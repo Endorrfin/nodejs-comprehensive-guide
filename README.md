@@ -19,6 +19,8 @@ npm run dev      # local dev server → http://localhost:5173  (full interactivi
 npm run build    # tsc typecheck + Vite production build → dist/
 npm run preview  # serve the production build locally
 npm run typecheck
+npm test         # engine truth-tests + content/link integrity (no browser)
+npm run qa       # content/link integrity only (scripts/qa-integrity.ts)
 ```
 
 ## Deploy to GitHub Pages

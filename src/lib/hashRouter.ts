@@ -5,7 +5,8 @@ export type Route =
   | { name: "chapter"; id: string }
   | { name: "interview" }
   | { name: "mental-models" }
-  | { name: "flashcards" };
+  | { name: "flashcards" }
+  | { name: "about" };
 
 export function parseHash(raw: string): Route {
   const h = raw.replace(/^#/, "").replace(/^\/+/, "");
@@ -14,6 +15,7 @@ export function parseHash(raw: string): Route {
   if (seg === "interview") return { name: "interview" };
   if (seg === "mental-models") return { name: "mental-models" };
   if (seg === "flashcards") return { name: "flashcards" };
+  if (seg === "about") return { name: "about" };
   return { name: "map" };
 }
 

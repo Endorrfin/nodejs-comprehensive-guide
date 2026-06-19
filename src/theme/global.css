@@ -59,6 +59,13 @@
   margin-top: 1px;
   letter-spacing: 0.3px;
 }
+/* CHANGED: stack title + sub-label (were collapsing onto one line as inline spans) */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.18;
+}
 .nav {
   display: flex;
   align-items: center;
@@ -218,6 +225,12 @@
 .footer-inner .src {
   margin-left: auto;
   color: var(--tx3);
+}
+.footer-inner .flink {
+  color: var(--tx2);
+}
+.footer-inner .flink:hover {
+  color: var(--accent-bright);
 }
 
 /* ----- Concept map (landing) -------------------------------------------- */
