@@ -1,0 +1,196 @@
+.ep-sim {
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 16px;
+  margin: 22px 0;
+}
+.ep-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ep-tabs button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--tx2);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ep-tabs button.on {
+  border-color: var(--accent-deep);
+  background: var(--accent-dim);
+  color: var(--tx);
+}
+.ep-ctx {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  margin: 12px 2px 12px;
+}
+.ep-ctx-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* code panel */
+.ep-code {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #0b0f0a;
+  padding: 8px 0;
+  overflow-x: auto;
+}
+.ep-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 1px 12px 1px 0;
+  border-left: 3px solid transparent;
+  white-space: pre;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.ep-line .ep-ln {
+  width: 26px;
+  text-align: right;
+  flex: none;
+  color: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  user-select: none;
+}
+.ep-line code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx);
+  white-space: pre;
+}
+.ep-line.on code {
+  color: #fff;
+}
+
+/* caption */
+.ep-caption {
+  margin-top: 13px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 13px;
+  min-height: 46px;
+}
+.ep-stepttl {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.ep-detail {
+  font-size: 13px;
+  color: var(--tx);
+}
+
+/* verdict banner */
+.ep-verdict {
+  margin-top: 12px;
+  border-radius: 9px;
+  padding: 10px 13px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid;
+}
+.ep-verdict.ok {
+  color: var(--accent-bright);
+  border-color: var(--accent-deep);
+  background: rgba(108, 194, 74, 0.12);
+}
+.ep-verdict.warn {
+  color: #fbbf24;
+  border-color: #7a5b18;
+  background: rgba(251, 191, 36, 0.12);
+}
+.ep-verdict.bad {
+  color: #fca5a5;
+  border-color: #7a2c2c;
+  background: rgba(248, 113, 113, 0.14);
+}
+
+/* controls */
+.ep-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+.ep-controls .btn {
+  font-size: 12.5px;
+  padding: 7px 12px;
+}
+.ep-progress {
+  flex: 1;
+  min-width: 80px;
+  height: 5px;
+  background: var(--s2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ep-progress-bar {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+.ep-step {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  white-space: nowrap;
+}
+
+/* takeaway */
+.ep-takeaway {
+  margin-top: 12px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+  font-size: 12.5px;
+  color: var(--tx2);
+  line-height: 1.55;
+}
+.ep-take-lbl {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 9px;
+}
+.ep-fix {
+  margin-top: 9px;
+  border-left: 2px solid var(--accent-deep);
+  padding-left: 10px;
+  color: var(--tx);
+}
+.ep-fix-lbl {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-bright);
+  margin-right: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ep-line,
+  .ep-progress-bar {
+    transition: none;
+  }
+}

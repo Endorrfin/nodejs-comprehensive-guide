@@ -24,6 +24,8 @@ const routes = [
   "#/chapter/concurrency",
   "#/chapter/streams",
   "#/chapter/modules",
+  "#/chapter/errors",
+  "#/chapter/http",
   "#/chapter/summary",
   "#/interview",
   "#/mental-models",
@@ -162,6 +164,21 @@ for (const must of ["V8 is not Node", "libuv", "Architecture trace-a-call simula
   const has = arch.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} architecture contains "${must}"`);
+}
+
+// ---- S6 Real systems A (Ch.12 Errors, Ch.13 HTTP): content + sims/figures ----
+const err = render("#/chapter/errors");
+for (const must of ["Error handling", "operational", "Error propagation simulator", "unhandledRejection", "AsyncLocalStorage", "EventEmitter"]) {
+  const has = err.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} errors contains "${must}"`);
+}
+
+const httpc = render("#/chapter/http");
+for (const must of ["HTTP internals", "llhttp", "HTTP request lifecycle simulator", "keepAliveTimeout", "headersTimeout", "keep-alive"]) {
+  const has = httpc.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} http contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");
