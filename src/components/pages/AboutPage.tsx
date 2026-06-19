@@ -92,7 +92,7 @@ export function AboutPage(): React.ReactElement {
 
       <div style={{ marginTop: 22, display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button className="btn primary" onClick={() => go("/map")}>
-          Explore the concept map →
+          Explore the overview →
         </button>
         <button className="btn" onClick={() => go("/chapter/event-loop")}>
           Start with the event loop

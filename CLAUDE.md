@@ -534,4 +534,19 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   += `/about`. **Verified:** app+scripts `tsc` clean · `vite build` OK (JS **201.93 kB gz**, CSS 11.6 kB) ·
   **15/15 test suites + QA 825/0** · SSR smoke **23 routes / 148 assertions / 0 fail**. (Scratch `scripts/_s9d2`,
   `scripts/_ssr_s9b|c` gitignored via `scripts/_*`.)
+- **2026-06-19 · S9c Mental-models figures + bilingual README** — User flagged the gallery over-promised ("18
+  pictures … reveal the real diagram") while **4 of 18 cards had no figure** (`v8-not-node`, `microtask-priority`,
+  `jit-tiers`, `cjs-vs-esm`). Gave all 18 a diagram: reused the previously-unused **`node-pieces`** figure for
+  V8-is-not-Node, and built **3 new on-brand SVG figures** — `MicrotaskLadder` (sync→nextTick→Promise→one macrotask:
+  timers/check), `JitTiers` (Ignition→Sparkplug→Maglev→TurboFan + deopt fall-back), `ModuleLoadCompare` (CJS sync
+  depth-first vs ESM parse→link→evaluate; require(esm) since 22.12) — registered in `lib/registry.tsx`
+  (`microtask-ladder`/`jit-tiers`/`module-load-compare`) and assigned to the 3 figureless cards. Every gallery card
+  now reveals a real diagram and the "18 pictures" claim is true. Also (S9b+) added a **bilingual EN/UA README**
+  (World Explorer style) and confirmed the live URL `https://endorrfin.github.io/nodejs-comprehensive-guide/`.
+  **Verified:** `tsc` clean · `vite build` OK (JS **204.02 kB gz**) · QA **829/0** (figures 18→21; all 18 models
+  have a figure) · SSR smoke **23 routes / 148 assertions / 0 fail**. (Scratch `scripts/_s9d3`, `scripts/_ssr_s9d`
+  gitignored.) **Resolved (user):** keep the Map page full-width (status quo — the card grid IS the navigator,
+  a sidebar there would duplicate it); renamed the nav tab **Map → Overview** (+ aligned the brand aria-label, the
+  not-found "Back to overview" button, and the About CTA). Route `#/map` and the `.map-*` CSS classes are unchanged.
+  Re-verified: `tsc` clean · `vite build` OK · SSR smoke 23 routes / 148 / 0 fail.
 - *(Update this log at the end of every session/block — per user request.)*

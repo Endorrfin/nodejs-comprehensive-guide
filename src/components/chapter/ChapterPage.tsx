@@ -22,7 +22,7 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
       <div className="chapter">
         <p className="prose">Chapter not found.</p>
         <button className="btn" onClick={() => go("/map")}>
-          ← Back to the map
+          ← Back to overview
         </button>
       </div>
     );
