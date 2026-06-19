@@ -266,4 +266,19 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   **Verified:** `tsc` clean · `vite build` OK (JS ≈78 kB gzip, relative `./assets`) · engine unit
   test ALL PASS · SSR smoke of all 7 routes OK. **Pending (user):** create the GitHub repo, push,
   set Pages Source = GitHub Actions. **Next: S2 — Async model + async-ordering sim + quiz engine.**
+- **2026-06-19 · S2 Async core** — DONE. Ch.7 **Async model** fully built (was a stub): 3-styles
+  table + side-by-side code, **await suspend/resume** figure (`AwaitTimeline`), micro/macro priority
+  ladder, serial-vs-`Promise.all` compare, 7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  **Async-ordering hero sim** (`asyncEngine.ts` + `AsyncOrderSim`): pure/deterministic engine, code
+  panel w/ active-line highlight, three lanes (call stack · microtasks · macrotasks) + numbered
+  console; 3 scenarios (micro-vs-macro · await · two-fn interleave). **Reusable Predict-the-output
+  quiz engine** (`study/PredictOutputQuiz` + `data/quizzes.ts`, 5 Qs) — registered as a sim so any
+  chapter can drop one in. Small infra: `Md` internal `#/…` links navigate in-app; `ChapterPage`
+  tags only the FIRST sim as `#simulator` (sim + quiz now coexist); `npm test` runs both engine suites.
+  **Correctness:** all sim/quiz outputs **captured from real Node 22** (`scripts/node-truth-async.mjs`)
+  and asserted in `scripts/test-async.ts`; engine reproduces them exactly. Found + documented the
+  **CJS-vs-ESM `nextTick` ordering flip** (pitfall + callout, verified). **Verified:** `tsc` clean ·
+  `vite build` OK (JS ≈88 kB gzip) · both engine suites ALL PASS · SSR smoke 7 routes + async-model
+  content assertions OK. (Scratch build dirs `scripts/_*/` gitignored; user can delete them locally.)
+  **Next: S3 — V8/GC + GC sim; Concurrency + thread-pool-vs-kernel sim.**
 - *(Update this log at the end of every session/block — per user request.)*

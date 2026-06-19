@@ -42,5 +42,21 @@ for (const must of ["EVENT LOOP", "console output", "Mental model", "setImmediat
   console.log(`${has ? "PASS" : "FAIL"} event-loop contains "${must}"`);
 }
 
+// async-model (S2): chapter prose + the async-order sim + the predict-output quiz
+const am = render("#/chapter/async-model");
+for (const must of [
+  "Async model",
+  "call stack",
+  "microtasks",
+  "console output",
+  "Predict the output",
+  "Promise.all",
+  "await suspends the function",
+]) {
+  const has = am.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} async-model contains "${must}"`);
+}
+
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");
 process.exit(ok ? 0 : 1);
