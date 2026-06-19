@@ -9,13 +9,15 @@
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts && node --experimental-strip-types scripts/test-performance.ts && node --experimental-strip-types scripts/test-security.ts && node --experimental-strip-types scripts/test-production.ts && node --experimental-strip-types scripts/test-modern.ts"
+    "qa": "node --experimental-strip-types scripts/qa-integrity.ts",
+    "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts && node --experimental-strip-types scripts/test-performance.ts && node --experimental-strip-types scripts/test-security.ts && node --experimental-strip-types scripts/test-production.ts && node --experimental-strip-types scripts/test-modern.ts && node --experimental-strip-types scripts/qa-integrity.ts"
   },
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@types/node": "^22.19.21",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.0",

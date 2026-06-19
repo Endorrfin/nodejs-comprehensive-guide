@@ -1,0 +1,12 @@
+{
+  // Type-checks the Node-side scripts (run via `node --experimental-strip-types`).
+  // Node globals (node:fs, process, import.meta) are available here via @types/node,
+  // while the app build (../tsconfig.json) deliberately omits node types so browser
+  // code can't lean on process/Buffer/etc. Editors pick the nearest tsconfig per file.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

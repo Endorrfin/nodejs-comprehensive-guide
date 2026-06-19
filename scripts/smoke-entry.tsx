@@ -34,6 +34,7 @@ const routes = [
   "#/interview",
   "#/mental-models",
   "#/flashcards",
+  "#/about",
 ];
 
 let ok = true;
@@ -242,6 +243,14 @@ for (const must of ["Flashcards", "Active recall", "Show answer", "Got it", "All
   const has = fc.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} flashcards contains "${must}"`);
+}
+
+const ab = render("#/about");
+// (React escapes apostrophes in SSR output, so assert on apostrophe-free strings)
+for (const must of ["About this guide", "What it is", "Truth-first", "Vasyl Krupka", "LinkedIn"]) {
+  const has = ab.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} about contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");

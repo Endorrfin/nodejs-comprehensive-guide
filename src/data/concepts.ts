@@ -326,7 +326,8 @@ http
     ],
     seeAlso: ["weaknesses", "event-loop", "concurrency", "what-is-node"],
     sources: [
-      { title: "Dan Kegel — The C10K problem", url: "http://www.kegel.com/c10k.html" },
+      // CHANGED: http→https — host supports TLS (verified); avoids a mixed-scheme link from the https site
+      { title: "Dan Kegel — The C10K problem", url: "https://www.kegel.com/c10k.html" },
       { title: "Node.js — About (non-blocking I/O design)", url: "https://nodejs.org/en/about" },
       { title: "Node.js — Don't block the event loop", url: "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop" },
       { title: "Node.js — Introduction to Node.js", url: "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs" },

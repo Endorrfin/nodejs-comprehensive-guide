@@ -40,7 +40,7 @@ check("abrupt: does NOT drain", !drainsInFlight(abrupt));
 check("abrupt: non-zero exit code", abrupt.exitCode !== 0);
 
 // ---- (2) LIVE anchor: real server.close() drains an in-flight request -------
-const server = http.createServer((req, res) => { setTimeout(() => res.end("done"), 120); });
+const server = http.createServer((_req, res) => { setTimeout(() => res.end("done"), 120); });
 await new Promise<void>((r) => server.listen(0, () => r()));
 const { port } = server.address() as { port: number };
 

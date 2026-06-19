@@ -183,9 +183,13 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
 ## 8. Deliverables
 
 - **Web guide** (this app) — primary.
-- **Deep-dive PDF per concept** — 5 dense slides each, orange theme, Ukraine footer
-  (mirror DPmap's `srp.js` golden standard). Built in the PDF sessions via the
-  **satori → PNG → img2pdf** pipeline (no browser in sandbox; see gotchas). Linked as `pdf` per chapter.
+- **Deep-dive PDF per concept** — **DEFERRED / dropped (decided 2026-06-19, S9).** Rationale: the 20
+  per-chapter PDFs would duplicate already-verified web content, **can't carry the simulators** (the guide's
+  differentiator), and add per-edit re-render upkeep + repo bloat; the 12 A4 posters (`Examples/Node-js core
+  concepts`) + in-app flashcards already cover portable/offline revision. The `pdf?` field stays in the schema
+  for a possible future *single* curated artifact (e.g. a printable interview-prep booklet) — NOT a per-chapter
+  dump. Pipeline-of-record if ever revived: **satori → resvg PNG → img2pdf**, black+green theme, Ukraine footer
+  (mirror DPmap `srp.js`).
 - LinkedIn assets — *not now* (optional later).
 
 ## 9. Conventions
@@ -495,4 +499,39 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   engine suites ALL PASS** · SSR smoke **22 routes** + S8 content assertions **SMOKE OK**. (Scratch `scripts/_s8dist`,
   `scripts/_ssr_s8` gitignored via `scripts/_*`; sandbox can't `unlink`, delete locally.)
   **Next: S9–S10 — deep-dive PDFs (satori → PNG → img2pdf): one golden PDF, then batch by group; link `pdf` per chapter.**
+- **2026-06-19 · S9 Polish & ship (PDF plan dropped)** — Pivoted: reviewed the planned deep-dive PDFs with the
+  user and **dropped the 20-PDF deliverable** (duplicate of verified web content, can't carry the sims, upkeep +
+  bloat; posters + flashcards already cover portable revision — see §8 for the full rationale + revive-it pipeline).
+  Spent the session hardening + shipping the web guide instead. **Added `scripts/qa-integrity.ts`** — a no-browser
+  content/link integrity checker (**825 checks**): chapter id/order uniqueness, group validity, **every `seeAlso`
+  resolves**, **every section sim/figure key is registered** in `lib/registry.tsx` (0 orphans), **all 85 in-prose
+  `#/` links resolve**, sources are well-formed https, interview/mental-model refs + quiz answer indices valid,
+  tables non-ragged. Wired into `npm test` (now **15** suites: 14 engine + qa) + a standalone `npm run qa`.
+  **Fix:** C10K source `http→https` (verified the host supports TLS) — the one issue QA surfaced. **Audited, no
+  change needed:** a11y (global `:focus-visible`, `prefers-reduced-motion` kill-switch, `.skip-link`→`#main`
+  landmark, `.sr-only`), mobile (900px sidebar-collapse + 560px nav-wrap), router fallback (any unknown hash →
+  map; bad chapter id → friendly not-found). **Added:** Open Graph + Twitter `summary` meta to `index.html` for
+  link unfurls (text-only; TODO add a 1200×630 `og:image` to upgrade to a rich card). **Verified:** `tsc` clean ·
+  `vite build` OK (JS **200.73 kB gzip**, CSS 11.6 kB, paths rewritten relative `./`) · **all 15 test suites PASS** ·
+  SSR smoke **22 routes / 142 content assertions / 0 fail**. Deploy confirmed ship-ready (`base:'./'`, `.nojekyll`,
+  favicon→`./`, Actions workflow correct). (Scratch `scripts/_s9dist`, `scripts/_ssr_s9` gitignored via `scripts/_*`;
+  sandbox can't `unlink`, delete locally.)
+  **Next: USER — create the GitHub repo, set Pages Source = GitHub Actions, push `main` to go live. Optional later:
+  one curated interview-prep PDF booklet; a 1200×630 og:image.**
+- **2026-06-19 · S9b Header fix · About page · LinkedIn · scripts type-checking** — Post-review polish from user
+  feedback. **Fixed the header:** brand title + sub-label were two inline spans collapsing onto one line
+  ("Guidesenior/staff…"); wrapped them in a `.brand-text` flex-column so the sub sits under the title. **New About
+  page** (`/about` route + nav tab + `components/pages/AboutPage.tsx`) — concise meta page: what it is · what's
+  inside (the 4 parts rendered live from `GROUPS`) · how it's built (truth-first / single-source / static) ·
+  author + LinkedIn, with two CTAs; counts (`chapters/parts/interview/models`) are live from the data layer.
+  **LinkedIn** (https://www.linkedin.com/in/vasyl-krupka/) added to the footer (every page) + the About author line.
+  **Scripts now type-check cleanly in the IDE:** added `@types/node@22` + a scoped **`scripts/tsconfig.json`**
+  (`types:["node"]`) so `node:*` / `process` / `import.meta` resolve in the Node scripts, while the app build keeps
+  node types OUT of `src` (root tsconfig **`"types": []`** — browser code can't lean on process/Buffer, and the
+  DOM `setTimeout`→number typing is preserved). Fixed the two errors this surfaced: `qa-integrity.ts` unused
+  `CHAPTER_BY_ID` import + a latent unused `req` in `test-production.ts`. smoke-entry extended to **23 routes**
+  (+about assertions; note React escapes `'` in SSR output, so assert apostrophe-free strings); `qa` KNOWN_ROUTES
+  += `/about`. **Verified:** app+scripts `tsc` clean · `vite build` OK (JS **201.93 kB gz**, CSS 11.6 kB) ·
+  **15/15 test suites + QA 825/0** · SSR smoke **23 routes / 148 assertions / 0 fail**. (Scratch `scripts/_s9d2`,
+  `scripts/_ssr_s9b|c` gitignored via `scripts/_*`.)
 - *(Update this log at the end of every session/block — per user request.)*
