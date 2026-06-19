@@ -32,6 +32,9 @@ import { SupplyChainTrust } from "../components/figures/SupplyChainTrust";
 import { ShutdownSequence } from "../components/figures/ShutdownSequence";
 import { VersionTimeline } from "../components/figures/VersionTimeline";
 import { WholePicture } from "../components/figures/WholePicture";
+import { MicrotaskLadder } from "../components/figures/MicrotaskLadder";
+import { JitTiers } from "../components/figures/JitTiers";
+import { ModuleLoadCompare } from "../components/figures/ModuleLoadCompare";
 import { PredictOutputQuiz } from "../components/study/PredictOutputQuiz";
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../data/quizzes";
 
@@ -102,4 +105,8 @@ export const FIGURES: Record<string, React.FC> = {
   "shutdown-sequence": ShutdownSequence,
   "version-timeline": VersionTimeline,
   "whole-picture": WholePicture,
+  // mental-model diagrams (gallery cards that previously had no figure to reveal)
+  "microtask-ladder": MicrotaskLadder,
+  "jit-tiers": JitTiers,
+  "module-load-compare": ModuleLoadCompare,
 };

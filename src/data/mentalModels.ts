@@ -25,6 +25,7 @@ export const MODELS: ModelCard[] = [
     id: "v8-not-node",
     title: "V8 is not Node",
     chapter: "architecture",
+    figure: "node-pieces",
     prompt: "What does V8 do, and what does it explicitly NOT do? Where does the event loop live?",
     answer:
       "V8 only compiles/executes JS and manages its heap + GC. It knows nothing about files, sockets, or the event loop. The loop, timers, async I/O and the thread pool are all libuv. Node = V8 + libuv + bindings + core JS.",
@@ -62,6 +63,7 @@ export const MODELS: ModelCard[] = [
     id: "microtask-priority",
     title: "Microtask priority",
     chapter: "event-loop",
+    figure: "microtask-ladder",
     prompt: "Order these: sync code, setTimeout(0), setImmediate, Promise.then, process.nextTick.",
     answer:
       "Sync first → process.nextTick → Promise.then → then macrotasks: setTimeout(0) (timers) and setImmediate (check), whose relative order is non-deterministic in the main module but immediate-first inside an I/O callback.",
@@ -97,6 +99,7 @@ export const MODELS: ModelCard[] = [
     id: "jit-tiers",
     title: "V8's JIT tiers",
     chapter: "v8-gc",
+    figure: "jit-tiers",
     prompt: "Name V8's compilation tiers in order, and say what triggers a deopt.",
     answer:
       "Ignition (bytecode interpreter) → Sparkplug (baseline) → Maglev (mid-tier, default in 22) → TurboFan (optimizing). Hot code tiers up on speculative type assumptions; if a hidden-class/shape assumption breaks, V8 deoptimizes back to a lower tier.",
@@ -114,6 +117,7 @@ export const MODELS: ModelCard[] = [
     id: "cjs-vs-esm",
     title: "CJS vs ESM loading",
     chapter: "modules",
+    figure: "module-load-compare",
     prompt: "How do CommonJS and ESM differ in how they load a diamond dependency graph?",
     answer:
       "CJS: synchronous, depth-first, executes on require(), cached by resolved path, interleaves load+eval. ESM: async parse → link (bindings) → evaluate as separate phases, live bindings, post-order evaluation. require(esm) is unflagged since 22.12 (but not for top-level-await graphs).",

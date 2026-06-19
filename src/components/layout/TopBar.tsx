@@ -120,7 +120,7 @@ export function TopBar({ route }: { route: Route }): React.ReactElement {
   return (
     <header className="topbar">
       <div className="topbar-inner">
-        <button className="brand" onClick={() => go("/map")} aria-label="Home — concept map">
+        <button className="brand" onClick={() => go("/map")} aria-label="Home — overview">
           <Logo />
           <span className="brand-text">
             <span className="brand-title">
@@ -132,7 +132,7 @@ export function TopBar({ route }: { route: Route }): React.ReactElement {
 
         <nav className="nav" aria-label="Primary">
           <a href="#/map" className={cx(route.name === "map" && "on")}>
-            Map
+            Overview
           </a>
           <a href="#/interview" className={cx(route.name === "interview" && "on")}>
             Interview
