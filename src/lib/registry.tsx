@@ -13,6 +13,7 @@ import { HttpLifecycleSim } from "../components/sims/HttpLifecycleSim";
 import { EventLoopLagSim } from "../components/sims/EventLoopLagSim";
 import { SupplyChainSim } from "../components/sims/SupplyChainSim";
 import { GracefulShutdownSim } from "../components/sims/GracefulShutdownSim";
+import { VersionTimelineSim } from "../components/sims/VersionTimelineSim";
 import { EventLoopRing } from "../components/figures/EventLoopRing";
 import { AwaitTimeline } from "../components/figures/AwaitTimeline";
 import { GcHeap } from "../components/figures/GcHeap";
@@ -29,6 +30,8 @@ import { TimeoutTriad } from "../components/figures/TimeoutTriad";
 import { FlameGraph } from "../components/figures/FlameGraph";
 import { SupplyChainTrust } from "../components/figures/SupplyChainTrust";
 import { ShutdownSequence } from "../components/figures/ShutdownSequence";
+import { VersionTimeline } from "../components/figures/VersionTimeline";
+import { WholePicture } from "../components/figures/WholePicture";
 import { PredictOutputQuiz } from "../components/study/PredictOutputQuiz";
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../data/quizzes";
 
@@ -76,6 +79,7 @@ export const SIMS: Record<string, React.FC> = {
   "eloop-lag": EventLoopLagSim,
   "supply-chain": SupplyChainSim,
   "graceful-shutdown": GracefulShutdownSim,
+  "version-timeline": VersionTimelineSim,
 };
 
 /** Static diagrams, referenced by key from concepts.ts sections (kind: 'figure'). */
@@ -96,4 +100,6 @@ export const FIGURES: Record<string, React.FC> = {
   "flame-graph": FlameGraph,
   "supply-chain-trust": SupplyChainTrust,
   "shutdown-sequence": ShutdownSequence,
+  "version-timeline": VersionTimeline,
+  "whole-picture": WholePicture,
 };
