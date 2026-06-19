@@ -13,6 +13,10 @@ Examples/
 QA.txt
 _arhive/
 
+# IDE
+.idea/
+.vscode/
+
 # dev/test artifacts
 scripts/ssr/
 scripts/_prev/

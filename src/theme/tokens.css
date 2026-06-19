@@ -1,0 +1,156 @@
+/* ===========================================================================
+   Node.js Comprehensive Guide — brand tokens (black + Node green)
+   Sampled from the user's "Node-js core concepts" poster series + official Node
+   palette (#6CC24A / #44883E / #215732). Orange is a SEMANTIC accent only
+   (thread pool / CPU work) — see --sem-* below.
+   =========================================================================== */
+:root {
+  /* surfaces */
+  --bg: #0a0c0a;
+  --bg-grad: radial-gradient(1200px 600px at 70% -10%, #10180f 0%, #0a0c0a 55%);
+  --surface: #111511;
+  --s2: #161b16;
+  --s3: #1b221b;
+  --line: #243024;
+  --line2: #33402f;
+
+  /* text */
+  --tx: #f4f7f4;
+  --tx2: #9cb3a0;
+  --tx3: #6b7b6e;
+
+  /* brand green */
+  --accent: #6cc24a; /* primary brand green */
+  --accent-deep: #3c873a; /* fills / borders */
+  --accent-bright: #4ade80; /* headings / glow highlights */
+  --accent-dim: rgba(108, 194, 74, 0.14);
+  --accent-glow: rgba(108, 194, 74, 0.35);
+
+  /* semantic palette for diagrams & sims (keep consistent everywhere) */
+  --sem-runtime: #6cc24a; /* event loop / kernel / network / runtime */
+  --sem-pool: #ff7a00; /* thread pool / CPU-bound (the personal-brand nod) */
+  --sem-timer: #38bdf8; /* timers */
+  --sem-micro: #a78bfa; /* microtasks (nextTick / Promise) */
+  --sem-error: #f87171; /* errors / leaks / warnings */
+  --sem-io: #fbbf24; /* I/O in flight */
+
+  /* group accents (green-family — don't dilute the identity) */
+  --grp-foundations: #6cc24a;
+  --grp-runtime: #4ade80;
+  --grp-systems: #2dd4bf;
+  --grp-mastery: #a3e635;
+
+  /* type */
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* shape */
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+  --maxw: 1180px;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  background-attachment: fixed;
+  color: var(--tx);
+  font-family: var(--font-body);
+  font-size: 15.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+a {
+  color: var(--accent-bright);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+button {
+  font-family: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #23301f;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #33402f;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* a11y helper */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 8px;
+  z-index: 100;
+  background: var(--accent);
+  color: #06200a;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
