@@ -305,4 +305,32 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   SSR smoke **8 routes** + v8-gc/concurrency content assertions OK. (Scratch `scripts/_s3dist`,
   `scripts/_ssr_s3` gitignored; sandbox can't `unlink`, delete locally.)
   **Next: S4 — Ch.10 Streams + Backpressure sim (+ stream-pipeline interactive); Ch.11 Modules CJS vs ESM (+ resolver interactive).**
+- **2026-06-19 · S4 Streams + Modules** — DONE. Two stub chapters built to the golden standard, each
+  with a verified interactive:
+  • **Ch.10 Streams & Buffers** — readFile-vs-stream memory contrast; Buffer-vs-stream callout; 4-types
+    table; backpressure mechanics (highWaterMark, write()===false, 'drain'); **`StreamPipeline` figure**
+    (data forward / backpressure backward); **Backpressure hero sim** (Respect⇄Ignore toggle + hwm
+    selector — watch the buffer stay bounded vs balloon); pipe-vs-pipeline compare; modern async-iterator
+    + `Readable.from` + `stream/promises` code; OOM + objectMode callouts; 7 key points, 5 pitfalls,
+    5 interview Q&A, verified sources.
+  • **Ch.11 Modules: CJS vs ESM** — loading-model framing; full CJS-vs-ESM table; CJS sync/depth-first/
+    cache + ESM parse→link→evaluate prose; **Module-resolver hero sim** (`module-resolver`: steps the
+    SAME diamond graph each way — CJS interleave + cache hit vs ESM 3-phase); live-binding callout +
+    code; require()-vs-import compare; interop (require(esm) since 22.12, node: prefix, named-export
+    heuristics) + interop table; dual-package-hazard & circular-partial callout; **modules predict-output
+    quiz** (3 Qs); 7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  **Two new verified engines (truth-first):** `streamEngine.ts` (fast producer / slow consumer; write()
+    flips false at buffered ≥ hwm; respect bounds the buffer at the mark, ignore overflows it) — invariants
+    in `scripts/test-streams.ts`, real behaviour + defaults (byte hWM **65536**, objectMode **16**) captured
+    in `scripts/node-truth-streams.mjs`. `moduleEngine.ts` (CJS depth-first+cache vs ESM parse/link/evaluate
+    over a diamond) — `scripts/test-modules.ts` asserts both evaluate post-order **[base,left,right,app]**,
+    base once, CJS interleaves, ESM separates phases; `scripts/node-truth-modules.mjs` records the real
+    eval order, ESM live binding (0→1) vs CJS copy (0→0), and the circular read (**CJS undefined+warning**
+    vs **ESM hoisted 'function'**). Sims `BackpressureSim`+`ModuleResolverSim` (+css) and `StreamPipeline`
+    figure + `modulesQuiz` registered in `lib/registry.tsx`/`data/quizzes.ts`; +5 interview-bank entries.
+    `npm test` now runs **6** engine suites. Fixed `.gitignore` to actually ignore all `scripts/_*` scratch
+    dirs (was only `_prev`). **Verified:** `tsc` clean · `vite build` OK (JS ≈121 kB gzip, relative
+    `./assets`) · all **6** suites ALL PASS · SSR smoke **10 routes** + streams/modules content assertions OK.
+    (Scratch `scripts/_s4dist`, `scripts/_ssr_s4` now gitignored; sandbox can't `unlink`, delete locally.)
+  **Next: S5 — Foundations (Part I): Ch.1–5 (what/why, strengths, weaknesses, competitors tables, architecture diagram).**
 - *(Update this log at the end of every session/block — per user request.)*

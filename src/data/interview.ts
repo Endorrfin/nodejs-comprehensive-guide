@@ -153,6 +153,38 @@ export const INTERVIEW: BankItem[] = [
     q: "How do worker_threads share data, and what does it cost?",
     a: "By default postMessage makes a structured-clone copy, so large payloads cost serialization and memory. You can transfer an ArrayBuffer (zero-copy, ownership moves) or use a SharedArrayBuffer with Atomics for true shared memory and lock-free coordination. Workers never share ordinary variables — design around copies or shared buffers.",
   },
+  {
+    id: "streams-pipe-vs-pipeline",
+    chapter: "streams",
+    topic: "Streams",
+    level: "staff",
+    q: "Why prefer pipeline() over pipe(), and what does write()'s return value mean?",
+    a: "write() returns false once the writable's buffered bytes reach highWaterMark — a signal to stop and wait for 'drain'. .pipe() wires data through and forwards backpressure but does NOT destroy the chain on error, so a failure mid-stream leaks file handles/sockets. stream.pipeline() (or its promises form) forwards backpressure AND destroys every stream on error or completion, giving you a single error path and no leaks.",
+  },
+  {
+    id: "streams-types",
+    chapter: "streams",
+    topic: "Streams",
+    level: "senior",
+    q: "What are the stream types, and what is objectMode?",
+    a: "Readable (source), Writable (sink), Duplex (both, independent sides — a TCP socket), and Transform (a Duplex whose output is a function of its input — gzip, hashing). By default streams move Buffers/strings with a 64 KiB highWaterMark; in objectMode each chunk is an arbitrary JS value and highWaterMark counts objects (default 16).",
+  },
+  {
+    id: "modules-require-esm",
+    chapter: "modules",
+    topic: "Modules",
+    level: "staff",
+    q: "Can you require() an ES module now, and what's the dual-package hazard?",
+    a: "Yes — require(esm) is unflagged and stabilized in current LTS lines (it landed in 22.12); it throws ERR_REQUIRE_ASYNC_MODULE only if the target uses top-level await. The dual-package hazard is shipping both a CJS and an ESM build: a dependency loaded both ways yields two separate module instances with separate state (two caches, failing instanceof). Mitigate by exposing state from a single CJS core, or shipping ESM-only.",
+  },
+  {
+    id: "modules-live-binding",
+    chapter: "modules",
+    topic: "Modules",
+    level: "staff",
+    q: "Live bindings vs value copies — how do CJS and ESM differ on mutation and circular deps?",
+    a: "ESM imports are live read-only bindings to the exporter's variables, so they observe later mutations; CommonJS require() returns a snapshot value-copy of module.exports. On circular deps, CJS hands back a partial exports object (you may read undefined for not-yet-assigned members), while ESM links bindings before evaluation so hoisted declarations resolve — circular references are handled more gracefully.",
+  },
 ];
 
 export const INTERVIEW_TOPICS: string[] = Array.from(new Set(INTERVIEW.map((i) => i.topic)));
