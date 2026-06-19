@@ -5,11 +5,19 @@ import { GcSim } from "../components/sims/GcSim";
 import { ThreadPoolSim } from "../components/sims/ThreadPoolSim";
 import { BackpressureSim } from "../components/sims/BackpressureSim";
 import { ModuleResolverSim } from "../components/sims/ModuleResolverSim";
+import { ArchitectureSim } from "../components/sims/ArchitectureSim";
+import { ThroughputSim } from "../components/sims/ThroughputSim";
+import { RuntimePicker } from "../components/sims/RuntimePicker";
 import { EventLoopRing } from "../components/figures/EventLoopRing";
 import { AwaitTimeline } from "../components/figures/AwaitTimeline";
 import { GcHeap } from "../components/figures/GcHeap";
 import { ThreadPoolKernel } from "../components/figures/ThreadPoolKernel";
 import { StreamPipeline } from "../components/figures/StreamPipeline";
+import { NodePieces } from "../components/figures/NodePieces";
+import { ArchitectureStack } from "../components/figures/ArchitectureStack";
+import { ConnectionScaling } from "../components/figures/ConnectionScaling";
+import { CompetitorMap } from "../components/figures/CompetitorMap";
+import { BlockingLoop } from "../components/figures/BlockingLoop";
 import { PredictOutputQuiz } from "../components/study/PredictOutputQuiz";
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../data/quizzes";
 
@@ -49,6 +57,9 @@ export const SIMS: Record<string, React.FC> = {
   backpressure: BackpressureSim,
   "module-resolver": ModuleResolverSim,
   "modules-quiz": ModulesQuiz,
+  architecture: ArchitectureSim,
+  throughput: ThroughputSim,
+  "runtime-picker": RuntimePicker,
 };
 
 /** Static diagrams, referenced by key from concepts.ts sections (kind: 'figure'). */
@@ -58,4 +69,9 @@ export const FIGURES: Record<string, React.FC> = {
   "gc-heap": GcHeap,
   "thread-pool-kernel": ThreadPoolKernel,
   "stream-pipeline": StreamPipeline,
+  "node-pieces": NodePieces,
+  "architecture-stack": ArchitectureStack,
+  "connection-scaling": ConnectionScaling,
+  "competitor-map": CompetitorMap,
+  "blocking-loop": BlockingLoop,
 };
