@@ -107,90 +107,602 @@ const stub = (
 
 export const CHAPTERS: Chapter[] = [
   // ---------------------------------------------------------------- Foundations
-  stub({
+  {
     id: "what-is-node",
     group: "foundations",
     order: 1,
     title: "What is Node.js",
+    full: "What is Node.js — a runtime, not a framework",
     tagline: "A JavaScript runtime built on V8, with non-blocking I/O via libuv.",
-    readMins: 6,
+    readMins: 7,
     mentalModel:
       "Node = V8 (runs JS) + libuv (event loop + async I/O + a 4-thread pool) + C++ bindings. Your JS is single-threaded; the waiting is offloaded.",
-    keyPoints: [
-      "Node runs JavaScript outside the browser, on Google's V8 engine.",
-      "libuv provides the event loop, asynchronous I/O, and a small thread pool.",
-      "Non-blocking by design: start I/O, register a callback, keep serving other work.",
-      "One language across the whole stack, with the largest package ecosystem (npm).",
+    sections: [
+      {
+        kind: "prose",
+        md: "**Node.js is a runtime that executes JavaScript outside the browser.** It is not a language, not a framework, and not a web server — it is the program that takes your JS and runs it on a server, a laptop, or a container, granting it the capabilities the browser deliberately withholds: reading files, opening network sockets, spawning child processes, talking to the OS. Created in **2009 by Ryan Dahl**, Node's defining idea was to pair Google's fast **V8** engine with an **event-driven, non-blocking I/O** model so a single process could handle huge numbers of concurrent connections. It's now stewarded by the **OpenJS Foundation** and runs much of the modern web's back end.",
+      },
+      { kind: "figure", fig: "node-pieces", caption: "Node in one line: V8 runs your JavaScript, libuv supplies the loop and async I/O, and the bindings + core JS API bridge them." },
+      {
+        kind: "prose",
+        md: "Three pieces do the work. **V8** compiles and runs your JavaScript and manages its memory. **libuv** (C) supplies the **event loop**, an abstraction over the OS's async I/O (epoll / kqueue / IOCP), and a small **thread pool**. **C++ bindings** plus a **core JS library** (`fs`, `http`, `net`, `streams`) wire your code to those native parts. The defining design choice is **non-blocking I/O**: instead of dedicating a thread to each request that sits blocked while the disk or network responds, Node *starts* the operation, *registers a callback*, and immediately gets on with other work — picking your callback up when the result is ready.",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Runtime, not framework",
+        md: "A frequent muddle. **Node is the platform**; **Express, NestJS, Fastify** are *libraries that run on top of it*. Node gives you `http`, `fs`, streams and the event loop; a framework gives you routing, DI and conventions. \"I use Node\" and \"I use Nest\" are statements about different layers — Nest runs *on* Node.",
+      },
+      {
+        kind: "prose",
+        md: "Why did it catch on? **One language end-to-end** — the same JavaScript (and types, and validation logic) on the browser and the server. **JSON and HTTP are native**, so building APIs is frictionless. And **npm** is the largest software registry in the world (millions of packages), which makes assembling a system fast. Companies adopted it precisely where its model fits — I/O-heavy, high-concurrency services and tooling — including Netflix, PayPal, LinkedIn and Uber as oft-cited case studies. Node is **actively developed** on a predictable LTS cadence; as of mid-2026 the Active LTS line is **Node 24** (Node 22 in maintenance, Node 26 the current line) — see [Modern Node](#/chapter/modern-node).",
+      },
+      {
+        kind: "compare",
+        a: "Node IS…",
+        b: "Node is NOT…",
+        rows: [
+          ["Category", "a JavaScript runtime (V8 + libuv)", "a language or a framework"],
+          ["Threading", "single-threaded JS, with I/O offloaded", "multi-threaded by default"],
+          ["Sweet spot", "I/O-bound servers, real-time, tooling", "CPU-bound number crunching"],
+          ["Frameworks", "the platform Express/Nest run on", "Express/Nest themselves"],
+        ],
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// A whole HTTP server — no framework, just the runtime.
+const http = require('node:http');
+
+http
+  .createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ hello: 'world' }));
+  })
+  .listen(3000);
+
+// Prove what Node is made of — the native pieces, by version:
+//   $ node -p "process.versions"
+//   { node, v8, uv, openssl, zlib, llhttp, ares, ... }`,
+        note: "createServer returns a Writable-friendly server with a few lines; process.versions lists V8, libuv (uv) and the bundled C libraries Node ships — the exact components in the diagram above.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "The one mental model to carry",
+        md: "Everything else in this guide hangs off a single sentence: **JavaScript runs on one thread; the waiting (I/O) is offloaded below it.** Next, see the pieces interact in [Top-level architecture](#/chapter/architecture), then how the one thread schedules work in [the Event Loop](#/chapter/event-loop).",
+      },
     ],
-    seeAlso: ["architecture", "event-loop", "strengths"],
-  }),
-  stub({
+    keyPoints: [
+      "Node runs JavaScript outside the browser, on Google's V8 engine — it's a runtime, not a language or framework.",
+      "libuv provides the event loop, asynchronous I/O, and a small (default 4) thread pool.",
+      "Non-blocking by design: start I/O, register a callback, keep serving other work.",
+      "JavaScript runs on a single thread; the waiting is offloaded — this one fact drives everything else.",
+      "One language across the whole stack, with the largest package ecosystem (npm).",
+      "Created 2009 by Ryan Dahl; governed by the OpenJS Foundation; even-numbered majors go LTS.",
+    ],
+    pitfalls: [
+      {
+        title: "Calling Node a language or a framework",
+        body: "Node is a runtime: the program that executes JavaScript with server capabilities. The language is JavaScript (or TypeScript compiled to it); frameworks like Express/Nest are libraries that run on Node.",
+      },
+      {
+        title: "Assuming Node is multi-threaded",
+        body: "Your JavaScript runs on one thread. libuv uses a small thread pool for some blocking operations and the kernel for sockets, but application code is single-threaded unless you explicitly use worker_threads.",
+      },
+      {
+        title: "Reaching for Node on CPU-bound work because it's 'fast'",
+        body: "V8 is fast, but a long synchronous computation blocks the single thread and freezes the whole process. Node's speed is about I/O concurrency, not parallel compute — see Weaknesses.",
+      },
+    ],
+    interview: [
+      {
+        q: "What is Node.js, in one paragraph?",
+        a: "A JavaScript runtime built on V8 that executes JS outside the browser with non-blocking I/O. It pairs V8 (runs JS, manages memory) with libuv (event loop, async I/O over epoll/kqueue/IOCP, a small thread pool) and C++ bindings plus a JS core API (fs, http, streams). Application JS runs on a single thread; I/O is offloaded, so one process can handle thousands of concurrent connections.",
+        level: "senior",
+      },
+      {
+        q: "Is Node single-threaded or multi-threaded?",
+        a: "Your JavaScript runs on a single thread (one event loop). Under it, libuv keeps a thread pool (default 4) for operations with no async OS primitive — file I/O, crypto, zlib, dns.lookup — and uses the kernel for network sockets. For parallel JS you opt into worker_threads. So: single-threaded JS, with offloaded and optional parallelism beneath.",
+        level: "senior",
+      },
+      {
+        q: "What problem was Node designed to solve?",
+        a: "The C10k problem: serving many simultaneous connections without a thread per connection. By making I/O non-blocking and multiplexing it on one event-loop thread, Node holds each connection as a cheap socket rather than an expensive thread, so a single process scales to tens of thousands of concurrent, mostly-idle connections.",
+        level: "senior",
+      },
+      {
+        q: "What's the difference between Node and Express?",
+        a: "Node is the runtime — it provides the engine, the event loop, and core modules like http and fs. Express (or Nest, Fastify) is a framework: a library running on Node that adds routing, middleware and structure. You can write a full server with Node's http module alone; frameworks just make it ergonomic.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["architecture", "event-loop", "strengths", "modern-node"],
+    sources: [
+      { title: "Node.js — About", url: "https://nodejs.org/en/about" },
+      { title: "Node.js — Introduction to Node.js", url: "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs" },
+      { title: "OpenJS Foundation — Node.js", url: "https://openjsf.org/projects" },
+      { title: "Node.js — Release schedule (LTS)", url: "https://github.com/nodejs/release#release-schedule" },
+    ],
+  },
+  {
     id: "strengths",
     group: "foundations",
     order: 2,
     title: "Strengths",
+    full: "Strengths — where Node shines",
     tagline: "Where Node shines — I/O-bound, real-time, one language end-to-end.",
-    readMins: 5,
-    mentalModel: "Node shines when the bottleneck is waiting (network, disk, DB), not computing.",
-    keyPoints: [
-      "I/O concurrency: thousands of sockets on a single thread via the event loop.",
-      "Real-time (WebSockets, streaming) and JSON/HTTP APIs are a natural fit.",
-      "One language front-to-back; huge ecosystem; fast iteration.",
-      "Low memory per connection vs thread-per-request models.",
+    readMins: 7,
+    mentalModel: "Node shines when the bottleneck is waiting (network, disk, DB), not computing — one thread overlaps thousands of waits.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Node's strengths all follow from one property: it's brilliant when the bottleneck is **waiting**, not **computing**. A web service spends most of its life idle — waiting on a database, an upstream API, a disk. The event loop plus the OS let a **single thread** overlap thousands of those waits, holding each connection as a cheap socket instead of an expensive thread. So Node's home turf is **I/O-bound, high-concurrency, network-facing** work: APIs, gateways, real-time systems, and tooling.",
+      },
+      { kind: "figure", fig: "connection-scaling", caption: "The C10k contrast: thread-per-request needs one ~1 MiB thread per connection; the event loop watches every socket on one thread via the kernel, at a fraction of the memory." },
+      {
+        kind: "prose",
+        md: "This is the famous **C10k** insight. The old model gave every connection its **own thread or process** — but a thread costs roughly a megabyte of stack plus scheduler overhead, so you hit a wall in the low thousands. Node holds a connection as a **socket the kernel watches** plus a little JS state — a few kilobytes — so one box serves **tens of thousands** of concurrent, mostly-idle connections. A thread costs about **16×** a socket; drag the slider and watch the memory gap widen.",
+      },
+      { kind: "sim", sim: "throughput" },
+      {
+        kind: "prose",
+        md: "Concurrency is the headline, but the rest of the list matters in practice: **one language end-to-end** — the same JavaScript, types and validation on client and server, which removes a whole translation layer and lets teams move fast; **JSON and HTTP are native**, so APIs and BFFs are frictionless; **real-time** (WebSockets, Server-Sent Events, streaming) is a natural fit for an event-driven runtime; **streaming with backpressure** processes data in bounded memory regardless of size (see [Streams](#/chapter/streams)); and the **npm ecosystem** plus fast iteration shorten the path from idea to running service.",
+      },
+      {
+        kind: "table",
+        caption: "Where Node fits well — and why.",
+        head: ["Workload", "Why Node is a strong fit"],
+        rows: [
+          ["HTTP / JSON APIs & BFFs", "I/O-bound, JSON-native, one language with the front end"],
+          ["Real-time (chat, presence, live dashboards)", "event-driven; WebSockets/SSE map cleanly onto the loop"],
+          ["Streaming proxies / API gateways", "backpressure keeps memory bounded while relaying data"],
+          ["CLI & build tooling", "fast startup, huge ecosystem, cross-platform"],
+          ["Serverless / edge functions", "small, I/O-glue handlers that scale horizontally"],
+          ["SSR / fullstack frameworks", "share rendering and types across client and server"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Concurrency is not parallelism",
+        md: "Node gives you massive **I/O concurrency** on **one** thread — many operations *in flight* at once. It does **not** give you CPU **parallelism** — many computations *executing* at once. The strength and the weakness are the same coin: the design that makes ten thousand idle sockets cheap is the design that makes one heavy `for`-loop catastrophic. Keep handlers I/O-bound and short; push CPU work to [worker_threads](#/chapter/concurrency).",
+      },
+      {
+        kind: "compare",
+        a: "Node's sweet spot",
+        b: "Not Node's job",
+        rows: [
+          ["Bottleneck", "waiting on I/O (net, disk, DB)", "burning CPU in JS"],
+          ["Shape", "many concurrent, short, async handlers", "long synchronous computation"],
+          ["Examples", "APIs, gateways, real-time, tooling", "video transcode, ML training, crypto mining"],
+          ["If you must", "—", "offload to worker_threads / native / another service"],
+        ],
+      },
     ],
-    seeAlso: ["weaknesses", "event-loop", "what-is-node"],
-  }),
-  stub({
+    keyPoints: [
+      "Node shines when the bottleneck is waiting (I/O), not computing.",
+      "I/O concurrency: thousands of sockets on a single thread via the event loop and the kernel.",
+      "Low memory per connection (~KB) vs thread-per-request (~MB) — the C10k win.",
+      "Real-time (WebSockets, SSE, streaming) and JSON/HTTP APIs are a natural fit.",
+      "One language front-to-back; huge npm ecosystem; fast iteration.",
+      "Concurrency ≠ parallelism: the loop overlaps waits, it does not parallelize CPU work.",
+    ],
+    pitfalls: [
+      {
+        title: "Choosing Node for CPU-heavy work because it benchmarks 'fast'",
+        body: "V8 is fast per-operation, but CPU-bound JS runs on the one thread and blocks everything. High single-op speed doesn't help when one request's computation stalls all the others — that's a job for Go/Rust/JVM or worker_threads.",
+      },
+      {
+        title: "Assuming more cores speed up one Node process",
+        body: "A single Node process uses one core for JS. To use all cores you run cluster or an orchestrator (≈one process per core), or offload CPU to worker_threads. Adding cores without that changes nothing for a single process.",
+      },
+      {
+        title: "Treating high throughput as automatic",
+        body: "Throughput holds only while handlers stay async and short. One synchronous call on the hot path (sync fs, big JSON.parse, a tight loop) collapses the whole event loop's concurrency — see Weaknesses.",
+      },
+    ],
+    interview: [
+      {
+        q: "Why is Node good at I/O-bound workloads?",
+        a: "Because I/O is mostly waiting, and Node overlaps waits instead of parking threads on them. The event loop registers a callback and moves on; libuv uses the kernel's async notifier (epoll/kqueue/IOCP) for sockets and a thread pool for blocking calls. One thread can therefore have thousands of operations in flight, holding each connection as a cheap socket rather than an expensive thread.",
+        level: "senior",
+      },
+      {
+        q: "How does a single thread serve thousands of connections?",
+        a: "Network sockets are non-blocking: libuv arms them with the OS event notifier and the kernel signals readiness; the one loop thread multiplexes them all, holding no thread per connection. Memory per connection is a few KB of socket + JS state, versus ~1 MB per thread in a thread-per-request model — so the same box scales from thousands to tens of thousands.",
+        level: "staff",
+      },
+      {
+        q: "When would you pick Node over Go or Java for a service?",
+        a: "When the work is I/O-bound and the team benefits from one language end-to-end: JSON/HTTP APIs, BFFs, real-time systems, streaming gateways, tooling. Node wins on developer velocity, ecosystem, and shared client/server code. I'd pick Go/Java/Rust instead when the service is CPU-bound or needs heavy parallel compute.",
+        level: "senior",
+      },
+      {
+        q: "What does 'one language end-to-end' actually buy you?",
+        a: "Shared code and types across client and server — validation schemas, models, utilities, even rendering (SSR) — which removes a translation layer and a class of drift bugs. It also means one hiring pool, one toolchain, and one mental model, which is a real velocity multiplier on product teams.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["weaknesses", "event-loop", "concurrency", "what-is-node"],
+    sources: [
+      { title: "Dan Kegel — The C10K problem", url: "http://www.kegel.com/c10k.html" },
+      { title: "Node.js — About (non-blocking I/O design)", url: "https://nodejs.org/en/about" },
+      { title: "Node.js — Don't block the event loop", url: "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop" },
+      { title: "Node.js — Introduction to Node.js", url: "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs" },
+    ],
+  },
+  {
     id: "weaknesses",
     group: "foundations",
     order: 3,
     title: "Weaknesses",
+    full: "Weaknesses — where Node is weak, and why",
     tagline: "Where Node is weak and why — CPU-bound work on one thread.",
-    readMins: 5,
-    mentalModel: "One thread for JS: a long computation freezes everything. Offload or chunk it.",
+    readMins: 7,
+    mentalModel: "One thread for JS: a long synchronous computation freezes everything — no I/O, no timers, no new connections. Offload or chunk it.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Node's weaknesses are the **same design seen from the other side**. The single thread that makes I/O cheap makes **CPU expensive**: one long synchronous computation has nowhere else to run, so it **freezes the entire process**. This isn't a bug to patch — it's structural, and understanding exactly *why* is what separates a senior answer from \"Node is slow at math.\"",
+      },
+      { kind: "figure", fig: "blocking-loop", caption: "One synchronous CPU task owns the only thread for its whole duration. Every other in-flight request waits, each inheriting the full stall as added latency." },
+      {
+        kind: "prose",
+        md: "The damage isn't that the CPU task itself is slow — it's that it adds its **entire duration to every other request**. While the thread is busy in a 250 ms `JSON.parse` or a synchronous hash, the loop runs **no** I/O callbacks, fires **no** timers, and accepts **no** new connections. On a busy server that one call spikes **p99 latency across the board** — a handful of heavy requests degrade everyone. The metric that catches it is **event-loop lag** (see [Performance](#/chapter/performance)).",
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "The cardinal sin: blocking the loop",
+        md: "The usual culprits are **synchronous APIs on the hot path**: `fs.readFileSync`, the `*Sync` crypto/zlib calls, a huge `JSON.parse`/`JSON.stringify`, a tight `for` loop over a big array, or **catastrophic regex backtracking (ReDoS)** on attacker-controlled input. Each holds the one thread. Fixes: move heavy CPU to a [worker_thread](#/chapter/concurrency), **chunk** the work across ticks, stream instead of buffering, or precompute/cache. The async variants exist for exactly this reason — prefer them.",
+      },
+      {
+        kind: "prose",
+        md: "CPU is the headline weakness, but an honest list has more. **Parallel compute is awkward**: you reach for `worker_threads` or native addons, which is heavier and clumsier than Go's goroutines or the JVM's threads. **Async control flow is easy to get subtly wrong** — a [floating promise](#/chapter/async-model) or an unhandled rejection can crash the process or silently swallow an error. The **dynamic-typing** baggage of JavaScript (the `this` keyword, `==`, IEEE-754 number precision) bites without TypeScript. The **npm supply chain** is a large attack surface — your dependencies are your risk (see [Security](#/chapter/security)). And **CJS/ESM interop** plus fast ecosystem churn add friction (see [Modules](#/chapter/modules)).",
+      },
+      {
+        kind: "table",
+        caption: "The real weaknesses — and how seniors mitigate each.",
+        head: ["Weakness", "Why it happens", "Mitigation"],
+        rows: [
+          ["CPU-bound work freezes the loop", "all JS shares one thread", "worker_threads, chunking, native, or a different tool"],
+          ["No easy parallelism", "single-threaded by design", "worker pool (Piscina), cluster, offload service"],
+          ["Subtle async bugs", "callbacks/promises are easy to misuse", "await everything, lint floating promises, AsyncLocalStorage"],
+          ["Dynamic-typing footguns", "JS semantics (this, ==, number precision)", "TypeScript (strict), linting, BigInt/decimal libs"],
+          ["Supply-chain risk", "huge transitive dependency trees", "lockfiles, npm audit, fewer deps, provenance"],
+          ["GC pauses under load", "GC shares the main thread", "reduce retention/allocations; watch event-loop lag"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "A leak becomes a latency problem",
+        md: "Because **garbage collection shares the event-loop thread**, a growing or leaking old space means longer, more frequent major GCs — which surface as **event-loop stalls and p99 spikes**, not just rising memory. It's the same lesson as blocking: anything that monopolizes the one thread — your CPU code *or* the GC cleaning up after it — hurts every request. Details in [V8 · GC](#/chapter/v8-gc).",
+      },
+      {
+        kind: "table",
+        caption: "Symptoms, and the cause they usually point to.",
+        head: ["Symptom you'll see", "Usually the real cause"],
+        rows: [
+          ["p99 latency spikes under load", "a synchronous/CPU call blocking the loop"],
+          ["'Node is slow at this'", "wrong tool for CPU-bound work — not a tuning issue"],
+          ["Process crashes intermittently", "an unhandled promise rejection / uncaught exception"],
+          ["Memory climbs until OOM", "a retained cache/listener — a leak, not load"],
+        ],
+      },
+    ],
     keyPoints: [
       "CPU-bound work blocks the single thread — throughput collapses.",
-      "A long synchronous task in one request adds latency to all in-flight requests.",
-      "Async control flow and error handling are easy to get subtly wrong.",
-      "Heavy numeric/compute needs worker_threads or native addons.",
+      "A long synchronous task adds its full duration to every in-flight and incoming request (p99 spikes).",
+      "Avoid sync APIs and unbounded loops/regex on the hot path; offload to worker_threads or chunk the work.",
+      "Real parallelism is awkward (worker_threads / native) vs goroutines or JVM threads.",
+      "Async control flow and error handling are easy to get subtly wrong (floating promises, unhandled rejections).",
+      "GC shares the thread, so a leak or large heap becomes an event-loop-latency problem.",
+      "The npm supply chain is a large attack surface; dynamic typing needs TypeScript discipline.",
     ],
-    seeAlso: ["strengths", "concurrency", "performance"],
-  }),
-  stub({
+    pitfalls: [
+      {
+        title: "Synchronous APIs on the hot path",
+        body: "fs.readFileSync, *Sync crypto/zlib, and big JSON.parse/stringify each hold the one thread for their whole duration, stalling every other request. Use the async variants, stream, or offload — reserve *Sync calls for startup/CLI scripts.",
+      },
+      {
+        title: "Unbounded loops and catastrophic regex (ReDoS)",
+        body: "A tight loop over a large array, or a regex that backtracks exponentially on hostile input, blocks the loop just like sync I/O. Chunk long work across ticks, bound input sizes, and avoid vulnerable regex patterns on untrusted data.",
+      },
+      {
+        title: "Floating promises and swallowed async errors",
+        body: "Calling an async function without await/.catch() (or inside forEach) detaches it: rejections become unhandledRejection and ordering becomes a race. Await it, catch it, or collect into Promise.all; lint for no-floating-promises.",
+      },
+      {
+        title: "Throwing more cores at one process",
+        body: "A single Node process is one core for JS. Without cluster/an orchestrator (≈one process per core) or worker_threads, extra cores sit idle while the one event-loop thread saturates.",
+      },
+      {
+        title: "Using worker_threads to 'speed up' I/O",
+        body: "Network/DB/file I/O is already concurrent via the loop and kernel. Wrapping it in workers adds isolate startup and copying for zero gain — workers are for CPU-bound JS only.",
+      },
+    ],
+    interview: [
+      {
+        q: "What is Node's biggest weakness, and why?",
+        a: "CPU-bound work. All application JavaScript runs on one event-loop thread, so a long synchronous computation has nowhere else to go and blocks the entire process — no I/O, no timers, no new connections — until it finishes. It's structural: the same single-threaded model that makes I/O concurrency cheap makes parallel CPU work impossible without worker_threads.",
+        level: "senior",
+      },
+      {
+        q: "What happens to other requests during a 200 ms synchronous task?",
+        a: "They all wait. The event loop can't advance while the thread is busy, so every in-flight request's callback and every queued timer is delayed by up to the full 200 ms, and new connections aren't accepted. One heavy synchronous call therefore adds latency across the board — visible as p99 spikes and event-loop lag.",
+        level: "staff",
+      },
+      {
+        q: "How do you handle CPU-bound work in Node?",
+        a: "Get it off the event-loop thread: move it to a pool of worker_threads (e.g. Piscina), break it into chunks that yield between ticks (setImmediate), use a native addon, or hand it to a separate service/queue. Streaming and caching reduce the work in the first place. The goal is to keep the main thread doing only short, async, I/O-bound work.",
+        level: "senior",
+      },
+      {
+        q: "Why are unhandled promise rejections dangerous in Node?",
+        a: "A promise you never await or .catch() (a floating promise) has nowhere to report failure, so its rejection becomes an unhandledRejection — which in modern Node terminates the process by default. Beyond crashes, floating promises make ordering a race and can swallow errors. Treat process.on('unhandledRejection') as a crash-and-restart backstop, not a handling strategy.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["strengths", "concurrency", "performance", "v8-gc"],
+    sources: [
+      { title: "Node.js — Don't block the event loop (or the worker pool)", url: "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop" },
+      { title: "Node.js — Worker threads", url: "https://nodejs.org/api/worker_threads.html" },
+      { title: "OWASP — Regular expression Denial of Service (ReDoS)", url: "https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS" },
+      { title: "Node.js — process 'unhandledRejection'", url: "https://nodejs.org/api/process.html#event-unhandledrejection" },
+    ],
+  },
+  {
     id: "competitors",
     group: "foundations",
     order: 4,
     title: "Competitors",
+    full: "Competitors — Deno, Bun, Go, Python, Java/.NET, Rust, Elixir",
     tagline: "Deno, Bun, Go, Python, Java, .NET, Rust, Elixir — when each wins.",
-    readMins: 7,
+    readMins: 9,
     mentalModel:
-      "Pick by bottleneck: I/O & ecosystem → Node; CPU & concurrency → Go/Rust/JVM; soft-real-time at scale → Elixir.",
-    keyPoints: [
-      "Deno & Bun: JS/TS runtimes — Bun chases speed, Deno web-standards & security.",
-      "Go: goroutines for easy concurrency, single static binary, strong for CPU+I/O.",
-      "Python: ecosystem & ML, but the GIL limits CPU parallelism.",
-      "Java/.NET: mature, truly multi-threaded, strong for CPU-heavy enterprise services.",
-      "Rust/Elixir: Rust for max performance & safety; Elixir/BEAM for massive concurrency.",
+      "Pick by bottleneck, not benchmark: I/O & ecosystem → Node; CPU & concurrency → Go/Rust/JVM; soft-real-time at scale → Elixir; ML → Python.",
+    sections: [
+      {
+        kind: "prose",
+        md: "The useful question is never *\"what's fastest?\"* but *\"what's my bottleneck?\"* Sort the field that way and it falls into tiers: the **JS-runtime cousins** (Deno, Bun) that share Node's event-loop model; the **CPU/concurrency tier** (Go, Rust, the JVM/.NET) with real threads; the **ecosystem play** (Python, for data/ML); and the **concurrency specialist** (Elixir on the BEAM). Node's enduring edge is the combination of a solid I/O model with the largest ecosystem and the deepest production track record — not raw numbers.",
+      },
+      { kind: "figure", fig: "competitor-map", caption: "A qualitative map: I/O concurrency + ecosystem velocity (→) vs CPU parallelism + raw performance (↑). The JS runtimes own the I/O sweet spot; the systems/JVM languages own raw compute." },
+      {
+        kind: "prose",
+        md: "Pick the constraint that dominates *your* system and see what fits — then read the trade-off, because there's rarely a single right answer.",
+      },
+      { kind: "sim", sim: "runtime-picker" },
+      {
+        kind: "prose",
+        md: "**The JS cousins.** **Deno** is Ryan Dahl's redo of Node: **TypeScript runs directly**, security is **opt-in by permission** (`--allow-net`, `--allow-read`), and it favors **web-standard APIs**; Deno 2.x added strong Node/npm compatibility. **Bun** bets on **speed and all-in-one tooling** — it's a runtime *and* bundler *and* test runner *and* package manager — built on Apple's **JavaScriptCore** (not V8) and written in Zig. Both run much existing Node code, but **Node still has the deepest ecosystem and the longest production track record**. (Web-verified, mid-2026: **Node 24** Active LTS, **Deno 2.8**, **Bun 1.3**.)",
+      },
+      {
+        kind: "table",
+        caption: "The JavaScript/TypeScript runtimes, side by side (current stable lines).",
+        head: ["", "Node.js", "Deno", "Bun"],
+        rows: [
+          ["Engine", "V8", "V8", "JavaScriptCore"],
+          ["TypeScript", "via tooling / type-stripping", "first-class, runs directly", "first-class, runs directly"],
+          ["Module default", "CJS + ESM", "ESM (web-style URLs)", "ESM + CJS"],
+          ["Security", "full access by default", "permissions opt-in", "full access by default"],
+          ["Tooling", "npm + external tools", "built-in fmt/lint/test", "all-in-one: bundler/test/install"],
+          ["Maturity / ecosystem", "deepest, largest (npm)", "growing; Node-compat", "growing; Node-compat"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**The other-language tier.** **Go** pairs **goroutines** (cheap, M:N-scheduled) with a **single static binary** and a GC — an excellent CPU+I/O balance and a favorite for cloud-native services. **Rust** offers **no GC, maximum performance and compile-time memory/data-race safety** — at the cost of a steeper learning curve. **Java / .NET** are mature, **truly multi-threaded**, strongly typed platforms built for large enterprise systems. **Python** owns **data science and ML** by ecosystem (NumPy, pandas, PyTorch) but its **GIL** limits CPU parallelism. **Elixir** on the **BEAM** runs **millions of isolated, supervised processes** — the standard-bearer for fault-tolerant, soft-real-time systems.",
+      },
+      {
+        kind: "table",
+        caption: "Across languages — model, concurrency, and where each wins.",
+        head: ["Runtime", "Concurrency model", "Best at", "Watch out for"],
+        rows: [
+          ["Node.js", "event loop, 1 JS thread + pool", "I/O-bound APIs, real-time, tooling", "CPU-bound work blocks the loop"],
+          ["Go", "goroutines (M:N), real threads", "concurrent CPU+I/O, static binaries", "less mature data/ML ecosystem"],
+          ["Rust", "threads + async, no GC", "max performance, safety-critical", "steep learning curve (borrow checker)"],
+          ["Java / .NET", "OS threads, mature schedulers", "large enterprise, CPU-heavy services", "heavier runtime & ceremony"],
+          ["Python", "threads + GIL (async available)", "data science, ML, scripting", "GIL caps CPU parallelism"],
+          ["Elixir (BEAM)", "millions of light processes", "fault-tolerant soft-real-time", "smaller talent pool / ecosystem"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Engines and models, precisely",
+        md: "Interviewers probe the details: **V8** powers Node and Deno; **JavaScriptCore** powers Bun. The **event loop** (Node/Deno/Bun) overlaps I/O on one thread; **goroutines** (Go) are M:N-scheduled over real threads; the **JVM/.NET** use OS threads directly; **Elixir** schedules millions of **BEAM processes** with per-process heaps and supervision; **CPython's GIL** serializes bytecode so threads don't run JS-style parallel CPU. Same word — \"concurrency\" — five different machines underneath.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "How to actually choose",
+        md: "Start from the **bottleneck**, then weigh **team, ecosystem and operations** — they cost more than a benchmark. Don't rewrite a service in Go or Rust to fix what is really a **blocking-call bug** in Node. And remember the JS runtimes are increasingly **interoperable**, so \"Node vs Deno vs Bun\" is often a tooling/ergonomics choice, not an architectural one. See [Strengths](#/chapter/strengths), [Weaknesses](#/chapter/weaknesses) and [Modern Node](#/chapter/modern-node).",
+      },
     ],
-    seeAlso: ["strengths", "weaknesses", "modern-node"],
-  }),
-  stub({
+    keyPoints: [
+      "Choose by bottleneck, not benchmark: I/O & ecosystem → Node; CPU & parallelism → Go/Rust/JVM; soft-real-time → Elixir; ML → Python.",
+      "Deno & Bun are JS/TS runtimes sharing Node's model — Bun chases speed (JavaScriptCore), Deno web-standards & security (V8).",
+      "Go: goroutines for easy concurrency, a single static binary, strong CPU+I/O balance.",
+      "Python: unmatched ML/data ecosystem, but the GIL limits CPU parallelism.",
+      "Java/.NET: mature, truly multi-threaded, strong for CPU-heavy enterprise services.",
+      "Rust for max performance & safety (no GC); Elixir/BEAM for massive fault-tolerant concurrency.",
+      "Mid-2026 stable lines: Node 24 LTS, Deno 2.8, Bun 1.3 (web-verified).",
+    ],
+    pitfalls: [
+      {
+        title: "Choosing on benchmark req/s alone",
+        body: "Micro-benchmarks rarely reflect your real, polymorphic, I/O-bound workload, and they ignore ecosystem, hiring and ops. Pick on the dominant bottleneck and total cost of ownership, then validate with a realistic load test.",
+      },
+      {
+        title: "Assuming Bun/Deno are 100% drop-in for Node",
+        body: "Node compatibility is strong and improving, but gaps remain in some native addons, less-common core APIs, and edge behaviors. Verify your critical dependencies actually run before committing a production service.",
+      },
+      {
+        title: "Rewriting in Go/Rust to fix a blocking-call bug",
+        body: "If Node is 'slow', first check for synchronous/CPU work on the event loop. A worker_thread or an async API often fixes it for a fraction of a rewrite's cost. Switch languages for a genuine model mismatch, not a fixable bug.",
+      },
+      {
+        title: "Picking Python for a CPU-parallel service",
+        body: "The GIL serializes bytecode execution, so threads don't give you parallel CPU. You need multiprocessing, native extensions, or another runtime — Python's strength is the ecosystem, not parallel compute.",
+      },
+    ],
+    interview: [
+      {
+        q: "Node vs Deno vs Bun — what actually differs?",
+        a: "All three are event-loop JS/TS runtimes. Node (V8) has the deepest ecosystem and track record. Deno (V8) runs TypeScript directly, is secure-by-default via opt-in permissions, and favors web-standard APIs, with Node/npm compat added in 2.x. Bun (JavaScriptCore, written in Zig) optimizes for speed and bundles a bundler, test runner and package manager. The model is shared; the differences are engine, tooling, security defaults and maturity.",
+        level: "senior",
+      },
+      {
+        q: "When would you choose Go or Rust over Node?",
+        a: "When the workload is CPU-bound or needs real parallelism. Go gives goroutines over real threads, a static binary, and an easy concurrency story — great for cloud-native, compute-plus-I/O services. Rust gives maximum performance with no GC and compile-time safety for hot paths or safety-critical code. Node would have to offload that work to worker_threads and still wouldn't match them.",
+        level: "senior",
+      },
+      {
+        q: "Why might Elixir beat Node for a real-time system?",
+        a: "The BEAM runs millions of lightweight, isolated processes, each with its own heap and preemptive scheduling, plus supervision trees for fault tolerance. That gives per-connection isolation and graceful failure recovery that Node's shared single thread doesn't — so for massive, stateful, soft-real-time systems (chat, presence, telephony) Elixir is often the better fit.",
+        level: "staff",
+      },
+      {
+        q: "What is the GIL and how does it affect Python vs Node?",
+        a: "CPython's Global Interpreter Lock lets only one thread execute Python bytecode at a time, so threads don't give parallel CPU — you use multiprocessing or native extensions instead. Node is also single-threaded for JS, but leans into async I/O rather than threads. Both serialize CPU work on one thread; the difference is Node's whole model is built around overlapping I/O, while Python's strength is its libraries.",
+        level: "staff",
+      },
+      {
+        q: "Is Bun a drop-in replacement for Node?",
+        a: "Largely, not entirely. Bun targets Node compatibility and runs a lot of existing code and npm packages, and its all-in-one tooling is fast. But some native addons, certain core APIs and edge behaviors still differ, and it uses JavaScriptCore rather than V8. For production I'd treat compatibility as something to verify per-dependency, not assume.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["strengths", "weaknesses", "modern-node", "concurrency"],
+    sources: [
+      { title: "Node.js — Release schedule (LTS lines)", url: "https://github.com/nodejs/release#release-schedule" },
+      { title: "Deno 2.8 — release blog", url: "https://deno.com/blog/v2.8" },
+      { title: "Bun — official site", url: "https://bun.sh/" },
+      { title: "Go — official site", url: "https://go.dev/" },
+      { title: "Elixir — official site (the BEAM)", url: "https://elixir-lang.org/" },
+      { title: "Python — What is the GIL? (docs glossary)", url: "https://docs.python.org/3/glossary.html#term-global-interpreter-lock" },
+    ],
+  },
+  {
     id: "architecture",
     group: "foundations",
     order: 5,
     title: "Top-level architecture",
     full: "Top-level architecture — who does what",
     tagline: "V8 · libuv · C++ bindings · core JS libraries, and how they interact.",
-    readMins: 7,
-    mentalModel: "Layers: your JS → core JS API → C++ bindings → { V8, libuv } → OS.",
+    readMins: 8,
+    mentalModel: "Layers: your JS → core JS API → C++ bindings → { V8, libuv, bundled C libs } → OS. Each layer has one job; the boundaries are the insight.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Node looks like one thing — `node` — but it's a **stack of layers**, each with a single job. From the top: **your JavaScript** calls the **core JS API** (`fs`, `http`, `streams`); that calls down through **C++ bindings** to the native tier of **V8**, **libuv** and a set of **bundled C libraries**; which in turn talk to the **operating system**. The power of this picture isn't the boxes — it's the **boundaries**: knowing which layer can and can't do what is what makes the event loop, the thread pool and GC all make sense.",
+      },
+      { kind: "figure", fig: "architecture-stack", caption: "The layer cake: your JS → core JS API → C++ bindings → { V8 · libuv · bundled C libs } → OS. A call descends; the result ascends." },
+      {
+        kind: "prose",
+        md: "**Who does what.** **V8** compiles and executes your JavaScript and manages its heap and garbage collection — and it knows **nothing** about files, sockets or the event loop (it's the same engine that runs in Chrome). **libuv** (C) owns the **event loop** itself (the six phases), the **async I/O abstraction** over the OS notifier (epoll / kqueue / IOCP), and the **thread pool** (default 4). The **bundled C libraries** handle specialized work — **OpenSSL** (TLS/crypto), **zlib** (compression), **llhttp** (HTTP/1 parsing), **c-ares** (`dns.resolve`), **nghttp2** (HTTP/2). And the **core JS library** is the JavaScript half of every API: `fs.js` wraps the fs binding; **streams**, **EventEmitter** and **timers** are implemented in JS.",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "V8 is not Node",
+        md: "The single most clarifying fact. **V8 is just the engine** — it executes JavaScript and manages memory, nothing more. It has no `fs`, no `http`, no event loop. **Node = V8 + libuv + the bindings + the core JS API.** So when someone asks \"is the event loop part of V8?\" the answer is **no** — the loop lives in **libuv**; `node` is the glue that wires them together.",
+      },
+      {
+        kind: "prose",
+        md: "Layers are static; the insight is **how a call flows through them** — and where it ends up. The same descent (JS → core → binding → native) leads to **three different destinations** depending on the work. Step each one below: `fs.readFile` is handed to the **thread pool**; `https.get` is armed on the **OS kernel** with no thread held; `JSON.parse` never leaves **V8** and **blocks** the loop. One stack, three endings.",
+      },
+      { kind: "sim", sim: "architecture" },
+      {
+        kind: "prose",
+        md: "From that picture the **one rule** falls out, and with it the rest of this guide: **JavaScript runs on a single thread; the waiting is offloaded below it.** How that one thread schedules work is [the Event Loop](#/chapter/event-loop); *where* the waiting goes is [the thread pool vs the kernel](#/chapter/concurrency); how memory is reclaimed on that same thread is [V8 · GC](#/chapter/v8-gc); how data moves through it without blowing memory is [Streams & backpressure](#/chapter/streams).",
+      },
+      {
+        kind: "table",
+        caption: "The native pieces are real — run `node -p \"process.versions\"` and you'll see each one.",
+        head: ["Component", "process.versions key", "Its job"],
+        rows: [
+          ["V8", "v8", "compile & execute JS; manage the heap and GC"],
+          ["libuv", "uv", "the event loop, async I/O abstraction, thread pool"],
+          ["OpenSSL", "openssl", "TLS and the crypto primitives"],
+          ["zlib", "zlib", "gzip/deflate/brotli compression"],
+          ["llhttp", "llhttp", "parse HTTP/1.x request & response bytes"],
+          ["c-ares", "ares", "asynchronous DNS for dns.resolve*()"],
+          ["nghttp2", "nghttp2", "HTTP/2 framing"],
+          ["undici", "undici", "the modern HTTP/1.1 client behind global fetch"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "See it yourself",
+        md: "`node -p \"process.versions\"` prints the exact native components Node bundles — `v8`, `uv`, `openssl`, `zlib`, `llhttp`, `ares` and more. It's the architecture diagram, printed by the runtime itself. (The keys in the table above were taken straight from a running Node and are asserted in this chapter's tests.)",
+      },
+    ],
     keyPoints: [
-      "V8 executes JS and manages the heap; it knows nothing about files or sockets.",
-      "libuv owns the event loop (6 phases), the async I/O abstraction, and the thread pool.",
-      "C++ bindings bridge JS ↔ libuv/OS; the core JS library wraps them (fs, http, streams).",
+      "Node is a layer cake: your JS → core JS API → C++ bindings → { V8, libuv, bundled C libs } → OS.",
+      "V8 executes JS and manages the heap; it knows nothing about files, sockets, or the event loop.",
+      "libuv owns the event loop (6 phases), the async I/O abstraction, and the thread pool (default 4).",
+      "Bundled C libraries do specialized work: OpenSSL (TLS), zlib (compress), llhttp (HTTP/1), c-ares (DNS), nghttp2 (HTTP/2).",
+      "The core JS library wraps the bindings; streams, EventEmitter and timers are implemented in JS.",
+      "One descent, three destinations: fs → thread pool, network → kernel, CPU → V8 (blocks the loop).",
       "The one rule: JavaScript is single-threaded; I/O is not.",
     ],
-    seeAlso: ["what-is-node", "event-loop", "concurrency"],
-  }),
+    pitfalls: [
+      {
+        title: "Thinking the event loop is part of V8",
+        body: "V8 only executes JS and manages its heap. The event loop, timers, sockets and the thread pool are all libuv. Node wires the two together — confusing them is a classic interview miss.",
+      },
+      {
+        title: "Believing Node is 'just C++ under the hood'",
+        body: "Much of Node's core is JavaScript: fs.js, streams, EventEmitter and timers are JS that calls thin C++ bindings. The native tier is V8 + libuv + a few C libraries, not the whole runtime.",
+      },
+      {
+        title: "Assuming all async work uses the thread pool",
+        body: "Network I/O uses the OS kernel's notifier and holds no pool thread; only operations without an async OS primitive (file I/O, crypto, zlib, dns.lookup) use the pool. Mixing these up leads to wrong capacity planning — see Concurrency.",
+      },
+      {
+        title: "Confusing the runtime with a framework",
+        body: "Node provides http, fs, streams and the loop; Express/Nest/Fastify add routing and structure on top. Architecture questions are about the runtime layers, not the framework.",
+      },
+    ],
+    interview: [
+      {
+        q: "Walk me through Node's architecture, top to bottom.",
+        a: "Your JavaScript sits on top, calling the core JS API (fs, http, net, streams). That calls C++ bindings, which reach the native tier: V8 executes the JS and manages the heap/GC; libuv provides the event loop, the async I/O abstraction over epoll/kqueue/IOCP, and a thread pool; bundled C libraries (OpenSSL, zlib, llhttp, c-ares, nghttp2) do specialized work. At the bottom is the OS. The core JS library wraps the bindings, and streams/EventEmitter/timers are themselves JavaScript.",
+        level: "senior",
+      },
+      {
+        q: "What does V8 do versus libuv?",
+        a: "V8 compiles and runs JavaScript and manages its memory (heap + GC); it knows nothing about I/O. libuv owns everything V8 doesn't: the event loop and its phases, the cross-platform async I/O abstraction, OS event notification, and the thread pool for blocking operations. Node is the glue that lets your JS in V8 drive I/O through libuv.",
+        level: "senior",
+      },
+      {
+        q: "Where does the event loop live — V8 or libuv?",
+        a: "libuv. The loop, timers, the thread pool and the OS-notifier integration are all libuv (written in C). V8 just executes JavaScript when the loop hands it a callback. This is why the event loop isn't a JavaScript or V8 feature — it's part of the host runtime.",
+        level: "senior",
+      },
+      {
+        q: "Trace what happens when you call fs.readFile.",
+        a: "fs.readFile (JS) validates args and calls its C++ binding, which submits the read to libuv. Since there's no non-blocking OS primitive for file reads, libuv runs read() on a thread-pool thread — your JS thread keeps running. When the read completes, libuv queues your callback in the poll phase; on the next tick the loop dequeues it and your cb(err, data) runs back in JavaScript. The thread was never blocked.",
+        level: "staff",
+      },
+      {
+        q: "Name some of the C libraries Node bundles, and what each does.",
+        a: "Beyond V8 and libuv: OpenSSL for TLS and crypto, zlib for compression, llhttp for HTTP/1 parsing, c-ares for asynchronous DNS (dns.resolve), nghttp2 for HTTP/2, and undici as the HTTP/1.1 client behind global fetch. You can list them with node -p 'process.versions'.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["what-is-node", "event-loop", "concurrency", "v8-gc"],
+    sources: [
+      { title: "Node.js — About (the architecture)", url: "https://nodejs.org/en/about" },
+      { title: "libuv — Design overview", url: "https://docs.libuv.org/en/v1.x/design.html" },
+      { title: "Node.js — process.versions", url: "https://nodejs.org/api/process.html#processversions" },
+      { title: "V8 — JavaScript engine", url: "https://v8.dev/" },
+    ],
+  },
 
   // --------------------------------------------------------------- Runtime core
   {

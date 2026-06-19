@@ -13,6 +13,11 @@ function render(hash: string): string {
 
 const routes = [
   "#/map",
+  "#/chapter/what-is-node",
+  "#/chapter/strengths",
+  "#/chapter/weaknesses",
+  "#/chapter/competitors",
+  "#/chapter/architecture",
   "#/chapter/event-loop",
   "#/chapter/async-model",
   "#/chapter/v8-gc",
@@ -121,6 +126,42 @@ for (const must of [
   const has = md.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} modules contains "${must}"`);
+}
+
+// ---- S5 Foundations (Ch.1–5): content + new figures/sims ----------------
+const wn = render("#/chapter/what-is-node");
+for (const must of ["What is Node.js", "Runtime, not framework", "OpenJS", "non-blocking", "process.versions"]) {
+  const has = wn.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} what-is-node contains "${must}"`);
+}
+
+const str = render("#/chapter/strengths");
+for (const must of ["C10k", "Connection-scaling simulator", "concurrent connections", "sweet spot", "one language"]) {
+  const has = str.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} strengths contains "${must}"`);
+}
+
+const weak = render("#/chapter/weaknesses");
+for (const must of ["blocking the loop", "ReDoS", "event-loop lag", "worker_thread", "p99"]) {
+  const has = weak.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} weaknesses contains "${must}"`);
+}
+
+const comp = render("#/chapter/competitors");
+for (const must of ["Deno", "Bun", "JavaScriptCore", "Pick a runtime by your bottleneck", "GIL", "Elixir"]) {
+  const has = comp.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} competitors contains "${must}"`);
+}
+
+const arch = render("#/chapter/architecture");
+for (const must of ["V8 is not Node", "libuv", "Architecture trace-a-call simulator", "llhttp", "process.versions"]) {
+  const has = arch.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} architecture contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");

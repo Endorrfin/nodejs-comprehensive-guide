@@ -333,4 +333,35 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
     `./assets`) · all **6** suites ALL PASS · SSR smoke **10 routes** + streams/modules content assertions OK.
     (Scratch `scripts/_s4dist`, `scripts/_ssr_s4` now gitignored; sandbox can't `unlink`, delete locally.)
   **Next: S5 — Foundations (Part I): Ch.1–5 (what/why, strengths, weaknesses, competitors tables, architecture diagram).**
+- **2026-06-19 · S5 Foundations (Part I)** — DONE. All five stub chapters (Ch.1–5) built to the golden
+  standard; **three new interactives** (architecture chosen as the hero + the two "maximal" extras the
+  user requested).
+  • **Ch.1 What is Node.js** — `NodePieces` figure (V8+libuv+bindings); runtime-not-framework framing +
+    OpenJS/Ryan-Dahl history; **Node IS / IS NOT** compare; http-server + `process.versions` code;
+    6 key points, 3 pitfalls, 4 interview Q&A, verified sources.
+  • **Ch.2 Strengths** — `ConnectionScaling` **C10k figure** + **Throughput sim** (`throughputEngine` +
+    `ThroughputSim`: slider ramps connections; thread-per-request ~1 MiB/thread vs event-loop ~64 KiB/socket;
+    blow-up approaches the **16×** ceiling — 10k conns ⇒ 9.8 GiB/10k threads vs 655 MiB/1 thread); where-Node-fits
+    table; **concurrency≠parallelism** callout; sweet-spot compare.
+  • **Ch.3 Weaknesses** — `BlockingLoop` figure (one 250 ms sync task stalls every in-flight request);
+    cardinal-sin (sync APIs / ReDoS) callout; weakness→mitigation table; **GC-leak→latency** senior callout;
+    symptom→cause table.
+  • **Ch.4 Competitors** — `CompetitorMap` positioning figure (I/O+velocity vs CPU+raw-perf) + **RuntimePicker
+    decision widget** (`data/runtimes.ts`, 8 bottleneck cases → best/runner-up/caveat); JS-runtimes table
+    (Node/Deno/Bun) + cross-language table; engines&models callout. **Web-verified mid-2026: Node 24 Active LTS
+    (22 maintenance, 26 current), Deno 2.8, Bun 1.3 (JavaScriptCore/Zig).**
+  • **Ch.5 Top-level architecture** — `ArchitectureStack` figure + **Architecture trace-a-call HERO sim**
+    (`architectureEngine` + `ArchitectureSim`: 3 scenarios end at 3 destinations — `fs.readFile`→**pool**,
+    `https.get`→**kernel** (no thread held), `JSON.parse`→**V8** and **blocks the loop**); **V8≠Node** callout;
+    `process.versions` table; "see it yourself" callout.
+  **Two truth-anchored engines:** `architectureEngine` (routing invariants: fs uses pool not kernel, net uses
+  kernel not pool, cpu never leaves js+v8 and is the only one that blocks; **asserts the diagram's native deps
+  `v8/uv/openssl/zlib/llhttp/ares` are real keys of `process.versions`** on the running Node) and `throughputEngine`
+  (C10k structural invariants + the ~16× asymptote). Tested in `scripts/test-architecture.ts` (38 checks) +
+  `scripts/test-throughput.ts`; **`npm test` now runs 8 engine suites.** New sims/figures registered in
+  `lib/registry.tsx`; **+10 interview-bank entries** (topic "Foundations") in `data/interview.ts`; smoke-entry
+  extended to the 5 new routes + content assertions. **Verified:** `tsc` clean · `vite build` OK (JS ≈144 kB gzip,
+  relative `./assets`) · **all 8 engine suites ALL PASS** · SSR smoke **15 routes** + Foundations content OK.
+  (Scratch `scripts/_s5dist`, `scripts/_ssr_s5` gitignored; sandbox can't `unlink`, delete locally.)
+  **Next: S6 — Ch.12 Errors; Ch.13 Networking & HTTP internals (+ HTTP-lifecycle interactive).**
 - *(Update this log at the end of every session/block — per user request.)*
