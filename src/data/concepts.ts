@@ -1796,38 +1796,372 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));`,
   },
 
   // ----------------------------------------------------------- Building systems
-  stub({
+  {
     id: "errors",
     group: "systems",
     order: 12,
     title: "Error handling",
-    tagline: "Operational vs programmer errors; fail fast; AsyncLocalStorage.",
-    readMins: 9,
-    mentalModel: "Recover from operational errors; crash on programmer bugs. Never silently swallow.",
-    keyPoints: [
-      "Separate operational errors (bad input, ECONNREFUSED) from programmer bugs.",
-      "Fail fast on bugs; handle and operate through operational errors.",
-      "Log + crash on unhandledRejection / uncaughtException; let a supervisor restart.",
-      "AsyncLocalStorage carries request context across async boundaries (domains are dead).",
+    full: "Error handling — operational vs programmer, fail fast, context",
+    tagline: "Operational vs programmer errors; the four error channels; fail fast; AsyncLocalStorage.",
+    readMins: 11,
+    mentalModel:
+      "Two kinds of error: operational (expected — handle and continue) and programmer (a bug — fail fast and restart clean). Errors travel four ways; try/catch only catches one of them. Never silently swallow.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Robust Node services rest on **one distinction**: an error is either **operational** or a **programmer bug**, and the two demand opposite responses. An **operational error** is an *expected* runtime failure that's part of normal life for a healthy program — bad user input, a 404, `ECONNREFUSED`, a timeout, a full disk. You **anticipate and handle** these: validate, retry, return a 4xx/5xx, fall back. A **programmer error** is a *defect* — `undefined is not a function`, a broken invariant, a forgotten `await`. You **cannot recover** from a bug, because after it fires the process is in an **unknown, possibly corrupted state**. The correct response is to **fail fast**: log it and let the process crash so a supervisor restarts it clean.",
+      },
+      { kind: "figure", fig: "error-taxonomy", caption: "The decision that governs everything else: is this an expected operational failure (handle it) or a programmer bug (let it crash)?" },
+      {
+        kind: "compare",
+        a: "Operational error",
+        b: "Programmer error (bug)",
+        rows: [
+          ["What it is", "an expected runtime failure", "a defect in your code"],
+          ["Examples", "bad input, 404, ECONNREFUSED, timeout", "undefined is not a function, bad invariant"],
+          ["Predictable?", "yes — part of normal operation", "no — you didn't foresee it"],
+          ["Response", "handle: validate · retry · 4xx/5xx · fallback", "fail fast: log & let it crash, then restart"],
+          ["State afterward", "known & recoverable", "unknown & possibly corrupt — don't continue"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "Before you can handle an error you have to **catch** it — and in Node an error can travel **four different ways**, only one of which `try/catch` sees. It can be **thrown** synchronously on the current call stack; it can **reject a Promise**; it can be **passed as the first argument** of an error-first callback (`(err, value) => …`); or it can be **emitted as an `'error'` event** on an EventEmitter. The classic senior mistake is assuming `try/catch` covers all four. It does not — it only catches a **synchronous throw on the stack it wraps**. Step the simulator to watch the same `throw` get caught in one context and crash the process in another.",
+      },
+      { kind: "sim", sim: "error-propagation" },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "try/catch is a synchronous tool",
+        md: "`try { setTimeout(() => { throw e }, 0) } catch {}` will **never** catch that error. `setTimeout` returns immediately, the `try` block finishes, and the callback throws on a **later tick with an empty stack** — the `catch` is long gone, and the error becomes an `uncaughtException` that crashes the process. The fix is to move the `try/catch` **inside** the async callback, or — far better — use **`async/await`**, where `await` re-threads a rejection back onto your stack so the surrounding `catch` works again.",
+      },
+      {
+        kind: "table",
+        caption: "The four channels an error arrives by — and how you handle each.",
+        head: ["Channel", "How the error arrives", "How you handle it"],
+        rows: [
+          ["throw (sync)", "thrown on the current call stack", "try/catch around the synchronous call"],
+          ["Promise rejection", "the promise settles rejected", "await inside try/catch, or .catch() — never leave it floating"],
+          ["Error-first callback", "passed as the first arg: (err, value)", "check if (err) on the first line, or promisify + await"],
+          ["EventEmitter 'error'", "emitted as an 'error' event", "attach an 'error' listener — with none, the emitter throws"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "The unifying move is to **collapse all four channels into one**: promises handled with `async/await` inside `try/catch`. Promisify (or use the `node:*/promises` APIs for) callback code so a dropped `err` becomes impossible; `await` every promise so none float; and attach an `'error'` listener to every socket, stream and server. The remaining trap is **`async/await` with concurrency**: `await`-ing in a `for` loop serializes; `Promise.all` runs in parallel but **rejects on the first failure** (and leaves the rest unawaited); `Promise.allSettled` waits for **all** and never rejects, so you inspect each result. See [the async model](#/chapter/async-model) for the ordering details.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// ✘ error-first err silently dropped → wrong data, no trace
+db.query(sql, (err, rows) => {
+  render(rows);                 // err ignored; rows may be undefined
+});
+
+// ✘ floating promise → unhandledRejection → process crash (Node ≥15)
+function handler() {
+  saveToDb(record);             // not awaited, not .catch()-ed
+}
+
+// ✓ one channel, one pattern: promisified + awaited + try/catch
+async function handler(record) {
+  try {
+    const rows = await db.query(sql);   // rejection re-thrown here
+    return render(rows);
+  } catch (err) {
+    log.error({ err }, 'query failed'); // operational → handle & respond
+    return reply.code(503).send('try again');
+  }
+}`,
+        note: "Convert callbacks to promises (util.promisify or the node: promises APIs), await everything, and handle in one place. The bad cases above are the two most common ways production Node loses or swallows errors.",
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "Fail fast: log + crash, don't limp on",
+        md: "`process.on('uncaughtException')` and `process.on('unhandledRejection')` are **last-resort backstops, not handlers**. Since **Node 15 an unhandled rejection terminates the process by default**, and an uncaught exception always has. Use the handlers only to **log the fatal error and exit** (flush logs, then `process.exit(1)`), and let your supervisor (**PM2 / systemd / Kubernetes**) restart a clean process — see [Production patterns](#/chapter/production). Trying to *resume* after a programmer error means running on a process whose state you no longer trust.",
+      },
+      {
+        kind: "prose",
+        md: "One hard problem remains: **carrying context across async boundaries**. A request id, a user, a trace span — you want them available deep inside async calls without threading an argument through every function. The modern, stable tool is **`AsyncLocalStorage`** (in `node:async_hooks`): it keeps a value alive **through the whole async call chain** of a request, isolated from every other in-flight request. It is the sanctioned replacement for **domains**, which are **deprecated** — never build new code on `domain`.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomUUID } from 'node:crypto';
+
+const als = new AsyncLocalStorage();
+
+// one store per request — survives every await/callback inside run()
+app.use((req, res, next) => {
+  als.run({ reqId: randomUUID() }, () => next());
+});
+
+// anywhere downstream, no argument threading:
+function log(msg) {
+  const { reqId } = als.getStore() ?? {};
+  console.log(JSON.stringify({ reqId, msg }));
+}`,
+        note: "AsyncLocalStorage carries request-scoped context across async hops so logs and traces can be correlated. It's the stable successor to the deprecated domain module.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "Two finishing touches",
+        md: "**Preserve the cause chain** — when you wrap an error, keep the original: `throw new Error('load failed', { cause: err })` (Node 16.9+). And **model your domain with error classes** (e.g. `class ValidationError extends Error`) so handlers can branch on type and map cleanly to status codes, instead of string-matching messages. The whole chapter in one line: **handle operational errors, crash on bugs, and never let an error vanish.**",
+      },
     ],
-    seeAlso: ["async-model", "production", "http"],
-  }),
-  stub({
+    keyPoints: [
+      "Split errors into operational (expected — handle & continue) and programmer bugs (fail fast — crash & restart).",
+      "Errors travel four ways: sync throw, Promise rejection, error-first callback arg, EventEmitter 'error'.",
+      "try/catch catches only a synchronous throw on the stack it wraps — not a throw inside setTimeout/callbacks.",
+      "async/await re-threads a rejection onto your stack, so try/catch works again — prefer it over raw callbacks.",
+      "A floating promise → unhandledRejection → process exit by default (Node ≥15); await or .catch() everything.",
+      "An EventEmitter 'error' with no listener throws; always attach an 'error' listener to sockets/streams/servers.",
+      "uncaughtException/unhandledRejection handlers should log + exit; AsyncLocalStorage carries request context (domains are deprecated).",
+    ],
+    pitfalls: [
+      {
+        title: "Wrapping an async call in try/catch and expecting it to catch",
+        body: "try/catch only guards the synchronous stack. setTimeout/setInterval callbacks, EventEmitter handlers and un-awaited promises throw on a later tick where the catch no longer exists. Move the try/catch inside the callback, or await the work.",
+      },
+      {
+        title: "Floating promises (no await, no .catch)",
+        body: "Calling an async function without awaiting or catching it detaches its outcome; a rejection becomes unhandledRejection and crashes the process by default. Await it, .catch() it, or collect into Promise.all/allSettled. Lint with no-floating-promises.",
+      },
+      {
+        title: "Ignoring the err argument in an error-first callback",
+        body: "Callback errors are passed, not thrown — ignore err and the failure is silently swallowed: no exception, no crash, just wrong behavior with no trace. Check if (err) first, or promisify and await so it can't be dropped.",
+      },
+      {
+        title: "Forgetting an 'error' listener on streams and sockets",
+        body: "EventEmitter throws an unlistened 'error' event synchronously, turning into an uncaughtException. Every server, socket and stream needs an 'error' handler — it's the most common surprise crash in networking code.",
+      },
+      {
+        title: "Trying to recover from a programmer error",
+        body: "After a bug the process state is untrustworthy. Catching uncaughtException and continuing risks corrupt data and zombie state. Log, exit non-zero, and let a supervisor restart a clean process — fail fast.",
+      },
+    ],
+    interview: [
+      {
+        q: "Operational vs programmer errors — what's the difference and why does it matter?",
+        a: "An operational error is an expected runtime failure (bad input, ECONNREFUSED, timeout, 404) that a correct program must handle — validate, retry, return a status, fall back. A programmer error is a bug (undefined is not a function, broken invariant) you didn't anticipate; after it fires the process state is unknown, so you can't safely recover. The distinction sets the response: handle operational errors, fail fast (crash and restart) on bugs.",
+        level: "senior",
+      },
+      {
+        q: "Why doesn't try/catch catch an error thrown inside setTimeout?",
+        a: "Because try/catch only guards the synchronous call stack it wraps. setTimeout returns immediately, the try block completes, and the callback runs much later on a fresh, empty stack in the timers phase — the catch is no longer anywhere on the stack. The throw becomes an uncaughtException. Put the try/catch inside the callback, or wrap the work in a promise and await it so the rejection re-threads onto a stack the catch can see.",
+        level: "senior",
+      },
+      {
+        q: "What happens to an unhandled promise rejection in modern Node?",
+        a: "Since Node 15 the default is to terminate the process (the unhandledRejection event fires and, unhandled, the process exits non-zero). A 'floating' promise — one you neither await nor .catch() — is the usual cause. The right fix is to await inside try/catch or attach .catch(); process.on('unhandledRejection') should only log and exit, acting as a crash backstop, not a handler.",
+        level: "staff",
+      },
+      {
+        q: "How do you propagate request context (like a request id) through async code?",
+        a: "AsyncLocalStorage from node:async_hooks. You call als.run(store, fn) at the start of a request, and any code in that async call chain — across awaits and callbacks — reads it with als.getStore(), with per-request isolation. It's the stable replacement for the deprecated domain module, and it's how request-scoped logging, tracing and tenancy are implemented without threading a context argument everywhere.",
+        level: "staff",
+      },
+      {
+        q: "What's your strategy for uncaughtException and unhandledRejection in production?",
+        a: "Treat both as fatal. Register handlers that log the error with full context, flush logs/metrics, and call process.exit(1) — do not resume. A process supervisor (PM2, systemd, Kubernetes) restarts a clean instance. For graceful handling during the crash window, stop accepting new work and let in-flight requests finish if possible, but the end state is always a fresh process. Resuming after a bug risks serving corrupt state.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["async-model", "production", "http", "concurrency"],
+    sources: [
+      { title: "Node.js — Error handling guide (operational vs programmer)", url: "https://nodejs.org/en/learn/asynchronous-work/error-handling-in-nodejs" },
+      { title: "Node.js — process 'uncaughtException' & 'unhandledRejection'", url: "https://nodejs.org/api/process.html#event-uncaughtexception" },
+      { title: "Node.js — AsyncLocalStorage (async_hooks)", url: "https://nodejs.org/api/async_context.html#class-asynclocalstorage" },
+      { title: "Node.js — events: capturing 'error' events", url: "https://nodejs.org/api/events.html#error-events" },
+      { title: "Node.js — domain (Deprecated, Stability 0)", url: "https://nodejs.org/api/domain.html" },
+    ],
+  },
+  {
     id: "http",
     group: "systems",
     order: 13,
     title: "Networking & HTTP internals",
-    tagline: "Sockets, the llhttp parser, keep-alive Agents, and the timeout triad.",
-    readMins: 10,
-    mentalModel: "A request is a stream of bytes parsed by llhttp; Agents pool and reuse the TCP sockets.",
-    keyPoints: [
-      "Sockets + the llhttp parser turn bytes into requests; responses stream back out.",
-      "Keep-alive Agents reuse TCP connections; tune maxSockets and reuse.",
-      "HTTP/1.1 head-of-line blocking vs HTTP/2 multiplexing over one connection.",
-      "Mind the timeout triad: headersTimeout, requestTimeout, keepAliveTimeout (common 502 causes).",
+    full: "Networking & HTTP internals — sockets, parsing, keep-alive, timeouts",
+    tagline: "Sockets on the kernel, the llhttp parser, keep-alive Agents, HTTP/1.1 vs 2, and the timeout triad.",
+    readMins: 12,
+    mentalModel:
+      "A request is a stream of bytes on a kernel-watched socket; llhttp parses it incrementally into req/res; your handler streams a response back. Agents pool and reuse the TCP sockets so most requests skip the handshake.",
+    sections: [
+      {
+        kind: "prose",
+        md: "An HTTP request is, at bottom, **bytes arriving on a TCP socket**. Node's job is to turn those bytes into a `req`/`res` pair, run your handler, and stream the answer back — and to do it for thousands of connections at once on **one thread**. The connection itself is **non-blocking and watched by the OS kernel** (epoll/kqueue/IOCP), so it holds **no thread-pool slot**; this is the same kernel-async path from [the architecture chapter](#/chapter/architecture) and exactly why a single Node process scales to so many concurrent sockets (see [Concurrency](#/chapter/concurrency)). The bytes are parsed by the bundled **llhttp** parser, the response body is a [stream with backpressure](#/chapter/streams), and the socket is then either **reused or thrown away** — a choice that dominates real-world latency.",
+      },
+      { kind: "figure", fig: "keep-alive-pool", caption: "A keep-alive Agent keeps a small pool of open sockets per origin and hands them to new requests — so most requests skip the TCP (and TLS) handshake entirely." },
+      {
+        kind: "prose",
+        md: "Trace one request end to end. The same journey ends three different ways depending on the `Connection` header and how fast the client is — reuse a pooled socket (fast, the modern default), open and discard a fresh one (slow), or stall until a timeout reclaims it. Step each one:",
+      },
+      { kind: "sim", sim: "http-lifecycle" },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "The socket holds no thread",
+        md: "Notice the simulator says **event loop free** at every step. Network I/O does **not** use the libuv thread pool — libuv arms the socket on the kernel's notifier and one loop thread watches them all. The pool is for file I/O, crypto and zlib (see [Concurrency](#/chapter/concurrency)). So \"can Node handle 10k connections?\" is a question about **sockets and memory**, not threads — the connections are nearly free; it's your *handlers* that must stay async and short.",
+      },
+      {
+        kind: "prose",
+        md: "**Parsing: llhttp.** Incoming bytes hit **llhttp** (the C parser Node bundles — `process.versions.llhttp`), which reads the request **incrementally** as it streams in: the request line, then each header, emitting events Node assembles into an `IncomingMessage`. It's strict by design — malformed framing, smuggled headers and oversized header blocks are rejected, which is a **security boundary**, not just a convenience. Because parsing is incremental, a slow client can hold a half-parsed request open — which is precisely what the timeouts below exist to bound.",
+      },
+      {
+        kind: "prose",
+        md: "**Keep-alive & Agents.** Opening a TCP connection costs a round-trip (the handshake), and HTTPS adds a TLS handshake on top — pure latency before any data moves. **HTTP keep-alive** amortizes that by **reusing one connection for many requests**. On the **client** side Node manages this with an **`Agent`** that pools sockets per origin; since **Node 19 the global Agent defaults to `keepAlive: true`**, so `http.request`/`fetch` (backed by **undici**) reuse connections out of the box. You tune the pool with `maxSockets` (per origin), `maxFreeSockets`, `maxTotalSockets`, and `scheduling`. On the **server** side, keep-alive is on by default and an idle socket is closed after `keepAliveTimeout`.",
+      },
+      {
+        kind: "table",
+        caption: "http.Agent knobs (defaults from a real http.globalAgent on Node 22 — JSON shows Infinity as null).",
+        head: ["Option", "Default", "What it controls"],
+        rows: [
+          ["keepAlive", "true (globalAgent, Node ≥19)", "reuse sockets instead of closing after each response"],
+          ["maxSockets", "Infinity", "max concurrent sockets per origin (host:port)"],
+          ["maxFreeSockets", "256", "max idle sockets kept open per origin for reuse"],
+          ["maxTotalSockets", "Infinity", "max sockets across all origins combined"],
+          ["scheduling", "'lifo'", "pick most-recently-used socket (keeps the pool warm, sheds idle ones)"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**HTTP/1.1 vs HTTP/2.** Over **HTTP/1.1**, a single connection carries **one request/response at a time** — the next must wait for the current response to finish. That's **head-of-line (HOL) blocking**, and it's why browsers open several parallel connections and why keep-alive matters so much. **HTTP/2** (Node's `node:http2`, via the bundled **nghttp2**) puts **many multiplexed streams on one connection**, plus header compression (HPACK) and server push — removing application-layer HOL. But HTTP/2 still rides **TCP**, so a single lost packet stalls *all* streams at the transport layer (**TCP-level HOL**). **HTTP/3** fixes that by running over **QUIC/UDP** with independent streams — but in Node core, **QUIC (`node:quic`, via nghttp3) is still experimental**, so most teams **terminate HTTP/3 at the edge** (CDN / load balancer) and run an **HTTP/2 (or 1.1) origin** in Node.",
+      },
+      {
+        kind: "compare",
+        a: "HTTP/1.1",
+        b: "HTTP/2",
+        rows: [
+          ["Concurrency per connection", "one request at a time (HOL blocking)", "many multiplexed streams"],
+          ["Headers", "plain text, repeated every request", "HPACK-compressed"],
+          ["Connections needed", "several in parallel", "usually one"],
+          ["Node module", "node:http (llhttp)", "node:http2 (nghttp2)"],
+          ["Transport HOL", "n/a (one stream)", "still TCP-level (HTTP/3/QUIC removes it)"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**The timeout triad.** Three server timeouts bound how long a connection can tie up resources, and getting them wrong is a top cause of mysterious **502s**. `headersTimeout` (default **60 s**) caps the time to receive **complete** headers — the defense against **Slowloris**, where an attacker dribbles headers to hold sockets open. `requestTimeout` (default **300 s**, **enabled by default since Node 18**) caps the **whole** request. `keepAliveTimeout` (default **5 s**) closes an **idle** socket between requests. (`server.timeout`, a per-socket inactivity timeout, defaults to **0** = off.)",
+      },
+      { kind: "figure", fig: "timeout-triad", caption: "Where each timeout fires across a connection's life: headers must complete within headersTimeout, the whole request within requestTimeout, and an idle keep-alive socket closes after keepAliveTimeout." },
+      {
+        kind: "table",
+        caption: "The timeout triad (defaults verified against http.createServer() on Node 22).",
+        head: ["Timeout", "Default", "Bounds", "Misconfig symptom"],
+        rows: [
+          ["keepAliveTimeout", "5 s", "idle time between requests on a kept socket", "502 / ECONNRESET behind a load balancer"],
+          ["headersTimeout", "60 s", "time to receive the COMPLETE request headers", "Slowloris holds sockets; or premature 408s"],
+          ["requestTimeout", "300 s (on since Node 18)", "time to receive the ENTIRE request", "slow uploads cut off, or sockets held too long"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "The keep-alive 502 race",
+        md: "The classic production bug: a load balancer (AWS ALB, nginx) keeps an upstream connection open for, say, **60 s**, but Node's `keepAliveTimeout` is **5 s**. Node closes the idle socket first; the LB then sends a request down a socket Node has already torn down → **`ECONNRESET`** → the client gets a **502**. Fix: set Node's **`keepAliveTimeout` (and `headersTimeout`) *greater* than the load balancer's idle timeout** so the LB always closes first. This single mismatch is behind a large share of intermittent 502s in containerized Node.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `import http from 'node:http';
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify({ ok: true }));
+});
+
+// Always handle malformed requests at the socket level (else they can crash you)
+server.on('clientError', (err, socket) => {
+  if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\\r\\n\\r\\n');
+});
+
+// Set keep-alive ABOVE the upstream LB's idle timeout (e.g. ALB = 60s) to avoid 502s
+server.keepAliveTimeout = 65_000;   // was 5_000
+server.headersTimeout   = 66_000;   // must exceed keepAliveTimeout
+server.listen(3000);
+
+// Outgoing: keep-alive Agent reuses sockets (globalAgent already does since Node 19)
+const agent = new http.Agent({ keepAlive: true, maxSockets: 50 });
+http.get({ host: 'api.internal', agent }, (res) => res.resume());`,
+        note: "Handle 'clientError', and raise keepAliveTimeout/headersTimeout above any upstream proxy's idle timeout. Reuse outgoing sockets with a keep-alive Agent (or just rely on the default global Agent / fetch).",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "The picture to keep",
+        md: "**Bytes → llhttp → req/res → your handler → streamed response → socket reused or closed.** The connection lives on the **kernel** (no thread); **keep-alive Agents** make the handshake a one-time cost; **HTTP/2** multiplexes where HTTP/1.1 blocks; and the **timeout triad** keeps slow/stalled clients from leaking resources. Next: [Performance & profiling](#/chapter/performance) to measure it, and [Production patterns](#/chapter/production) for graceful shutdown of in-flight requests.",
+      },
     ],
-    seeAlso: ["streams", "performance", "production"],
-  }),
+    keyPoints: [
+      "A request is bytes on a kernel-watched socket; the connection holds no thread-pool slot (network I/O is kernel-async).",
+      "llhttp parses incoming bytes incrementally into req/res, and strictly rejects malformed framing (a security boundary).",
+      "Keep-alive reuses one TCP connection for many requests, skipping the handshake; client Agents pool sockets per origin.",
+      "Since Node 19 the global Agent defaults to keepAlive:true; tune maxSockets (∞), maxFreeSockets (256), scheduling ('lifo').",
+      "HTTP/1.1 = one request per connection (HOL blocking); HTTP/2 (nghttp2) multiplexes streams over one connection.",
+      "HTTP/2 still has TCP-level HOL; HTTP/3/QUIC fixes it but is experimental in Node core — terminate it at the edge.",
+      "Timeout triad: keepAliveTimeout 5s, headersTimeout 60s, requestTimeout 300s — keep them above any LB idle timeout to avoid 502s.",
+    ],
+    pitfalls: [
+      {
+        title: "keepAliveTimeout shorter than the upstream load balancer",
+        body: "If Node closes an idle keep-alive socket before the LB/proxy does, the LB reuses a dead socket and the client gets ECONNRESET → 502. Set Node's keepAliveTimeout (and headersTimeout above it) greater than the LB's idle timeout so the LB always closes first.",
+      },
+      {
+        title: "Not reusing outgoing connections",
+        body: "Creating connections without a keep-alive Agent pays a TCP (and TLS) handshake on every outbound request, adding latency and CPU. Since Node 19 the global Agent keeps connections alive by default; for custom Agents set keepAlive:true and size maxSockets to your concurrency.",
+      },
+      {
+        title: "Assuming HTTP/2 removes all head-of-line blocking",
+        body: "HTTP/2 removes application-layer HOL by multiplexing, but it still runs over TCP, so one lost packet stalls every stream at the transport layer. Only HTTP/3 over QUIC makes streams independent — and that's still experimental in Node core.",
+      },
+      {
+        title: "Leaving server timeouts at defaults behind a proxy",
+        body: "The default keepAliveTimeout (5s), headersTimeout (60s) and requestTimeout (300s) rarely match your infrastructure. Tune them to your load balancer and upload sizes; a too-low headersTimeout cuts off legitimate slow clients, a too-high one invites Slowloris.",
+      },
+      {
+        title: "No 'clientError'/'error' handler on the server",
+        body: "Malformed requests emit 'clientError', and socket failures emit 'error'; unhandled, they can crash the process. Attach handlers (respond 400 and close on clientError) — the same 'always attach an error listener' rule from the errors chapter.",
+      },
+    ],
+    interview: [
+      {
+        q: "Walk me through what happens when an HTTP request hits a Node server.",
+        a: "The kernel signals the socket readable and the event loop wakes in its poll phase (no thread is parked on the connection). The bundled llhttp parser reads the bytes incrementally into a request line and headers, Node builds IncomingMessage (req) and ServerResponse (res) and emits 'request', and your handler runs on the event-loop thread. The handler writes status/headers/body, which stream back out through the socket with backpressure. Finally the socket is either kept alive for reuse (and an idle timer starts) or closed, per the Connection header.",
+        level: "senior",
+      },
+      {
+        q: "What is HTTP keep-alive and why does it matter for performance?",
+        a: "Keep-alive reuses a single TCP connection for multiple requests instead of opening a new one each time. That avoids a TCP handshake (one round-trip) and, on HTTPS, a TLS handshake (one or more) per request — pure latency and CPU you'd otherwise pay repeatedly. Node manages it client-side with an Agent that pools sockets per origin; since Node 19 the global Agent defaults to keepAlive:true, so http.request and fetch reuse connections by default.",
+        level: "senior",
+      },
+      {
+        q: "HTTP/1.1 vs HTTP/2 vs HTTP/3 — what changed, and what does Node support?",
+        a: "HTTP/1.1 carries one request at a time per connection, so you get head-of-line blocking and open several connections. HTTP/2 (Node's node:http2 via nghttp2) multiplexes many streams over one connection with header compression, removing app-layer HOL — but it still rides TCP, so packet loss causes transport-level HOL. HTTP/3 runs over QUIC/UDP with independent streams to fix that; in Node core QUIC (node:quic) is still experimental, so HTTP/3 is usually terminated at the edge with an HTTP/2 or 1.1 origin in Node.",
+        level: "staff",
+      },
+      {
+        q: "A service behind a load balancer returns intermittent 502s. How do you reason about it?",
+        a: "A prime suspect is the keep-alive race: if Node's keepAliveTimeout (default 5s) is shorter than the load balancer's idle timeout, Node closes an idle upstream socket the LB still thinks is usable; the LB sends a request into it, gets ECONNRESET, and returns 502. The fix is to set Node's keepAliveTimeout — and headersTimeout above it — greater than the LB's idle timeout so the LB always closes first. I'd confirm with connection metrics and packet/RST counts before and after.",
+        level: "staff",
+      },
+      {
+        q: "What is the role of llhttp, and why is strict parsing a security feature?",
+        a: "llhttp is the C parser Node bundles to turn raw socket bytes into HTTP messages, incrementally as they arrive. Strictness matters because lax parsing enables request smuggling and header-injection attacks: ambiguous framing (conflicting Content-Length/Transfer-Encoding), oversized header blocks, or malformed lines can desync a proxy and origin. By rejecting malformed input early (and via headersTimeout against Slowloris), the parser is a first line of defense, not just a convenience.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["streams", "concurrency", "performance", "production"],
+    sources: [
+      { title: "Node.js — HTTP (Server timeouts, Agent, http.request)", url: "https://nodejs.org/api/http.html" },
+      { title: "Node.js — HTTP/2 (node:http2)", url: "https://nodejs.org/api/http2.html" },
+      { title: "Node.js — net (sockets)", url: "https://nodejs.org/api/net.html" },
+      { title: "llhttp — the Node.js HTTP parser", url: "https://github.com/nodejs/llhttp" },
+      { title: "Use Keep-Alive by default in global agents (Node 19, PR #43522)", url: "https://github.com/nodejs/node/pull/43522" },
+    ],
+  },
   stub({
     id: "performance",
     group: "systems",

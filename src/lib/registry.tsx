@@ -8,6 +8,8 @@ import { ModuleResolverSim } from "../components/sims/ModuleResolverSim";
 import { ArchitectureSim } from "../components/sims/ArchitectureSim";
 import { ThroughputSim } from "../components/sims/ThroughputSim";
 import { RuntimePicker } from "../components/sims/RuntimePicker";
+import { ErrorPropagationSim } from "../components/sims/ErrorPropagationSim";
+import { HttpLifecycleSim } from "../components/sims/HttpLifecycleSim";
 import { EventLoopRing } from "../components/figures/EventLoopRing";
 import { AwaitTimeline } from "../components/figures/AwaitTimeline";
 import { GcHeap } from "../components/figures/GcHeap";
@@ -18,6 +20,9 @@ import { ArchitectureStack } from "../components/figures/ArchitectureStack";
 import { ConnectionScaling } from "../components/figures/ConnectionScaling";
 import { CompetitorMap } from "../components/figures/CompetitorMap";
 import { BlockingLoop } from "../components/figures/BlockingLoop";
+import { ErrorTaxonomy } from "../components/figures/ErrorTaxonomy";
+import { KeepAlivePool } from "../components/figures/KeepAlivePool";
+import { TimeoutTriad } from "../components/figures/TimeoutTriad";
 import { PredictOutputQuiz } from "../components/study/PredictOutputQuiz";
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../data/quizzes";
 
@@ -60,6 +65,8 @@ export const SIMS: Record<string, React.FC> = {
   architecture: ArchitectureSim,
   throughput: ThroughputSim,
   "runtime-picker": RuntimePicker,
+  "error-propagation": ErrorPropagationSim,
+  "http-lifecycle": HttpLifecycleSim,
 };
 
 /** Static diagrams, referenced by key from concepts.ts sections (kind: 'figure'). */
@@ -74,4 +81,7 @@ export const FIGURES: Record<string, React.FC> = {
   "connection-scaling": ConnectionScaling,
   "competitor-map": CompetitorMap,
   "blocking-loop": BlockingLoop,
+  "error-taxonomy": ErrorTaxonomy,
+  "keep-alive-pool": KeepAlivePool,
+  "timeout-triad": TimeoutTriad,
 };

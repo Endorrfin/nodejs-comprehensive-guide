@@ -364,4 +364,41 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   relative `./assets`) · **all 8 engine suites ALL PASS** · SSR smoke **15 routes** + Foundations content OK.
   (Scratch `scripts/_s5dist`, `scripts/_ssr_s5` gitignored; sandbox can't `unlink`, delete locally.)
   **Next: S6 — Ch.12 Errors; Ch.13 Networking & HTTP internals (+ HTTP-lifecycle interactive).**
+- **2026-06-19 · S6 Real systems A** — DONE. The two `systems` stub chapters built to the golden
+  standard, each with a verified interactive (truth-first as always):
+  • **Ch.12 Error handling** — operational-vs-programmer taxonomy (`ErrorTaxonomy` figure) + compare;
+    the **four error channels** table (sync throw · Promise rejection · err-first callback · EventEmitter
+    'error') and why try/catch is a *synchronous-only* tool; **Error-propagation interactive**
+    (`error-propagation`: 6 scenarios — sync/await caught vs timer-throw → uncaughtException, floating →
+    unhandledRejection, ignored err-first → swallowed, unlistened emitter 'error' → crash; code panel with
+    active-line highlight + verdict); async/await-as-one-channel + bad-vs-good code; **fail-fast** callout
+    (unhandledRejection terminates by default since Node 15 — handlers log+exit, supervisor restarts);
+    **AsyncLocalStorage** for request context (domains deprecated) + code; Error `{cause}` + error classes;
+    7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  • **Ch.13 Networking & HTTP internals** — bytes → **llhttp** → req/res → handler → streamed response →
+    socket reused/closed; **keep-alive Agent pool** figure (`KeepAlivePool`); **HTTP-lifecycle HERO sim**
+    (`http-lifecycle`: 3 scenarios end three ways — keep-alive **reuse** (no handshake) · `Connection: close`
+    **handshake** every time · slow client → **headersTimeout 408**; actor pipeline client→socket→llhttp→
+    handler, loop stays *free* throughout); Agent-knobs table; **HTTP/1.1 vs HTTP/2** prose+compare (HOL vs
+    multiplexing; nghttp2; **HTTP/3/QUIC experimental** in core → terminate at edge); the **timeout triad**
+    (`TimeoutTriad` timeline figure + table) and the **keep-alive 502 race** callout; correct-server code;
+    7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  **Two new truth-anchored engines:** `errorEngine.ts` (outcome/survives table captured from real Node via
+  forked child exit codes in `scripts/node-truth-errors.mjs`; `scripts/test-errors.ts` also **live-verifies
+  routing** on Node 22 — sync/await caught here; timer-throw escapes the surrounding try/catch into
+  uncaughtException; a floating rejection reaches unhandledRejection; an unlistened EventEmitter 'error'
+  throws). `httpEngine.ts` (request-lifecycle scenarios; **defaults read from a real `http.Server`** and
+  asserted in `scripts/test-http.ts` — keepAliveTimeout **5000** · headersTimeout **60000** · requestTimeout
+  **300000** (on by default since Node 18) · server.timeout **0**; globalAgent `keepAlive:true` (Node ≥19),
+  maxFreeSockets **256**, scheduling **'lifo'**, maxSockets **∞**; `node-truth-http.mjs` proves a keep-alive
+  Agent **reuses the same socket** — identical client port 43170×2 — while a non-keep-alive Agent opens new
+  ones). **Web-verified mid-2026:** HTTP/2 stable (`node:http2`/nghttp2); **QUIC/HTTP3 still experimental**
+  (`node:quic`/nghttp3 — Stability 1; no ngtcp2/nghttp3 in default `process.versions`). Sims
+  `ErrorPropagationSim`+`HttpLifecycleSim` (+css) and figures `ErrorTaxonomy`/`KeepAlivePool`/`TimeoutTriad`
+  registered in `lib/registry.tsx`; **+6 interview-bank entries** (3 Errors, 3 HTTP) in `data/interview.ts`;
+  smoke-entry extended to the 2 new routes + content assertions. **`npm test` now runs 10 engine suites.**
+  **Verified:** `tsc` clean · `vite build` OK (JS ≈162 kB gzip, relative `./assets`) · **all 10 engine
+  suites ALL PASS** · SSR smoke **17 routes** + errors/http content OK. (Scratch `scripts/_s6dist`,
+  `scripts/_ssr_s6` gitignored via `scripts/_*`; sandbox can't `unlink`, delete locally.)
+  **Next: S7 — Ch.14 Performance & profiling; Ch.15 Security & supply chain; Ch.16 Production patterns (+ graceful-shutdown sim). (web-search current tooling/CVEs.)**
 - *(Update this log at the end of every session/block — per user request.)*
