@@ -1,0 +1,23 @@
+
+Зміст
+Що таке Node.js: визначення, призначення, масштаб
+Переваги — де Node проявляється сильно
+Недоліки — де Node слабкий і чому
+Конкуренти: Deno, Bun, Go, Python, Java, .NET, Rust, Elixir
+Архітектура верхнього рівня
+Основні блоки та їх взаємодія
+Event Loop — серце Node
+Асинхронна модель: callbacks → promises → async/await
+V8, JIT, пам'ять, GC
+Конкурентність: worker_threads, cluster, child_process
+Streams & Buffers, backpressure
+Модульна система: CJS vs ESM
+Обробка помилок
+Мережа та HTTP-нутрощі
+Продуктивність та профілювання
+Безпека та supply chain
+Продакшн-патерни: graceful shutdown, scaling, serverless
+Сучасний Node (2026): версії та можливості
+40 senior/staff-питань на співбесіду
+Mental models — що треба вміти намалювати з пам'яті
+Загальна summary

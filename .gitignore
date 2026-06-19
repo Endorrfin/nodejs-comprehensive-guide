@@ -1,0 +1,19 @@
+# dependencies & build
+node_modules
+dist
+.vite
+
+# the two reference projects + posters (each has its own nested .git + heavy assets;
+# the live site ships only dist/, so these never reach Pages anyway)
+Examples/
+
+# misc
+*.local
+.DS_Store
+QA.txt
+_arhive/
+
+# dev/test artifacts
+scripts/ssr/
+scripts/_prev/
+preview-*.html
