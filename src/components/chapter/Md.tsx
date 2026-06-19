@@ -17,10 +17,18 @@ function inline(text: string): React.ReactNode[] {
     } else if (tok.startsWith("[")) {
       const mm = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(tok);
       if (mm) {
+        // CHANGED: in-app hash links (#/…) navigate in place; external links open a new tab.
+        const internal = mm[2].startsWith("#");
         nodes.push(
-          <a key={k++} href={mm[2]} target="_blank" rel="noreferrer">
-            {mm[1]}
-          </a>,
+          internal ? (
+            <a key={k++} href={mm[2]}>
+              {mm[1]}
+            </a>
+          ) : (
+            <a key={k++} href={mm[2]} target="_blank" rel="noreferrer">
+              {mm[1]}
+            </a>
+          ),
         );
       } else {
         nodes.push(tok);

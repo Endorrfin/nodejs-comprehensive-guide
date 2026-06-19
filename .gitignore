@@ -10,8 +10,10 @@ Examples/
 # misc
 *.local
 .DS_Store
-QA.txt
+
+#Temp
 _arhive/
+QA.txt
 
 # IDE
 .idea/

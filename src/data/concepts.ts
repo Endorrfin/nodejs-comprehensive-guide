@@ -343,23 +343,224 @@ console.log('end');                            // sync`,
       },
     ],
   },
-  stub({
+  {
     id: "async-model",
     group: "runtime",
     order: 7,
     title: "Async model",
     full: "Async model — callbacks → promises → async/await",
     tagline: "Callbacks, promises, async/await, and micro- vs macro-task ordering.",
-    readMins: 9,
-    mentalModel: "await pauses the function, not the thread — the loop keeps running other work.",
-    keyPoints: [
-      "Three styles: callbacks → promises → async/await (sugar over promises).",
-      "Microtasks (promises, nextTick) run before macrotasks (timers, I/O, immediate).",
-      "async/await does not create parallelism — it sequences awaited promises.",
-      "Run independent work concurrently with Promise.all; always handle rejections.",
+    readMins: 11,
+    mentalModel:
+      "await pauses the function, not the thread — its continuation becomes a microtask, so the loop keeps serving other work and resumes you at the next checkpoint.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Node's whole value proposition is doing other work *while it waits*. The open question is how you **express** that waiting in code. Three styles evolved, each desugaring into the one before it: **callbacks** are the raw primitive libuv hands you; **promises** are objects representing a future value, turning nesting into a flat chain; **async/await** is syntax that makes promise-based code read like ordinary sequential code. They are not three engines — they are three *ergonomics* over the same event loop.",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "It's sugar, not a second engine",
+        md: "`async`/`await` compiles down to promises and the microtask queue. `await x` evaluates `x`, wraps it in a promise if it isn't one already, **suspends** the function, and schedules the remainder as a microtask. The thread is never blocked — which is exactly why one `await` in a request handler doesn't stop the server from handling other requests.",
+      },
+      {
+        kind: "table",
+        caption: "Same job, three ergonomics — all desugar to the layer above.",
+        head: ["Aspect", "Callbacks", "Promises", "async/await"],
+        rows: [
+          ["Shape", "nested functions", "flat .then() chain", "linear, sync-looking"],
+          ["Errors", "manual (err, …) per step", "one .catch()", "try / catch"],
+          ["Compose", "awkward by hand", ".then / Promise.all", "await / Promise.all"],
+          ["Returns", "nothing — it calls back", "a Promise", "a Promise"],
+          ["Underneath", "the primitive", "wraps callbacks", "sugar over Promises"],
+        ],
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `const fs = require('node:fs');
+const fsp = require('node:fs/promises');
+
+// 1) Callbacks — nesting grows with every step ('callback hell')
+fs.readFile('config.json', 'utf8', (err, raw) => {
+  if (err) return done(err);
+  let cfg;
+  try { cfg = JSON.parse(raw); } catch (e) { return done(e); }
+  fetchUser(cfg.userId, (err, user) => {
+    if (err) return done(err);          // error handling at every level
+    done(null, user.name);
+  });
+});
+
+// 2) Promises — a flat chain, one .catch for the whole pipeline
+fsp.readFile('config.json', 'utf8')
+  .then((raw) => JSON.parse(raw))
+  .then((cfg) => fetchUser(cfg.userId))
+  .then((user) => user.name)
+  .catch((err) => { /* one place for every failure above */ });
+
+// 3) async/await — reads top-to-bottom, errors via ordinary try/catch
+async function getName() {
+  try {
+    const cfg  = JSON.parse(await fsp.readFile('config.json', 'utf8'));
+    const user = await fetchUser(cfg.userId);
+    return user.name;
+  } catch (err) { /* the same failures, normal control flow */ }
+}`,
+        note: "All three register a continuation and return to the loop — identical at runtime. async/await only wins on readability and on putting every failure in one try/catch.",
+      },
+      {
+        kind: "prose",
+        md: "So where does the code *after* an `await` actually run? Not on a timer, not vaguely 'soon' — it runs at the very next **microtask checkpoint**. Recall from the [Event Loop](#/chapter/event-loop) that after the synchronous script, and after *every* callback, Node drains two microtask queues — **`process.nextTick` first, then promises** — completely, before it touches the next macrotask. `await` schedules its continuation onto that promise queue. Therefore an awaited continuation **always beats `setTimeout(0)`** and **always loses to synchronous code**.",
+      },
+      { kind: "figure", fig: "await-timeline", caption: "await suspends the function and queues its continuation as a single microtask — the one thread is freed, not blocked." },
+      {
+        kind: "table",
+        caption: "The priority ladder. The whole microtask block (2–3) drains before any macrotask (4–5).",
+        head: ["#", "Runs", "Queue / phase", "Scheduled by"],
+        rows: [
+          ["1", "All synchronous code", "the call stack", "plain statements; an async body up to its first await"],
+          ["2", "process.nextTick callbacks", "nextTick queue (microtask)", "process.nextTick(fn)"],
+          ["3", "Promise reactions", "microtask queue", "then / catch / finally · await · queueMicrotask(fn)"],
+          ["4", "Timers", "timers phase (macrotask)", "setTimeout(fn, 0) · setInterval"],
+          ["5", "setImmediate", "check phase (macrotask)", "setImmediate(fn)"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "That gives a strict, predictable order. Step a real program through it below — **predict each line before you advance**. The three scenarios build up: micro-vs-macro, then `await`, then two async functions interleaving.",
+      },
+      { kind: "sim", sim: "async-order" },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "nextTick-vs-Promise order flips between CommonJS and ESM",
+        md: "The simulator shows the canonical **CommonJS** 'main script' order, where `process.nextTick` drains before the Promise queue. In an **ES module**, the top-level body is *itself* evaluated during a microtask drain, so a top-level `Promise.then` can run **before** a top-level `process.nextTick`. Verified on Node 22. Lesson: never rely on nextTick-vs-promise ordering across module systems — and prefer `queueMicrotask` to `process.nextTick` for 'run right after this' work.",
+      },
+      {
+        kind: "prose",
+        md: "Now without the visual aid. Five snippets — read the queues and call the exact output. Each answer was captured from real Node, and each explanation tells you *why*.",
+      },
+      { kind: "sim", sim: "async-quiz" },
+      {
+        kind: "prose",
+        md: "`await` is **sequential by default** — its great virtue and its classic trap. Awaiting inside a loop makes N independent calls run one after another, turning a 50 ms job into 50 × N ms. If the calls don't depend on each other, start them all and await together with `Promise.all`.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// ❌ Serial: each await waits for the previous — total ≈ sum of latencies
+async function serial(ids) {
+  const users = [];
+  for (const id of ids) {
+    users.push(await fetchUser(id));     // N round-trips, strictly one at a time
+  }
+  return users;
+}
+
+// ✅ Concurrent: start them all, then await — total ≈ the slowest one
+async function concurrent(ids) {
+  return Promise.all(ids.map((id) => fetchUser(id)));
+}`,
+        note: "Reach for Promise.allSettled when one failure shouldn't cancel the rest; Promise.all rejects as soon as any single call rejects.",
+      },
+      {
+        kind: "compare",
+        a: "await in series",
+        b: "Promise.all([...])",
+        rows: [
+          ["Execution", "one after another — each awaits the last", "all started up front, run concurrently"],
+          ["Total latency", "≈ sum of every call", "≈ the slowest single call"],
+          ["Use when", "each step needs the previous result", "the calls are independent"],
+          ["On failure", "stops at the first throw", "rejects on the first rejection (allSettled keeps going)"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "Handle every rejection — including the ones you forgot to await",
+        md: "`try/catch` around `await` catches throws *and* rejected awaits — but **not** a promise you never awaited (a 'floating' promise), whose rejection becomes an `unhandledRejection`. Await it, `.catch()` it, or hand it to `Promise.all`. Use `Promise.allSettled` when one failure shouldn't sink the batch, and treat `process.on('unhandledRejection')` as a crash-and-restart backstop, not a handling strategy. See [Error handling](#/chapter/errors).",
+      },
     ],
-    seeAlso: ["event-loop", "errors", "streams"],
-  }),
+    keyPoints: [
+      "Three eras over one loop: callbacks → promises → async/await (sugar over promises).",
+      "await pauses the function, not the thread; its continuation is a microtask scheduled at the next checkpoint.",
+      "Microtasks drain fully before any macrotask: process.nextTick first, then promises, then timers/check.",
+      "An awaited continuation beats setTimeout(0) but never beats synchronous code.",
+      "async/await is sequential by default — use Promise.all for independent work (latency ≈ slowest, not sum).",
+      "A promise you don't await or .catch() is a floating promise — its rejection is lost (unhandledRejection).",
+      "CJS vs ESM: top-level nextTick-vs-promise ordering differs, because an ES module top level is already a microtask drain.",
+    ],
+    pitfalls: [
+      {
+        title: "await in a loop for independent work",
+        body: "for (const x of xs) await f(x) runs strictly serially — N×latency. If the calls don't depend on each other, Promise.all(xs.map(f)) collapses it to ≈ one call's latency. Only keep the loop when each step truly needs the previous result.",
+      },
+      {
+        title: "Floating promises",
+        body: "Calling an async function without await/.catch() (or in a forEach, which ignores returned promises) detaches it: errors surface as unhandledRejection, and ordering becomes a race. Await it, catch it, or collect it into Promise.all.",
+      },
+      {
+        title: "Thinking await yields fairly to I/O",
+        body: "await only yields to the microtask queue, not to macrotasks. A tight loop of await null (or recursive promise chains) floods microtasks and starves timers and I/O — the same way recursive process.nextTick does.",
+      },
+      {
+        title: "The explicit-Promise-construction antipattern",
+        body: "Wrapping an already-promise-returning API in new Promise((res, rej) => …) invites double-resolve bugs and swallowed errors. Only construct a Promise to adapt a raw callback/event API; otherwise just return the existing promise.",
+      },
+      {
+        title: "Assuming nextTick-before-promise everywhere",
+        body: "True in CommonJS, but in an ES module the top level is already inside a microtask drain, so a top-level Promise.then can run before a top-level process.nextTick. Don't encode that ordering into logic.",
+      },
+    ],
+    interview: [
+      {
+        q: "Is async/await just promises? What does await actually do?",
+        a: "Yes — it's syntax over promises. await evaluates its operand, wraps a non-promise in a resolved promise, suspends the async function, and schedules the rest of the body as a microtask (one tick, since V8's await optimization). When the awaited promise settles, the continuation runs at the next microtask checkpoint. The thread is never blocked; the function is.",
+        level: "senior",
+      },
+      {
+        q: "process.nextTick vs Promise.then vs setTimeout(0) — what order, and why microtasks first?",
+        a: "Synchronous code, then microtasks, then macrotasks. Within microtasks the nextTick queue drains before the promise queue (in CommonJS). setTimeout(0) is a timers-phase macrotask, so it runs after the entire microtask block. Microtasks run first because Node drains both microtask queues to empty after every callback and between phases — they are checkpoints, not a phase.",
+        level: "senior",
+      },
+      {
+        q: "You have 10 independent async calls. How do you run them, and what's the latency difference vs awaiting in a loop?",
+        a: "Start them concurrently and join: await Promise.all(ids.map(fetch)). Awaiting in a loop is serial, so total ≈ sum of all 10 latencies; Promise.all overlaps them, so total ≈ the slowest one. If failures should not cancel the batch, use Promise.allSettled; for the first success, Promise.any; for the first to settle, Promise.race.",
+        level: "senior",
+      },
+      {
+        q: "Can promises or async/await starve the event loop?",
+        a: "Yes. await only yields to the microtask queue. A recursive promise chain or a tight await-null loop keeps the microtask queue non-empty, so the loop never advances to timers or I/O — the same starvation pattern as recursive process.nextTick, just one priority tier lower. CPU-bound work between awaits still blocks the thread outright.",
+        level: "staff",
+      },
+      {
+        q: "Does try/catch catch all errors in an async function? What about Promise.all?",
+        a: "try/catch catches synchronous throws and rejections of awaited promises. It does NOT catch a promise you didn't await (a floating promise) — that becomes an unhandledRejection. Promise.all rejects as soon as any input rejects, abandoning the others' results (they still run); use Promise.allSettled to get every outcome regardless of individual failures.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["event-loop", "errors", "concurrency", "streams"],
+    sources: [
+      {
+        title: "V8 — Faster async functions and promises (the await microtask optimization)",
+        url: "https://v8.dev/blog/fast-async",
+      },
+      {
+        title: "MDN — Using microtasks in JavaScript with queueMicrotask()",
+        url: "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide",
+      },
+      {
+        title: "Node.js — The event loop, timers, and process.nextTick()",
+        url: "https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick",
+      },
+      {
+        title: "MDN — async function",
+        url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function",
+      },
+    ],
+  },
   stub({
     id: "v8-gc",
     group: "runtime",

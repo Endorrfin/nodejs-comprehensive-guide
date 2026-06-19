@@ -32,7 +32,10 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
   const idx = ORDERED.findIndex((c) => c.id === ch.id);
   const prev = idx > 0 ? ORDERED[idx - 1] : null;
   const next = idx < ORDERED.length - 1 ? ORDERED[idx + 1] : null;
-  const hasSim = ch.sections.some((s) => s.kind === "sim");
+  // CHANGED: tag only the FIRST sim section as #simulator (chapters can now have
+  // several interactive widgets, e.g. a sim + a quiz — avoid duplicate ids).
+  const firstSimIdx = ch.sections.findIndex((s) => s.kind === "sim");
+  const hasSim = firstSimIdx !== -1;
 
   return (
     <article className="chapter">
@@ -82,7 +85,7 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
       {/* sections */}
       <div className="ch-sections">
         {ch.sections.map((s, i) => (
-          <div key={i} id={s.kind === "sim" ? "simulator" : undefined}>
+          <div key={i} id={i === firstSimIdx ? "simulator" : undefined}>
             <SectionView section={s} />
           </div>
         ))}

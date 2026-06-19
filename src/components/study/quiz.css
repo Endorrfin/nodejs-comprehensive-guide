@@ -1,0 +1,228 @@
+.pq {
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 16px;
+  margin: 22px 0;
+}
+.pq-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pq-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pq-kicker {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent-bright);
+}
+.pq-intro {
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+.pq-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+}
+.pq-score {
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 1px 9px;
+  color: var(--accent);
+}
+
+.pq-card {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  padding: 13px 14px;
+}
+.pq-qrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.pq-q {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.pq-lvl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 1px 7px;
+  color: var(--tx3);
+}
+.pq-ask {
+  font-size: 13px;
+  color: var(--tx2);
+}
+.pq-prompt {
+  margin: 9px 0 0;
+  font-size: 12.5px;
+  color: var(--tx3);
+  font-style: italic;
+}
+.pq-code {
+  margin: 11px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: #0c110b;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12.4px;
+  line-height: 1.55;
+  color: #d6e6cf;
+}
+
+.pq-choices {
+  display: grid;
+  gap: 8px;
+}
+.pq-choice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  color: var(--tx);
+  transition: border-color 0.12s, background 0.12s;
+}
+.pq-choice:hover:not(.locked) {
+  border-color: var(--accent-deep);
+  background: var(--surface);
+}
+.pq-choice.locked {
+  cursor: default;
+}
+.pq-choice.ok {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.pq-choice.no {
+  border-color: var(--sem-error);
+  background: rgba(248, 113, 113, 0.08);
+}
+.pq-mark {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  color: var(--tx2);
+}
+.pq-choice.ok .pq-mark {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pq-choice.no .pq-mark {
+  border-color: var(--sem-error);
+  color: var(--sem-error);
+}
+.pq-order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.pq-tok {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--tx2);
+}
+.pq-tok.ok {
+  border-color: var(--accent-deep);
+  color: var(--accent);
+}
+.pq-tok.no {
+  border-color: var(--sem-error);
+  color: var(--sem-error);
+}
+.pq-arrow {
+  color: var(--tx3);
+  font-size: 11px;
+}
+
+.pq-hint {
+  margin: 11px 0 0;
+  font-size: 12px;
+  color: var(--tx3);
+}
+.pq-explain {
+  margin-top: 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  padding: 10px 13px;
+  background: var(--s2);
+}
+.pq-explain.ok {
+  border-left-color: var(--accent);
+}
+.pq-explain.no {
+  border-left-color: var(--sem-error);
+}
+.pq-verdict {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.pq-explain.ok .pq-verdict {
+  color: var(--accent);
+}
+.pq-explain.no .pq-verdict {
+  color: var(--sem-error);
+}
+.pq-explain p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tx2);
+  line-height: 1.55;
+}
+
+.pq-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+.pq-controls .btn {
+  font-size: 12.5px;
+  padding: 7px 12px;
+}
+.pq-final {
+  font-size: 12.5px;
+  color: var(--accent);
+  margin-left: 4px;
+}
