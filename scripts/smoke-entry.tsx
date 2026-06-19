@@ -26,6 +26,9 @@ const routes = [
   "#/chapter/modules",
   "#/chapter/errors",
   "#/chapter/http",
+  "#/chapter/performance",
+  "#/chapter/security",
+  "#/chapter/production",
   "#/chapter/summary",
   "#/interview",
   "#/mental-models",
@@ -179,6 +182,28 @@ for (const must of ["HTTP internals", "llhttp", "HTTP request lifecycle simulato
   const has = httpc.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} http contains "${must}"`);
+}
+
+// ---- S7 Real systems B (Ch.14 Performance, Ch.15 Security, Ch.16 Production) ----
+const perf = render("#/chapter/performance");
+for (const must of ["profiling", "Event-loop lag simulator", "monitorEventLoopDelay", "flamegraph", "worker_threads", "utilization"]) {
+  const has = perf.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} performance contains "${must}"`);
+}
+
+const sec = render("#/chapter/security");
+for (const must of ["transitive", "Supply-chain defense simulator", "Permission Model", "provenance", "--allow-fs-read", "lockfile"]) {
+  const has = sec.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} security contains "${must}"`);
+}
+
+const prod = render("#/chapter/production");
+for (const must of ["Graceful shutdown simulator", "SIGTERM", "server.close", "readiness", "drain", "closeIdleConnections"]) {
+  const has = prod.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} production contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");
