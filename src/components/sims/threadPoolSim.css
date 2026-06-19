@@ -1,0 +1,347 @@
+.tp-sim {
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 16px;
+  margin: 22px 0;
+}
+.tp-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tp-tabs button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--tx2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.tp-tabs button.on {
+  border-color: var(--accent-deep);
+  background: var(--accent-dim);
+  color: var(--tx);
+}
+.tp-blurb {
+  font-size: 12.5px;
+  color: var(--tx2);
+  margin: 10px 2px 12px;
+}
+
+/* pool-size selector */
+.tp-poolsize {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 2px 14px;
+}
+.tp-ps-lbl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  margin-right: 4px;
+}
+.tp-ps-btn {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  min-width: 30px;
+  padding: 4px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--tx2);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.tp-ps-btn.on {
+  border-color: #b5611a;
+  background: rgba(255, 122, 0, 0.13);
+  color: #ffb478;
+}
+
+.tp-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 14px;
+}
+
+/* code panel */
+.tp-code {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #0c110b;
+  align-self: start;
+}
+.tp-code-head,
+.tp-col-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  padding: 8px 12px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+.tp-code pre {
+  margin: 0;
+  padding: 8px 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 11.6px;
+  line-height: 1.55;
+}
+.tp-cl {
+  display: flex;
+  gap: 10px;
+  padding: 1px 12px;
+  color: #cfe6c6;
+  white-space: pre;
+}
+.tp-ln {
+  color: var(--tx3);
+  user-select: none;
+  flex: 0 0 auto;
+}
+.tp-lt {
+  white-space: pre-wrap;
+}
+
+/* stage */
+.tp-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tp-lane {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--surface);
+}
+.tp-lane.pool {
+  border-color: #4a3115;
+}
+.tp-lane.kernel {
+  border-color: #233e1c;
+}
+.tp-lane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx);
+  padding: 8px 12px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+.tp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+.tp-lane-sub {
+  color: var(--tx3);
+  font-size: 10.5px;
+}
+
+/* pool slots */
+.tp-slots {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.tp-slot {
+  border: 1px dashed var(--line2);
+  border-radius: 8px;
+  padding: 7px 8px;
+  min-height: 58px;
+  background: rgba(0, 0, 0, 0.22);
+}
+.tp-slot.busy {
+  border-style: solid;
+  border-color: #7a4a1c;
+  background: rgba(255, 122, 0, 0.07);
+}
+.tp-slot-head {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--tx3);
+  margin-bottom: 4px;
+}
+.tp-slot-task {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  margin-bottom: 6px;
+}
+.tp-slot-idle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.tp-bar {
+  height: 5px;
+  background: var(--s2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tp-bar-fill {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.tp-queue-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+.tp-queue-lbl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  flex: 0 0 auto;
+}
+.tp-queue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* kernel lane */
+.tp-kernel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+.tp-inflight {
+  border: 1px solid #2a5320;
+  border-radius: 8px;
+  padding: 5px 8px;
+  background: rgba(108, 194, 74, 0.06);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  min-width: 74px;
+}
+.tp-inflight .tp-bar {
+  margin-top: 5px;
+}
+
+.tp-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 1px 7px;
+  background: rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+.tp-chip.waiting {
+  opacity: 0.66;
+  border-style: dashed;
+}
+.tp-chip.fresh {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+.tp-empty {
+  color: var(--tx3);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+/* completed line */
+.tp-doneline {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--surface);
+}
+.tp-done {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+
+/* caption + controls */
+.tp-caption {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 13px;
+  min-height: 40px;
+}
+.tp-tick {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-bright);
+  border: 1px solid var(--accent-deep);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-right: 9px;
+}
+.tp-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+.tp-controls .btn {
+  font-size: 12.5px;
+  padding: 7px 12px;
+}
+.tp-progress {
+  flex: 1;
+  min-width: 80px;
+  height: 5px;
+  background: var(--s2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tp-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+.tp-step {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  white-space: nowrap;
+}
+.tp-takeaway {
+  margin-top: 12px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+  font-size: 12.5px;
+  color: var(--tx2);
+  line-height: 1.55;
+}
+.tp-take-lbl {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  margin-right: 9px;
+}
+
+@media (max-width: 820px) {
+  .tp-body {
+    grid-template-columns: 1fr;
+  }
+}

@@ -281,4 +281,28 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   `vite build` OK (JS ≈88 kB gzip) · both engine suites ALL PASS · SSR smoke 7 routes + async-model
   content assertions OK. (Scratch build dirs `scripts/_*/` gitignored; user can delete them locally.)
   **Next: S3 — V8/GC + GC sim; Concurrency + thread-pool-vs-kernel sim.**
+- **2026-06-19 · S3 V8/GC + Concurrency** — DONE (largest batch so far). Two stub chapters built to
+  the golden standard, each with a verified hero sim:
+  • **Ch.8 V8 · JIT · memory & GC** — compilation pipeline (Ignition→Sparkplug→**Maglev** (default in
+  Node 22 / V8 12.4, web-verified)→TurboFan) + tiers table + deopt callout; hidden classes + inline
+  caches (+ shape-drift code); generational-heap figure (`GcHeap`); Scavenge vs Mark-Sweep-Compact
+  (Orinoco) prose + compare; **GC hero sim**; flags/tuning table; leak ("old space that never
+  shrinks") callout; 7 key points, 5 pitfalls, 5 interview Q&A, verified V8/Node sources.
+  • **Ch.9 Concurrency** — thread-pool-vs-kernel figure (`ThreadPoolKernel`); libuv pool (default 4,
+  `UV_THREADPOOL_SIZE`≤1024; backs async fs/crypto/zlib + `dns.lookup`; sockets→kernel); **`dns.lookup`
+  vs `dns.resolve`** senior callout; **thread-pool hero sim** (live pool-size control); worker_threads
+  code + worker/cluster/child_process table + worker-vs-child compare; decision-guide callout;
+  **concurrency predict-output quiz**; 7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  **Two new verified engines (truth-first):** `threadPoolEngine.ts` reproduces real Node 22 pool waves
+  (pbkdf2×6 → pool2 `[2,2,2]`, pool4 `[4,2]`, pool6 `[6]`), captured in `scripts/node-truth-threadpool.mjs`,
+  asserted in `scripts/test-concurrency.ts`. `gcEngine.ts` models Scavenge→promote→Mark-Sweep-Compact;
+  invariants in `scripts/test-gc.ts` (minors>majors, ≥1 major, promotions, permanent-object
+  conservation); real GC ratio via perf_hooks in `scripts/node-truth-gc.mjs` (minor **52 : 1** major;
+  **271 : 1** with `--max-semi-space-size=1`). Sims `GcSim`+`ThreadPoolSim` (+css) and both figures
+  registered in `lib/registry.tsx`; `concurrencyQuiz` (3 Qs, outputs captured from real Node 22) added
+  to `data/quizzes.ts`; +4 entries in the interview bank (`data/interview.ts`). `npm test` now runs **4**
+  engine suites. **Verified:** `tsc` clean · `vite build` OK (JS ≈105 kB gzip) · all 4 suites ALL PASS ·
+  SSR smoke **8 routes** + v8-gc/concurrency content assertions OK. (Scratch `scripts/_s3dist`,
+  `scripts/_ssr_s3` gitignored; sandbox can't `unlink`, delete locally.)
+  **Next: S4 — Ch.10 Streams + Backpressure sim (+ stream-pipeline interactive); Ch.11 Modules CJS vs ESM (+ resolver interactive).**
 - *(Update this log at the end of every session/block — per user request.)*

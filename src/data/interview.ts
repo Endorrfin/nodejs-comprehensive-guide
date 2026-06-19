@@ -121,6 +121,38 @@ export const INTERVIEW: BankItem[] = [
     q: "Why might a healthy Node service return sporadic 502s behind a proxy?",
     a: "Often a timeout mismatch: the upstream proxy keep-alive outlives Node's keepAliveTimeout/headersTimeout, so Node closes a socket the proxy reuses. Align the timeout triad (keepAliveTimeout ≥ proxy idle, headersTimeout > keepAliveTimeout).",
   },
+  {
+    id: "gc-tiers-deopt",
+    chapter: "v8-gc",
+    topic: "V8 & GC",
+    level: "staff",
+    q: "Name V8's compilation tiers and explain deoptimization.",
+    a: "Ignition (bytecode interpreter) → Sparkplug (baseline JIT) → Maglev (mid-tier optimizing JIT, default in Node 22) → TurboFan (peak optimizer). Optimizing tiers speculate on observed types/shapes; when a runtime value breaks an assumption, V8 deoptimizes — discards the optimized code and falls back to a lower tier. Repeated deopt churn is slower than never optimizing, so keep types and object shapes stable.",
+  },
+  {
+    id: "gc-leak-hunt",
+    chapter: "v8-gc",
+    topic: "V8 & GC",
+    level: "senior",
+    q: "Memory climbs until the process OOMs — how do you find the leak?",
+    a: "Confirm it's a leak (rising retained floor across heap snapshots, not just sawtoothing heap-used), then diff snapshots over time and sort by retained size to find the retainer — usually a module-level cache/Map that only grows, per-request listeners never removed, or closures held by timers. Fix the retainer; raising --max-old-space-size only delays the crash and lengthens major-GC pauses.",
+  },
+  {
+    id: "conc-dns-pool",
+    chapter: "concurrency",
+    topic: "Concurrency",
+    level: "staff",
+    q: "How can DNS stall a busy HTTP client, and how do you fix it?",
+    a: "http/net resolve hostnames via dns.lookup, which wraps the blocking getaddrinfo and runs on the 4-thread libuv pool. Many lookups to new hosts can exhaust the pool and block unrelated fs/crypto work. Use dns.resolve*() (c-ares, network-based, no pool thread) or a caching resolver, cache results, and raise UV_THREADPOOL_SIZE.",
+  },
+  {
+    id: "conc-worker-comm",
+    chapter: "concurrency",
+    topic: "Concurrency",
+    level: "staff",
+    q: "How do worker_threads share data, and what does it cost?",
+    a: "By default postMessage makes a structured-clone copy, so large payloads cost serialization and memory. You can transfer an ArrayBuffer (zero-copy, ownership moves) or use a SharedArrayBuffer with Atomics for true shared memory and lock-free coordination. Workers never share ordinary variables — design around copies or shared buffers.",
+  },
 ];
 
 export const INTERVIEW_TOPICS: string[] = Array.from(new Set(INTERVIEW.map((i) => i.topic)));

@@ -561,41 +561,344 @@ async function concurrent(ids) {
       },
     ],
   },
-  stub({
+  {
     id: "v8-gc",
     group: "runtime",
     order: 8,
     title: "V8, JIT, memory & GC",
-    tagline: "Hidden classes, JIT tiers, generational GC, and stop-the-world pauses.",
-    readMins: 10,
+    full: "V8 · JIT · memory & garbage collection",
+    tagline: "Hidden classes, the four JIT tiers, generational GC, and where the pauses come from.",
+    readMins: 12,
     mentalModel:
-      "Most objects die young. The scavenger sweeps the nursery (young space); survivors graduate to old space, collected by mark-sweep-compact.",
-    keyPoints: [
-      "V8 compiles JS through tiers (Ignition interpreter → Maglev/TurboFan JIT).",
-      "Hidden classes + inline caches make property access fast — keep object shapes stable.",
-      "Generational GC: young space (fast scavenge) → promote survivors → old space (mark-sweep-compact).",
-      "Major GC is largely concurrent/incremental but still has stop-the-world pauses.",
+      "Most objects die young. A fast Scavenge copies the few survivors out of the nursery and flips; objects that live long enough are promoted to old space, collected by the slower Mark-Sweep-Compact. Meanwhile V8 tiers hot functions up — and deoptimizes them when your assumptions break.",
+    sections: [
+      {
+        kind: "prose",
+        md: "V8 does two invisible jobs for you: it **compiles and runs** your JavaScript, and it **manages memory** so you never call `free()`. Both are silent until they become your bottleneck — a function that won't optimize, or a garbage collector that stalls the event loop. This chapter is about making the invisible legible: the **compilation pipeline** (Ignition → Sparkplug → Maglev → TurboFan), the **object model** (hidden classes + inline caches) that decides whether your code is fast, and the **generational garbage collector** (Orinoco) that decides when it pauses.",
+      },
+      {
+        kind: "prose",
+        md: "V8 never waits to 'compile the whole program' — it starts fast and gets faster. Source is parsed to bytecode and run immediately by **Ignition**, the interpreter. As a function runs more, V8 *tiers it up* through progressively more optimizing compilers, trading compile time for faster machine code. Each tier is a bet that the function is worth optimizing and that its observed types will hold.",
+      },
+      {
+        kind: "table",
+        caption: "V8's compilation tiers (Node 22 ships V8 12.4 — Maglev is enabled by default on x64/arm64).",
+        head: ["Tier", "Role", "Compiles", "Code quality"],
+        rows: [
+          ["Ignition", "bytecode interpreter — runs everything first", "—", "baseline"],
+          ["Sparkplug", "baseline JIT, no optimization", "near-instant", "modest"],
+          ["Maglev", "mid-tier optimizing JIT (default in Node 22)", "fast", "good"],
+          ["TurboFan", "top-tier optimizing JIT for the hottest code", "slow", "peak"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Optimization is speculative — and reversible",
+        md: "Maglev and TurboFan optimize on **assumptions** gathered at lower tiers: 'this argument is always a small integer', 'this object always has this shape'. Violate an assumption at runtime — pass a string where a number always flowed, mutate an object's shape — and V8 **deoptimizes**: it throws away the optimized code and falls back to a lower tier. A hot path that keeps deopting is *slower* than one that never optimized. Keep the types and shapes at a call site **stable**.",
+      },
+      {
+        kind: "prose",
+        md: "Why do shapes matter so much? JavaScript objects look dynamic, but V8 backs them with **hidden classes** (a.k.a. *maps* or *shapes*): two objects created the same way share one hidden class, so V8 can compile a property access into a fixed memory offset. **Inline caches** then memoize each property-access site by the shapes it has seen. Same shape every time (**monomorphic**) → the IC hits and access is near-C-speed. A handful of shapes (**polymorphic**) is fine; many shapes (**megamorphic**) blows the cache back to a slow dictionary lookup.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// ✅ One hidden class: same fields, same order, set up front
+class Point { constructor(x, y) { this.x = x; this.y = y; } }
+const a = new Point(1, 2);
+const b = new Point(3, 4);   // a and b share a shape → inline caches hit
+
+// ❌ Shape drift defeats the optimizer
+const p = {}; p.x = 1; p.y = 2;
+const q = {}; q.y = 2; q.x = 1;   // different insertion order → different shape
+q.z = 3;                          // a late property mutates the shape again
+delete p.x;                       // 'delete' drops the object to slow dictionary mode`,
+        note: "Rule of thumb: initialize every field in the constructor, in the same order; don't add properties late or 'delete' them; don't mix types at a call site. Stable shapes are what let the JIT keep its optimized code.",
+      },
+      {
+        kind: "prose",
+        md: "The second invisible job is memory. V8's heap is **generational**, built on one empirical observation — the *generational hypothesis*: **most objects die young**. So the heap is split into a small **young generation** (the nursery), collected very often and cheaply, and a larger **old generation**, collected rarely. The whole collector — codenamed **Orinoco** — is engineered to keep the main thread running by being parallel, incremental and concurrent.",
+      },
+      { kind: "figure", fig: "gc-heap", caption: "The generational heap: objects are born in the young generation (two semi-spaces, collected by Scavenge) and promoted to the old generation (collected by Mark-Sweep-Compact)." },
+      {
+        kind: "prose",
+        md: "The **minor GC** is the **Scavenger**. The young generation is two equal **semi-spaces**: allocation fills the active *From* space; when it's full, V8 copies the (few) live objects into the empty *To* space, abandons everything else in one stroke, and **flips** — *To* becomes the new active space. Its cost is proportional to **survivors, not garbage**, which is exactly why churning millions of short-lived objects stays cheap. An object that survives about **two** scavenges is **promoted** to old space. The Scavenge is parallel but **stop-the-world** — short enough to be negligible in most workloads.",
+      },
+      {
+        kind: "prose",
+        md: "The **major GC** collects old space with **Mark-Sweep-Compact**: *mark* every reachable object, *sweep* the dead, and *compact* survivors to one end so fragmentation doesn't waste space. This is the expensive one — its cost scales with the live old-space size. Orinoco hides most of it: marking runs **concurrently** on helper threads while your JS keeps executing (cutting main-thread marking time by ~60–70%), with **incremental** steps and concurrent sweeping. But it cannot be fully free — there are still brief **stop-the-world** pauses to finalize. Step through both collections below.",
+      },
+      { kind: "sim", sim: "gc" },
+      {
+        kind: "compare",
+        a: "Minor GC — Scavenge",
+        b: "Major GC — Mark-Sweep-Compact",
+        rows: [
+          ["Collects", "young generation (nursery)", "old generation"],
+          ["Algorithm", "semi-space copy (From → To) + flip", "mark, sweep, then compact"],
+          ["Cost scales with", "live survivors — cheap", "live old-space size — costly"],
+          ["Frequency", "very frequent", "rare"],
+          ["Pausing", "parallel, brief stop-the-world", "concurrent/incremental marking; short STW to finalize"],
+          ["Triggered when", "the active semi-space fills", "old space crosses its limit"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "GC shares your thread — so a leak becomes a latency problem",
+        md: "Marking is concurrent, but GC is *not* free and the finalizing pauses run on the **main thread** — the same thread as the event loop. A large, growing old space means longer, more frequent major GCs, which surface as **event-loop stalls** and p99 latency spikes. A memory **leak** in Node is almost always *'old space that never shrinks'*: module-level caches/`Map`s that only grow, `EventEmitter` listeners added per request and never removed, timers that keep closures alive. Diagnose with heap snapshots and **retained size**, not just heap-used graphs. See [Performance & profiling](#/chapter/performance).",
+      },
+      {
+        kind: "table",
+        caption: "The flags and APIs worth knowing (defaults now scale with available/container memory).",
+        head: ["Flag / API", "What it does"],
+        rows: [
+          ["--max-old-space-size=N", "cap old space in MB; modern Node derives the default from available (and cgroup/container) memory"],
+          ["--max-semi-space-size=N", "size one young semi-space in MB; a bigger nursery means fewer minor GCs at the cost of memory"],
+          ["--trace-gc", "log every GC — kind, duration, before/after sizes — to stderr"],
+          ["--expose-gc → global.gc()", "force a collection; for tests and diagnostics only, never production logic"],
+          ["perf_hooks 'gc' · v8.getHeapStatistics()", "observe GC events and heap usage programmatically (used to verify this chapter's sim)"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "Measured, not guessed",
+        md: "The minor-vs-major ratio in the simulator isn't invented: a short workload that churns garbage while retaining a growing array, observed with the `perf_hooks` GC observer on **Node 22**, produced **52 minor GCs to 1 major** — and **271 : 1** with `--max-semi-space-size=1`. Minor collections dominate; that is the generational hypothesis in numbers.",
+      },
     ],
-    seeAlso: ["event-loop", "performance", "concurrency"],
-  }),
-  stub({
+    keyPoints: [
+      "V8 tiers hot code up: Ignition (interpreter) → Sparkplug → Maglev (default in Node 22) → TurboFan.",
+      "Optimization is speculative; violating type/shape assumptions causes deoptimization back to a slower tier.",
+      "Hidden classes + inline caches make property access fast — keep object shapes stable and monomorphic.",
+      "The heap is generational because most objects die young: a small nursery + a large old space.",
+      "Minor GC (Scavenge) copies survivors between two semi-spaces and flips; cost ∝ survivors, not garbage.",
+      "Surviving ~2 scavenges promotes an object to old space, collected by Mark-Sweep-Compact.",
+      "Major GC marks concurrently but still has short stop-the-world pauses on the main thread — a leak (old space that never shrinks) becomes a latency problem.",
+    ],
+    pitfalls: [
+      {
+        title: "Polymorphic / shape-drifting objects on a hot path",
+        body: "Adding properties late, in varying order, deleting properties, or mixing value types at a call site creates new hidden classes and makes inline caches megamorphic — V8 deopts to slow dictionary lookups. Initialize all fields in the constructor, same order, same types.",
+      },
+      {
+        title: "Reading micro-benchmarks as production truth",
+        body: "A tiny loop will get fully optimized by TurboFan and may not represent real, polymorphic, GC-pressured code. Benchmark realistic shapes and data sizes, and watch for deopt/bailout traces (--trace-deopt).",
+      },
+      {
+        title: "Treating 'heap used' as the leak signal",
+        body: "Heap-used sawtooths up and down with GC — that's healthy. A leak shows as a rising floor and growing RETAINED size across snapshots. Compare snapshots and look at retainers, not a single gauge.",
+      },
+      {
+        title: "Bumping --max-old-space-size to 'fix' a leak",
+        body: "Raising the limit delays the crash and makes the eventual major GC longer (bigger old space = longer pauses). Find the retainer instead; the flag is for genuinely large working sets, not leaks.",
+      },
+      {
+        title: "Calling global.gc() in production",
+        body: "Forcing GC almost always hurts — you trigger stop-the-world pauses V8 would have scheduled more cheaply. It's a diagnostic tool (with --expose-gc), not a tuning knob.",
+      },
+    ],
+    interview: [
+      {
+        q: "Explain V8's generational garbage collection.",
+        a: "The heap is split by object age on the generational hypothesis that most objects die young. The young generation (two semi-spaces) is collected by a fast Scavenge: live objects are copied into the To-space and the rest abandoned, then the spaces flip; cost is proportional to survivors. Objects that survive ~2 scavenges are promoted to the old generation, collected by Mark-Sweep-Compact — mark live objects (concurrently, via Orinoco), sweep the dead, compact to avoid fragmentation. Minors are frequent and cheap; majors are rare and costly.",
+        level: "senior",
+      },
+      {
+        q: "Why keep object shapes stable, and what is a hidden class?",
+        a: "V8 represents each object's structure as a hidden class (map/shape); objects built the same way share one, letting property access compile to a fixed offset cached by an inline cache. Stable, monomorphic shapes keep those caches hitting. Adding/removing/reordering properties or mixing types makes call sites polymorphic then megamorphic, blowing the cache to slow dictionary lookups and triggering deoptimization.",
+        level: "staff",
+      },
+      {
+        q: "What are V8's compilation tiers and what is deoptimization?",
+        a: "Ignition interprets bytecode; Sparkplug is a near-instant baseline JIT; Maglev is a fast mid-tier optimizing JIT (default in Node 22 on x64/arm64); TurboFan is the peak optimizer for the hottest code. Optimizing tiers speculate on observed types/shapes. When a runtime value violates an assumption, V8 deoptimizes — discards the optimized code and falls back to a lower tier. Repeated deopt churn is slower than never optimizing.",
+        level: "staff",
+      },
+      {
+        q: "How does garbage collection interact with the event loop and tail latency?",
+        a: "GC largely shares the main thread with your JS. Marking is concurrent, but finalizing pauses are stop-the-world on the main thread — so they show up as event-loop lag and p99 spikes. A large or leaking old space means longer, more frequent major GCs. Mitigate by reducing allocations/retention, not by forcing GC; watch event-loop lag and GC traces.",
+        level: "staff",
+      },
+      {
+        q: "A Node service's memory climbs until it OOMs. How do you find the leak?",
+        a: "Confirm it's a leak (rising retained floor across heap snapshots, not just sawtoothing heap-used). Take snapshots over time and diff them; sort by retained size and inspect retainers — usually a module-level cache/Map that only grows, listeners added per request without removal, or closures held by timers. Fix the retainer; raising --max-old-space-size only delays the crash and lengthens pauses.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["event-loop", "performance", "concurrency", "async-model"],
+    sources: [
+      { title: "V8 — Maglev, V8's fastest optimizing JIT", url: "https://v8.dev/blog/maglev" },
+      { title: "V8 — Trash talk: the Orinoco garbage collector", url: "https://v8.dev/blog/trash-talk" },
+      { title: "V8 — Concurrent marking", url: "https://v8.dev/blog/concurrent-marking" },
+      { title: "V8 — Orinoco: young generation garbage collection (parallel Scavenger)", url: "https://v8.dev/blog/orinoco-parallel-scavenger" },
+      { title: "Node.js — Understanding and tuning memory", url: "https://nodejs.org/learn/diagnostics/memory/understanding-and-tuning-memory" },
+    ],
+  },
+  {
     id: "concurrency",
     group: "runtime",
     order: 9,
     title: "Concurrency",
-    full: "Concurrency — worker_threads, cluster, child_process",
-    tagline: "Real parallelism, the 4-thread pool, and when to reach for each.",
-    readMins: 10,
+    full: "Concurrency — the thread pool, worker_threads, cluster, child_process",
+    tagline: "The 4-thread pool, real parallelism, and which tool fits which bottleneck.",
+    readMins: 12,
     mentalModel:
-      "Threads share memory (compute); processes don't (isolation). Network async needs neither — the kernel does the waiting.",
-    keyPoints: [
-      "worker_threads: real in-process JS parallelism; share memory via SharedArrayBuffer.",
-      "cluster: fork N processes sharing a port — scale a server across cores.",
-      "child_process: run separate programs/scripts; talk over IPC/streams.",
-      "The libuv thread pool (default 4, UV_THREADPOOL_SIZE) backs fs, dns.lookup, crypto, zlib.",
+      "Two paths off the one JS thread: blocking work (fs/crypto/zlib/dns.lookup) goes to the libuv thread pool (default 4 slots); network sockets go to the kernel and hold no thread. For more CPU you add threads (worker_threads, shared memory) or processes (cluster/child_process, isolated) — but most 'I need concurrency' is really I/O the loop already handles.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Your JavaScript runs on **one thread**. So how does Node do many things at once — and when do you need to reach for *real* parallelism? The honest first answer is: **usually you don't**. Most 'I need concurrency' is **I/O** — waiting on a socket, disk, or database — and the event loop plus the OS already overlap thousands of those on the single thread. You only need more execution units when you're **burning CPU in JavaScript**. This chapter covers the machinery: the **libuv thread pool** that hides blocking calls, and the three ways to get more — `worker_threads`, `cluster`, `child_process`.",
+      },
+      { kind: "figure", fig: "thread-pool-kernel", caption: "Two async paths off the one JS thread: blocking work goes to the 4-thread libuv pool; network sockets are watched by the OS kernel with no pool thread held." },
+      {
+        kind: "prose",
+        md: "Some 'async' operations have **no non-blocking OS primitive** — reading a file, hashing a password, compressing a buffer, resolving a hostname with `getaddrinfo`. libuv runs those on a small **thread pool** so they don't block the loop. The pool defaults to **4 threads** (raise it with `UV_THREADPOOL_SIZE`, up to 1024). What uses it: most async **`fs`**, the async **`crypto`** functions (`pbkdf2`, `scrypt`, `randomBytes`, `randomFill`, `generateKeyPair`), all async **`zlib`**, and **`dns.lookup`**. Network I/O (TCP/HTTP sockets) does **not** — that's the kernel's job. The catch: the pool is **fixed and shared**, so one slow `pbkdf2` can delay every other file read in the whole process.",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "dns.lookup uses the pool; dns.resolve() does not",
+        md: "`dns.lookup()` (which `http`/`net` call by default for hostnames) wraps the OS's **blocking** `getaddrinfo`, so it runs on the **thread pool** — under a burst of connections to new hosts, slow DNS can quietly **exhaust all 4 threads** and stall unrelated `fs`/`crypto` work. The `dns.resolve*()` family instead uses **c-ares** over the network and holds **no** pool thread. For connection-heavy clients, prefer `dns.resolve` or a caching resolver, and consider raising `UV_THREADPOOL_SIZE`.",
+      },
+      {
+        kind: "prose",
+        md: "Step the pool against the kernel below. Watch a fixed pool finish CPU-bound tasks in **waves**, change `UV_THREADPOOL_SIZE` and see the waves change, then watch the kernel run every network op at once with **no** thread held.",
+      },
+      { kind: "sim", sim: "thread-pool" },
+      {
+        kind: "prose",
+        md: "When the work really is **CPU-bound JavaScript** — parsing huge payloads, hashing, image or markdown processing, ML pre/post-processing — offload it to a **`worker_thread`**. Each worker is its **own V8 isolate with its own event loop**, so it runs truly in parallel on another core without blocking the main loop. Workers don't share variables; they communicate by **message passing** (`postMessage`, a structured-clone copy) or, for genuinely shared state, a **`SharedArrayBuffer`** coordinated with **`Atomics`**.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// main.js — offload a CPU-bound hash without blocking the event loop
+const { Worker } = require('node:worker_threads');
+
+function hashInWorker(password) {
+  return new Promise((resolve, reject) => {
+    const w = new Worker('./hash-worker.js', { workerData: password });
+    w.once('message', resolve);     // structured-clone copy back to main
+    w.once('error', reject);
+    w.once('exit', (code) => {
+      if (code !== 0) reject(new Error('worker stopped, exit ' + code));
+    });
+  });
+}
+
+// hash-worker.js — runs on its own thread + isolate
+const { workerData, parentPort } = require('node:worker_threads');
+const crypto = require('node:crypto');
+const hash = crypto.pbkdf2Sync(workerData, 'salt', 1e6, 64, 'sha512');
+parentPort.postMessage(hash);       // send the result home`,
+        note: "Note pbkdf2Sync here: inside a worker, blocking is fine — that's the point. A real service reuses a small POOL of workers (e.g. Piscina) rather than spawning one per task: a worker boots a fresh V8 isolate, which isn't free.",
+      },
+      {
+        kind: "table",
+        caption: "Three ways to get more execution — pick by what you actually need.",
+        head: ["Tool", "Gives you", "Shares memory?", "Reach for it when"],
+        rows: [
+          ["worker_threads", "parallel JS threads, one isolate each", "yes — SharedArrayBuffer + Atomics", "CPU-bound JS: parsing, hashing, images, compression"],
+          ["cluster", "N processes sharing one listening port", "no", "scale one HTTP server across all cores"],
+          ["child_process", "spawn/exec separate programs", "no — IPC / streams", "run ffmpeg/git/python, or isolate risky work"],
+        ],
+      },
+      {
+        kind: "compare",
+        a: "worker_threads",
+        b: "child_process",
+        rows: [
+          ["Unit of execution", "a thread in the same process", "a separate OS process"],
+          ["Memory", "own isolate; can SHARE via SharedArrayBuffer", "fully isolated; data copied over IPC"],
+          ["Start-up cost", "lighter — a new V8 isolate", "heavier — a whole new process"],
+          ["Best for", "CPU-bound JS/TS inside your app", "running other programs; strong isolation"],
+          ["Crash blast radius", "can take down the whole process", "contained to the child"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "To scale a **server** across cores, the classic tool is **`cluster`**: it forks N worker **processes** that all share one listening port, with the OS (or Node's round-robin) distributing incoming connections. Rule of thumb is **~one Node process per core**, with **stateless** handlers (shared state goes in Redis/DB, not process memory). In container-orchestrated setups, an external supervisor — **Kubernetes**, PM2 — often plays this role instead, running one process per container and scaling pods. Either way the model is *processes, not threads*: no shared memory, isolation by default.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "Decision guide: start from the bottleneck",
+        md: "**Waiting** on network/disk/DB → it's **I/O**: keep it async, add nothing. **Burning CPU** in JS → **`worker_threads`** (a pool of them). **Saturating one core** serving traffic → **`cluster`** or an orchestrator (~one process per core). Need to run **another binary** → **`child_process`**. The classic mistake is spinning up workers to 'speed up' database or HTTP calls — that work was never on your thread to begin with; the kernel already runs it concurrently.",
+      },
+      {
+        kind: "prose",
+        md: "Finally, a few orderings the pool and the loop make **guaranteed** — and one they make a **race**. Call each before revealing it.",
+      },
+      { kind: "sim", sim: "concurrency-quiz" },
     ],
-    seeAlso: ["event-loop", "v8-gc", "production"],
-  }),
+    keyPoints: [
+      "JS is single-threaded; most concurrency you need is I/O the event loop already overlaps — reach for parallelism only for CPU-bound JS.",
+      "The libuv thread pool (default 4, UV_THREADPOOL_SIZE up to 1024) backs async fs, crypto, zlib, and dns.lookup.",
+      "Network sockets use the kernel (epoll/kqueue/IOCP), not the pool — one thread watches thousands of connections.",
+      "dns.lookup() uses the pool (blocking getaddrinfo); dns.resolve*() uses the network (c-ares) and no pool thread.",
+      "worker_threads give real parallel JS (own isolate); communicate by message-passing or share via SharedArrayBuffer + Atomics.",
+      "cluster forks ~one process per core sharing a port; processes don't share memory — keep handlers stateless.",
+      "child_process runs separate programs with isolation; heavier than a worker but contains crashes.",
+    ],
+    pitfalls: [
+      {
+        title: "Using worker_threads to 'speed up' I/O",
+        body: "Network/DB/file calls are already concurrent via the loop and kernel (or pool). Wrapping them in workers adds isolate startup and structured-clone copying for zero throughput gain. Workers are for CPU-bound JS only.",
+      },
+      {
+        title: "Blocking the thread pool with one slow task",
+        body: "The pool is fixed and shared. A long pbkdf2/scrypt, a giant sync zlib, or DNS exhaustion ties up slots so unrelated fs/crypto calls stall. Size UV_THREADPOOL_SIZE for the workload, move heavy CPU to worker_threads, and prefer dns.resolve for connection-heavy clients.",
+      },
+      {
+        title: "Spawning a worker (or child process) per task",
+        body: "Each worker boots a fresh V8 isolate; each child boots a process. Under load that startup cost dominates. Reuse a bounded pool of long-lived workers (e.g. Piscina) and hand them tasks.",
+      },
+      {
+        title: "Expecting workers or cluster to share variables",
+        body: "Workers have separate isolates and cluster has separate processes — neither shares your JS heap. Data is copied (postMessage/IPC) unless you explicitly use SharedArrayBuffer (workers only). Shared application state belongs in Redis/DB.",
+      },
+      {
+        title: "Assuming setTimeout(0) vs setImmediate is ordered, or pool order is FIFO at size > 1",
+        body: "In the main module timeout-vs-immediate is a race (deterministic only inside an I/O callback). And pool tasks are FIFO-dispatched but run concurrently, so with the default 4 threads their completion order is not guaranteed — only a one-thread pool serializes them.",
+      },
+    ],
+    interview: [
+      {
+        q: "worker_threads vs cluster vs child_process — when do you use each?",
+        a: "worker_threads for CPU-bound JavaScript in-process: each worker is its own isolate running in parallel, sharing memory only via SharedArrayBuffer. cluster to scale a server across cores: it forks ~one process per core sharing a listening port, no shared memory. child_process to run a separate program (ffmpeg, git, python) or to isolate risky work in its own process. If the bottleneck is I/O, none of them — the event loop already handles it.",
+        level: "senior",
+      },
+      {
+        q: "What runs on the libuv thread pool, how big is it, and why does it matter?",
+        a: "Most async fs, the async crypto functions (pbkdf2, scrypt, randomBytes, randomFill, generateKeyPair), all async zlib, and dns.lookup. It defaults to 4 threads (UV_THREADPOOL_SIZE, up to 1024). It matters because it's fixed and shared: one slow pool task delays every other pool task in the process, so a slow hash or DNS lookup can stall unrelated file reads.",
+        level: "staff",
+      },
+      {
+        q: "Why can DNS resolution stall a busy HTTP client, and how do you fix it?",
+        a: "http/net resolve hostnames with dns.lookup, which wraps the blocking getaddrinfo and runs on the 4-thread pool. Under many connections to new hosts, slow lookups can exhaust the pool and block unrelated fs/crypto work. Fixes: use dns.resolve*() (c-ares, network-based, no pool thread) or a caching resolver, cache results, and raise UV_THREADPOOL_SIZE.",
+        level: "staff",
+      },
+      {
+        q: "How do worker_threads communicate, and what's the cost of message passing?",
+        a: "By default via postMessage, which makes a structured-clone copy of the data — so large payloads cost serialization and memory. You can transfer an ArrayBuffer (zero-copy, ownership moves) or use a SharedArrayBuffer with Atomics for genuinely shared memory and lock-free coordination. Workers do not share ordinary variables; design around copies or shared buffers.",
+        level: "staff",
+      },
+      {
+        q: "If Node is single-threaded, how does it serve thousands of concurrent connections?",
+        a: "Network I/O is non-blocking: libuv registers sockets with the OS event notifier (epoll/kqueue/IOCP) and the kernel signals readiness; one loop thread multiplexes them all, holding no thread per connection. Only blocking operations without an async OS primitive (files, crypto, compression, getaddrinfo) use the small thread pool. So concurrency for I/O is the kernel's job, not threads'.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["event-loop", "v8-gc", "production", "performance"],
+    sources: [
+      { title: "libuv — Thread pool work scheduling", url: "https://docs.libuv.org/en/v1.x/threadpool.html" },
+      { title: "Node.js — Don't block the event loop (or the worker pool)", url: "https://nodejs.org/learn/asynchronous-work/dont-block-the-event-loop" },
+      { title: "Node.js — Worker threads", url: "https://nodejs.org/api/worker_threads.html" },
+      { title: "Node.js — Cluster", url: "https://nodejs.org/api/cluster.html" },
+      { title: "Node.js — DNS implementation considerations (lookup vs resolve)", url: "https://nodejs.org/api/dns.html#implementation-considerations" },
+    ],
+  },
   stub({
     id: "streams",
     group: "runtime",
