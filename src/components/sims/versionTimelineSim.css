@@ -1,0 +1,238 @@
+.vt-sim {
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 16px;
+  margin: 22px 0;
+}
+.vt-blurb {
+  font-size: 12.5px;
+  color: var(--tx2);
+  margin: 2px 2px 16px;
+}
+
+/* the scrub track */
+.vt-track {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px 2px;
+}
+.vt-rail {
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  top: 13px;
+  height: 2px;
+  background: var(--line2);
+  border-radius: 2px;
+}
+.vt-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: 1;
+}
+.vt-node-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid var(--bg);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.vt-node.on .vt-node-dot {
+  transform: scale(1.25);
+}
+.vt-node-major {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx3);
+  margin-top: 4px;
+}
+.vt-node.on .vt-node-major {
+  color: var(--tx);
+}
+.vt-node.past .vt-node-major {
+  color: var(--tx2);
+}
+.vt-node-year {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--tx3);
+}
+
+/* controls */
+.vt-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 2px 4px;
+  flex-wrap: wrap;
+}
+.vt-controls .btn {
+  font-size: 12.5px;
+  padding: 7px 12px;
+}
+.vt-step {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  white-space: nowrap;
+}
+.vt-reset {
+  margin-left: auto;
+}
+
+/* panel */
+.vt-panel {
+  margin-top: 12px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 15px;
+}
+.vt-panel-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.vt-major {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.vt-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 3px 11px;
+}
+.vt-v8,
+.vt-year {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.vt-statusnote {
+  font-size: 12.5px;
+  margin-top: 7px;
+  opacity: 0.92;
+}
+.vt-headline {
+  font-size: 14.5px;
+  color: var(--tx);
+  font-style: italic;
+  margin: 9px 0 14px;
+  line-height: 1.5;
+}
+
+/* feature grid */
+.vt-feats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+}
+.vt-feat {
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 10px 12px;
+}
+.vt-feat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.vt-feat-label {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.vt-pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.vt-feat-blurb {
+  font-size: 12px;
+  color: var(--tx2);
+  line-height: 1.5;
+  margin-top: 5px;
+}
+.vt-feat-domain {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tx3);
+  margin-top: 7px;
+}
+
+.vt-standing {
+  margin-top: 13px;
+  border-top: 1px dashed var(--line);
+  padding-top: 11px;
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+.vt-standing b {
+  color: var(--accent-bright);
+}
+
+/* what's next */
+.vt-next {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--tx2);
+  line-height: 1.55;
+  background: rgba(163, 230, 53, 0.06);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--grp-mastery);
+  border-radius: 8px;
+  padding: 10px 13px;
+}
+.vt-next-lbl {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--grp-mastery);
+  margin-bottom: 4px;
+}
+
+@media (max-width: 720px) {
+  .vt-feats {
+    grid-template-columns: 1fr;
+  }
+  .vt-node-year {
+    display: none;
+  }
+  .vt-reset {
+    margin-left: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-node-dot {
+    transition: none;
+  }
+}

@@ -1,0 +1,30 @@
+/* Additions for the Mental-models gallery (Ch.19). Base .mm-* classes live in
+   theme/global.css; these add the group chip and the revealed-figure frame. */
+.mm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tx3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px 2px 7px;
+  margin-bottom: 10px;
+}
+.mm-chip .sb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.mm-fig {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 12px 6px;
+  margin: 4px 0 12px;
+}

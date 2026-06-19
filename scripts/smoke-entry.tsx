@@ -29,9 +29,11 @@ const routes = [
   "#/chapter/performance",
   "#/chapter/security",
   "#/chapter/production",
+  "#/chapter/modern-node",
   "#/chapter/summary",
   "#/interview",
   "#/mental-models",
+  "#/flashcards",
 ];
 
 let ok = true;
@@ -204,6 +206,42 @@ for (const must of ["Graceful shutdown simulator", "SIGTERM", "server.close", "r
   const has = prod.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} production contains "${must}"`);
+}
+
+// ---- S8 Mastery (Ch.17 Modern Node, Ch.20 Summary) + study features --------
+const mn = render("#/chapter/modern-node");
+for (const must of ["Modern Node", "Active LTS", "type stripping", "Permission Model", "require(esm)", "Node 27"]) {
+  const has = mn.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} modern-node contains "${must}"`);
+}
+
+const sm = render("#/chapter/summary");
+for (const must of ["whole picture", "never block the thread", "Six event-loop phases", "Plays to its strength", "draw it from memory"]) {
+  const has = sm.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} summary contains "${must}"`);
+}
+
+const mm = render("#/mental-models");
+for (const must of ["Mental models", "The six event-loop phases", "The four error channels", "release-line lifecycle", "Reveal"]) {
+  const has = mm.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} mental-models contains "${must}"`);
+}
+
+const iv = render("#/interview");
+for (const must of ["interview bank", "Search questions", "All topics", "senior/staff questions"]) {
+  const has = iv.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} interview contains "${must}"`);
+}
+
+const fc = render("#/flashcards");
+for (const must of ["Flashcards", "Active recall", "Show answer", "Got it", "All parts"]) {
+  const has = fc.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} flashcards contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");

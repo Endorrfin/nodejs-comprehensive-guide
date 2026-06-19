@@ -7,6 +7,7 @@ import { ConceptMap } from "./components/map/ConceptMap";
 import { ChapterPage } from "./components/chapter/ChapterPage";
 import { InterviewPage } from "./components/pages/InterviewPage";
 import { MentalModelsPage } from "./components/pages/MentalModelsPage";
+import { FlashcardsPage } from "./components/pages/FlashcardsPage";
 
 export default function App(): React.ReactElement {
   const route = useRoute();
@@ -37,6 +38,7 @@ export default function App(): React.ReactElement {
             {route.name === "chapter" ? <ChapterPage id={route.id} /> : null}
             {route.name === "interview" ? <InterviewPage /> : null}
             {route.name === "mental-models" ? <MentalModelsPage /> : null}
+            {route.name === "flashcards" ? <FlashcardsPage /> : null}
           </main>
         </div>
       )}

@@ -451,4 +451,48 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   content OK. (Scratch `scripts/_s7dist`, `scripts/_ssr_s7` gitignored via `scripts/_*`; sandbox can't `unlink`,
   delete locally.)
   **Next: S8 — Mastery + polish: Ch.17 Modern Node (2026, web-search versions); Ch.18 Interview bank (grow to 40 Q); Ch.19 Mental-models gallery; Ch.20 Summary; global search, flashcards, mobile/a11y/perf pass.**
+- **2026-06-19 · S8 Mastery + polish** — DONE (all-in-one, user's choice). The four Mastery chapters
+  finished and the app-wide study/search/polish landed. The web guide is now **content-complete — all 20
+  chapters built**.
+  • **Ch.17 Modern Node (2026)** — built to golden standard + the **Version-timeline HERO sim**
+    (`version-timeline`: scrub Node 18→26, each line reveals what landed **stable** (green) vs **experimental**
+    (orange) + its LTS status; play/step, reduced-motion aware) driven by a truth-anchored `versionTimelineEngine`
+    and the `VersionTimeline` release-lifecycle figure. 13 sections incl. capability cheat-sheet table, then-vs-now
+    compare, TypeScript-without-a-build prose (type stripping ≠ type-checking; decorators/NestJS caveat), the
+    Oct-2026 schedule-change callout; 7 KP, 5 pitfalls, 5 IV, verified sources. **Web-verified mid-2026:** **24
+    Active LTS** (V8 13.6, npm 11), **22 Maintenance**, **26 Current** (V8 14.6, Temporal default, Undici 8),
+    **20 EOL 30 Apr 2026**, **18 EOL**; type-stripping default in 24 (stable 24.12), Permission Model stable 23.5,
+    require(esm) unflagged 22.12, WebSocket stable 22, **node:sqlite (22.5) + fs.glob still experimental**,
+    **HTTP3/node:quic still experimental**; **schedule change Oct 2026 → Node 27: one major/yr, calendar-year
+    versions, every release LTS, Alpha channel**.
+  • **Ch.20 Summary** — the capstone: **`WholePicture` causal-spine figure** (one thread → never block → offload →
+    stream → fail safe; V8+GC underneath, same thread), a "six pictures to hold" recap table, strength-vs-design
+    compare, the **3-sentence distillation**, the four-group throughline, and a turn-reading-into-recall callout.
+    9 sections, 7 KP, 5 recurring-trap pitfalls, 4 capstone IV.
+  • **Ch.19 Mental-models** — gallery expanded **5 → 19 cards** (one+ per major concept, each tied to its real
+    figure); `MentalModelsPage` upgraded — **group filter**, **reveals the actual diagram** (not just text),
+    group chip, `aria-expanded`, reduced-motion.
+  • **Ch.18 Interview** — bank already at **44 Q** (target 40 met, found pre-built) so **no new content**; fixed the
+    stale "growing to 40" copy and added **free-text search** over Q+A on `InterviewPage`.
+  • **Flashcards** (new study feature) — `/flashcards` route + nav; unified deck (`lib/flashcards.ts`) assembled
+    from the 19 mental models + 44 interview Qs (**63 cards**, no new content to maintain); reveal-then-grade where
+    **"Again" re-queues** the card so a round repeats what you miss; group/source filters, shuffle/restart,
+    keyboard (space=flip · 1=again · 2=got it · ←=prev), progress + counts, reduced-motion.
+  • **Global search upgrade** — `lib/search.ts` indexes chapters **incl. section prose/callouts/tables**, the
+    interview bank and the mental-models gallery; `TopBar` search now returns **ranked, categorised hits**
+    (Chapter / Q&A / Model badges) with arrow-key nav + combobox ARIA.
+  • **Mobile/a11y/perf pass** — phone media query (nav wraps to its own row, brand-sub hidden, tighter content
+    padding), reduced-motion fallbacks on the new sim + flashcards, ARIA on the timeline track + search combobox +
+    reveal buttons.
+  **Truth-first as always:** `versionTimelineEngine` + `scripts/test-modern.ts` assert internal consistency
+  (monotonic majors + V8, exactly one Active-LTS / one Current, `NOW` matches the data) **and live-probe the
+  running Node** — every capability whose line ≤ the running major must actually exist here (fetch, structuredClone,
+  node:test, WebSocket, fs.glob, Maglev all PASS on Node 22; **URLPattern/Temporal correctly absent until 24/26**).
+  `scripts/node-truth-modern.mjs` captures the real capability surface. Sims/figures `version-timeline` +
+  `whole-picture` registered in `lib/registry.tsx`; `npm test` now runs **14** engine suites; smoke-entry extended
+  to **22 routes** + modern-node/summary/mental-models/interview/flashcards content assertions.
+  **Verified:** `tsc` clean · `vite build` OK (JS ≈**201 kB gzip**, CSS ≈11.6 kB, relative `./assets`) · **all 14
+  engine suites ALL PASS** · SSR smoke **22 routes** + S8 content assertions **SMOKE OK**. (Scratch `scripts/_s8dist`,
+  `scripts/_ssr_s8` gitignored via `scripts/_*`; sandbox can't `unlink`, delete locally.)
+  **Next: S9–S10 — deep-dive PDFs (satori → PNG → img2pdf): one golden PDF, then batch by group; link `pdf` per chapter.**
 - *(Update this log at the end of every session/block — per user request.)*

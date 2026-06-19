@@ -1,0 +1,196 @@
+/* Flashcards study page (study feature, S8). Reuses .page/.filters/.fbtn/.btn
+   from global.css; everything below is deck-specific. */
+.fc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.fc-deck {
+  margin-top: 16px;
+  border-radius: var(--r-lg);
+  outline-offset: 4px;
+}
+
+.fc-card {
+  position: relative;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 22px 22px 26px;
+  min-height: 230px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+.fc-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.fc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tx2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px 3px 8px;
+}
+.fc-chip .sb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+.fc-src {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tx3);
+}
+.fc-front {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--tx);
+}
+.fc-hint {
+  margin-top: auto;
+  padding-top: 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.fc-back {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line2);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tx);
+  animation: fc-reveal 0.18s ease;
+}
+@keyframes fc-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* controls */
+.fc-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.fc-controls .btn {
+  font-size: 12.5px;
+  padding: 8px 13px;
+}
+.fc-spacer {
+  flex: 1;
+}
+.fc-key {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  opacity: 0.6;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-left: 5px;
+}
+.fc-got {
+  border-color: var(--accent-deep) !important;
+  color: var(--accent-bright) !important;
+}
+.fc-got:hover:not(:disabled) {
+  background: var(--accent-dim) !important;
+}
+.fc-again {
+  border-color: #5a3a18 !important;
+  color: var(--sem-pool) !important;
+}
+.fc-again:hover:not(:disabled) {
+  background: rgba(255, 122, 0, 0.1) !important;
+}
+
+/* progress */
+.fc-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.fc-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--s2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.fc-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+.fc-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+  white-space: nowrap;
+}
+
+/* done */
+.fc-done {
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 30px 24px;
+  text-align: center;
+}
+.fc-done-ttl {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent-bright);
+  margin-bottom: 6px;
+}
+.fc-done-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .fc-front {
+    font-size: 16px;
+  }
+  .fc-spacer {
+    flex-basis: 100%;
+    height: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fc-back {
+    animation: none;
+  }
+  .fc-bar-fill {
+    transition: none;
+  }
+}

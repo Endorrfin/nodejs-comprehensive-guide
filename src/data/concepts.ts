@@ -2638,22 +2638,184 @@ process.on('SIGINT',  () => shutdown('SIGINT'));`,
   },
 
   // -------------------------------------------------------------------- Mastery
-  stub({
+  {
     id: "modern-node",
     group: "mastery",
     order: 17,
     title: "Modern Node (2026)",
-    tagline: "Versions & capabilities — the batteries now included.",
-    readMins: 7,
-    mentalModel: "Modern Node = batteries included: test runner, fetch, watch mode, --env-file, permissions.",
-    keyPoints: [
-      "Built-in test runner (node:test) + watch mode reduce tooling dependencies.",
-      "Global fetch, WebStreams, and --env-file are standard in recent lines.",
-      "require(ESM), the permission model, and a built-in SQLite are part of the modern toolkit.",
-      "LTS cadence: even-numbered majors go LTS — track the active LTS for production. (Verify exact versions in S8.)",
+    full: "Modern Node (2026) — batteries included, and the line to stand on",
+    tagline: "What's now in the box, and which release line to build on.",
+    readMins: 8,
+    mentalModel:
+      "Modern Node = delete dependencies (fetch, node:test, --watch, WebSocket, run-TypeScript) and stand on the Active-LTS line. June 2026: build on 24; 22 maintenance; 26 current; 18 & 20 EOL.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Two questions decide how modern your Node actually is — and only one is about your code. First: **which release line are you standing on?** A brilliant codebase shipped on an end-of-life runtime is a security liability, not a modern stack. Second: **what's already in the box?** Across the 18 → 26 lines Node quietly absorbed jobs that used to need a pile of dependencies — an HTTP client, a test runner, a file watcher, a WebSocket client, even running TypeScript. \"Modern Node\" is mostly about **deleting dependencies** and **standing on the right line**.",
+      },
+      {
+        kind: "figure",
+        fig: "version-timeline",
+        caption:
+          "The support windows on one axis. 18 and 20 have ended; 22 is in maintenance; 24 is the Active-LTS line to build on; 26 is Current and reaches furthest. EOL is a security decision, not a preference.",
+      },
+      {
+        kind: "prose",
+        md: "**The cadence (through Node 26).** A new major ships every six months — April and October — and the October **even-numbered** majors are promoted to **LTS**. Each LTS line spends ~6 months as **Current**, then ~12 as **Active LTS** (new features + fixes), then ~18 as **Maintenance** (critical + security fixes only), then goes **EOL** — about three years in all. As of **June 2026**: **Node 24** is Active LTS (the default target), **22** is Maintenance, **26** is Current, and **20** (EOL 30 Apr 2026) and **18** (EOL 2025) are **end-of-life**. The production rule falls straight out: **build on the Active LTS line; never ship on EOL.**",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "The 'even = LTS' rule is about to expire",
+        md: "That whole even/odd model **ends with Node 26**. From **October 2026, starting at Node 27**, the project moves to **one major per year**, version numbers that **track the calendar year**, **every release becomes LTS**, and a new **Alpha** channel for early testing. So \"even majors are the stable ones\" is correct *today* and wrong *next year* — reason from the **support table**, not the parity of the number.",
+      },
+      {
+        kind: "prose",
+        md: "Here's the journey in one control. Scrub the lines and watch the standard library fill in — and read the colour: **green landed stable, orange landed experimental** (and some of it still is). The point isn't to memorise versions; it's to see the **shape** — Node grew *up*, absorbing the toolchain, while the runtime model underneath never changed.",
+      },
+      { kind: "sim", sim: "version-timeline" },
+      {
+        kind: "table",
+        caption:
+          "A senior's cheat-sheet: what moved into core, when you can lean on it, and what it lets you drop. \"Stability today\" is for the current LTS lines.",
+        head: ["Capability", "Since", "Stability today", "Lets you drop"],
+        rows: [
+          ["global fetch()", "18 (stable 21)", "Stable", "axios · node-fetch"],
+          ["node:test runner", "18 → stable 20", "Stable", "jest · mocha (often)"],
+          ["--watch", "stable 22", "Stable", "nodemon"],
+          ["Global WebSocket (client)", "stable 22", "Stable", "ws (client)"],
+          ["require(esm)", "unflagged 22.12", "Stable", "dual-package glue"],
+          ["Run .ts directly (strip types)", "22.6 → default 24", "Stable (24.12)", "ts-node (dev)"],
+          ["Permission Model (--permission)", "stable 23.5", "Stable", "— (adds defense-in-depth)"],
+          ["node:sqlite", "22.5", "Experimental", "better-sqlite3 (cautiously)"],
+          ["fs.glob / fs.globSync", "22", "Experimental", "glob (cautiously)"],
+          ["node:quic / HTTP3", "24+ (flag)", "Experimental", "— terminate at the edge"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**Running TypeScript with no build step** is the headline for a TS shop. Since **Node 24** you can run a `.ts` file directly — `node server.ts` — because Node **strips the type annotations** at load and runs the JavaScript underneath (stable in 24.12). What it **does not** do matters just as much: it **does not type-check** (a type error won't stop the program), and it can't emit constructs that need real transformation — TypeScript **enums**, **namespaces** and legacy **decorators** require `--experimental-transform-types`. So if your framework leans on decorators and metadata — **NestJS**, for instance — plain stripping isn't enough; you still need the TypeScript compiler. Treat type stripping as a gift for **scripts, tools and tests**, and as a *complement* to your app toolchain: keep `tsc --noEmit` in CI for checking, and a bundler if you ship to older runtimes.",
+      },
+      {
+        kind: "code",
+        lang: "bash",
+        note: "Several dependencies' worth of capability, all built in — and the one job stripping won't do.",
+        code: `# Run TypeScript with no build step (Node 24+)
+node server.ts
+
+# Restart on change — no nodemon
+node --watch server.ts
+
+# Run a package.json script straight from the runtime
+node --run build
+
+# Load env vars from a file — no dotenv (since 20.6)
+node --env-file=.env server.ts
+
+# Type-CHECK separately — stripping does NOT. Keep this in CI:
+npx tsc --noEmit`,
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "\"Experimental\" is a warning, not a formality",
+        md: "Some of the shiniest built-ins are still **experimental**: `node:sqlite`, `fs.glob`, and `node:quic`/HTTP3. That tag means the **API can change between minor releases**, and using it prints an `ExperimentalWarning`. The safe pattern: check the **stability index** for *your* LTS line, and if you must use one, hide it behind a **thin adapter** so swapping it later is a one-file change. Don't make an experimental API a load-bearing dependency.",
+      },
+      {
+        kind: "compare",
+        a: "Then — an npm install",
+        b: "Now — in core",
+        rows: [
+          ["HTTP client", "axios / node-fetch", "global fetch()"],
+          ["WebSocket client", "ws", "global WebSocket"],
+          ["Test runner", "jest / mocha (+ts-jest)", "node:test + run .ts"],
+          ["Restart on change", "nodemon", "node --watch"],
+          ["Run TypeScript (dev)", "ts-node", "type stripping"],
+          ["Env files", "dotenv", "node --env-file"],
+          ["Run scripts", "npm run", "node --run"],
+          ["Embedded SQL", "better-sqlite3", "node:sqlite (experimental)"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "In production the **version is a dependency**. Track the **Active LTS** line and move up before it slips into Maintenance; **rebuild images on security releases** (Node shipped one across 26/24/22 on **18 June 2026**) instead of pinning a frozen base; pin base images by digest. Layer the [Permission Model](#/chapter/security) as defense-in-depth, and use the bigger standard library to **shrink your dependency tree** — fewer packages is a smaller [supply-chain](#/chapter/security) surface. None of this changes the core model: [one thread still runs your JavaScript](#/chapter/event-loop) and [libuv still does the waiting](#/chapter/concurrency). See also [Modules](#/chapter/modules) for require(esm) and [Production patterns](#/chapter/production).",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "Print your runtime's real capabilities",
+        md: "`node --version` tells you the line; `node -p \"process.versions\"` prints the exact V8/libuv/openssl/undici it bundles; and `node -p \"typeof fetch\"`, `node -p \"typeof WebSocket\"`, `node -p \"typeof URLPattern\"` tell you in one second what's actually present in *your* runtime — which is exactly how this chapter's timeline is checked against a running Node in its tests.",
+      },
     ],
-    seeAlso: ["modules", "security", "competitors"],
-  }),
+    keyPoints: [
+      "Modern Node is \"batteries included\": fetch, node:test, --watch, WebSocket, --env-file, run-TypeScript, a permission model — many dependencies become deletable.",
+      "Target the Active LTS line for new production — June 2026 that's Node 24 (22 maintenance, 26 current, 18 & 20 EOL). Build on Active LTS; never ship on EOL.",
+      "Node 24 runs .ts directly (type stripping, default on) — but it STRIPS types, it does NOT type-check; keep tsc --noEmit in CI, and note enums/decorators need --experimental-transform-types.",
+      "require(esm) is unflagged since 22.12 — CommonJS can load an ES module synchronously; the CJS/ESM wall is much lower.",
+      "The Permission Model (--permission) is stable since 23.5 — a seat belt at the process boundary, NOT a sandbox (--allow-net still experimental).",
+      "\"Stable\" is per-line: node:sqlite, fs.glob and node:quic/HTTP3 are still experimental — check the stability index before depending on them.",
+      "The cadence changes Oct 2026 (Node 27): one major/year, calendar-year versions, every release LTS — the \"even = LTS\" heuristic stops being true.",
+    ],
+    pitfalls: [
+      {
+        title: "Running production on an end-of-life line",
+        body: "Node 18 (2025) and Node 20 (30 Apr 2026) receive no further security patches; a CVE found after EOL is fixed only for 22+. Staying on EOL is a self-inflicted security decision, not a version preference.",
+      },
+      {
+        title: "Assuming `node app.ts` type-checks your code",
+        body: "Type stripping erases annotations and runs the JS underneath — it never checks them, so a type error won't stop the program. Type-checking is a separate step (tsc --noEmit in CI). Stripping also won't emit enums/namespaces/decorators without --experimental-transform-types.",
+      },
+      {
+        title: "Treating an experimental built-in as production-ready",
+        body: "node:sqlite, fs.glob and HTTP3 can change between minors and emit ExperimentalWarning. The experimental tag is a real signal; if you adopt one, isolate it behind an adapter so you can swap it without a rewrite.",
+      },
+      {
+        title: "Hard-coding the 'even majors are LTS' rule",
+        body: "True through Node 26, but from Node 27 (Oct 2026) every line is LTS and version numbers track the year. Reason from the published support table, not the parity of the major number.",
+      },
+      {
+        title: "Confusing 'in the docs' with 'in my runtime'",
+        body: "nodejs.org shows the newest line; a feature 'added in v24' is not in your v22 deployment. Check the 'added in' note and process.versions / a quick `node -p` before relying on it.",
+      },
+    ],
+    interview: [
+      {
+        q: "Which Node version should a new service target in 2026, and why?",
+        a: "The Active LTS line — Node 24 in mid-2026. It gets fixes and a support window into ~2028, with stability appropriate for production. Avoid Current (26) for prod until it goes LTS in October 2026, and never deploy on EOL (18, 20) — those get no security patches. Match the runtime to the support table, not to the newest number.",
+        level: "senior",
+      },
+      {
+        q: "Node can run TypeScript now — does that replace tsc and your build?",
+        a: "No. Since 24, Node strips type annotations and runs the JS (stable 24.12), which is great for scripts, tools and tests. But it does NOT type-check, and it won't emit enums/namespaces/decorators without --experimental-transform-types — so a decorator-heavy framework like NestJS still needs the compiler. Keep tsc --noEmit for checking and a bundler if you target older runtimes; stripping complements the toolchain, it doesn't replace it.",
+        level: "senior",
+      },
+      {
+        q: "What does require(esm) change, and what are its limits?",
+        a: "Since 22.12 (unflagged), CommonJS can require() an ES module synchronously, which removes a lot of dual-package and interop pain. The limit is the async boundary: if the ESM graph uses top-level await it can't be require()d (require is synchronous) and you get ERR_REQUIRE_ASYNC_MODULE — use import() there. Know that line and most CJS↔ESM friction disappears.",
+        level: "staff",
+      },
+      {
+        q: "Is the Permission Model a sandbox?",
+        a: "No. It's a coarse allow-list at the process boundary — --allow-fs-read, --allow-fs-write, --allow-child-process, --allow-worker — stable since 23.5. It's defense-in-depth that reduces blast radius, not isolation; --allow-net is still experimental, and it won't contain genuinely hostile code the way a container or VM does. Use it as one layer, not the only one.",
+        level: "senior",
+      },
+      {
+        q: "How do you decide whether to adopt a new core built-in (say node:sqlite) over an npm package?",
+        a: "Check the stability index for YOUR LTS line first. If it's stable there, the in-core option usually wins — one fewer dependency, no supply-chain surface, maintained with the runtime. If it's experimental (node:sqlite, fs.glob today), weigh API-churn risk and ecosystem maturity, and adopt it behind a thin adapter so the exit cost stays low. The decision is stability-and-exit-cost, not novelty.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["modules", "security", "production", "competitors"],
+    sources: [
+      { title: "Node.js — Releases & LTS schedule", url: "https://nodejs.org/en/about/previous-releases" },
+      { title: "Node.js 24.0.0 (Current → LTS)", url: "https://nodejs.org/en/blog/release/v24.0.0" },
+      { title: "Node.js 22 — release announcement", url: "https://nodejs.org/en/blog/announcements/v22-release-announce" },
+      { title: "Node.js 26.0.0 (Current)", url: "https://nodejs.org/en/blog/release/v26.0.0" },
+      { title: "Modules: TypeScript (type stripping)", url: "https://nodejs.org/api/typescript.html" },
+      { title: "Node.js — Permission Model", url: "https://nodejs.org/api/permissions.html" },
+      { title: "Evolving the Node.js Release Schedule", url: "https://nodejs.org/en/blog/announcements/evolving-the-nodejs-release-schedule" },
+    ],
+  },
   stub({
     id: "interview",
     group: "mastery",
@@ -2684,21 +2846,133 @@ process.on('SIGINT',  () => shutdown('SIGINT'));`,
     link: "/mental-models",
     seeAlso: ["event-loop", "concurrency", "v8-gc"],
   }),
-  stub({
+  {
     id: "summary",
     group: "mastery",
     order: 20,
     title: "Summary",
-    tagline: "The whole picture on one page.",
-    readMins: 4,
-    mentalModel: "One thread runs JS; libuv + the OS do the waiting; never block the thread.",
-    keyPoints: [
-      "The single-threaded loop + offloaded I/O is the whole idea.",
-      "Know the diagrams cold: 6 phases, thread-pool-vs-kernel, microtask priority, GC generations, backpressure.",
-      "Strength = I/O concurrency; weakness = CPU on the main thread.",
+    full: "Summary — the whole picture on one page",
+    tagline: "The whole guide compressed into one chain you can redraw from memory.",
+    readMins: 6,
+    mentalModel:
+      "One thread runs JS; the event loop schedules it; the waiting is offloaded below it; never block the thread. Everything else is a consequence.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Twenty chapters reduce to **one sentence**, and the sentence draws as one chain. This page is the whole guide compressed — if you can reconstruct the rest *from* it, you've internalized Node. So start here, and end here.",
+      },
+      { kind: "figure", fig: "whole-picture", caption: "From one fact — a single thread runs your JS — every other lesson follows in order. V8 and the GC sit underneath, on that same thread." },
+      {
+        kind: "prose",
+        md: "Read the chain left to right and every chapter becomes a clause in one sentence. **[One thread runs your JS](#/chapter/event-loop)** — the event loop, six phases, microtasks draining between them. Because it's one thread, **[never block it](#/chapter/weaknesses)**: a synchronous CPU burst or a `*Sync` call freezes *every* connection at once. So **[offload the waiting](#/chapter/concurrency)** — file, crypto and `dns.lookup` work goes to libuv's small **thread pool**, while sockets are watched by the **OS kernel** with no thread held. For data too big to hold in memory, **[stream it with backpressure](#/chapter/streams)** rather than buffering. Underneath, **[V8 runs the code and the GC reclaims memory](#/chapter/v8-gc)** on that *same* thread — so a GC pause or [event-loop lag](#/chapter/performance) is everyone's latency. And because the process is mortal, **[fail safe in production](#/chapter/production)**: drain on `SIGTERM`, run one loop per core, watch the lag. That is the whole guide.",
+      },
+      {
+        kind: "table",
+        caption: "Six pictures regenerate the rest. If you can draw each from memory, you have the guide. Practice them in the Mental-models gallery.",
+        head: ["The picture", "The one line"],
+        rows: [
+          ["Six event-loop phases", "timers → pending → poll → check → close; microtasks (nextTick, then Promise) drain between every callback"],
+          ["Micro vs macro order", "sync → nextTick → Promise → timers/immediate; a resolved await continuation is a microtask"],
+          ["Thread pool vs kernel", "fs / crypto / zlib / dns.lookup → 4-thread pool; sockets → OS notifier, threadless"],
+          ["GC generations", "young space scavenged fast; survivors promoted; old space mark-sweep-compact (mostly concurrent)"],
+          ["Backpressure", "write() === false past highWaterMark → pause → 'drain'; pipeline() wires it for you"],
+          ["Architecture layers", "your JS → core JS API → C++ bindings → { V8, libuv, C libs } → OS"],
+        ],
+      },
+      {
+        kind: "compare",
+        a: "Plays to its strength",
+        b: "Fights its design",
+        rows: [
+          ["Workload", "I/O-bound, high concurrency", "CPU-bound number crunching"],
+          ["Connections", "thousands of mostly-idle sockets", "heavy compute per request"],
+          ["Best at", "APIs, gateways, glue, real-time, streaming", "transcoding, ML training, big matrix math"],
+          ["Big data", "stream it through", "load it all into memory"],
+          ["When CPU is needed", "worker_threads / a separate service", "blocking the main loop"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "The distillation — what generates the right answer",
+        md: "Hold three sentences and most Node questions answer themselves. **(1)** JavaScript is single-threaded; the event loop (libuv) schedules it; I/O is offloaded below it. **(2)** Anything that blocks that one thread — sync CPU, `*Sync` calls, unbounded buffering — hurts *every* request, so push CPU to workers and bound memory with streams. **(3)** Errors, versions and shutdown are part of the design, not afterthoughts — fail fast, run a maintained LTS, drain on `SIGTERM`. Everything else is detail hanging off these three.",
+      },
+      {
+        kind: "prose",
+        md: "The guide is four movements. **[Foundations](#/chapter/what-is-node)** builds the mental model — what Node is, where it shines and struggles, and how the [layers](#/chapter/architecture) fit. **The runtime core** is the heart — [event loop](#/chapter/event-loop), [async](#/chapter/async-model), [V8 & GC](#/chapter/v8-gc), [concurrency](#/chapter/concurrency), [streams](#/chapter/streams), [modules](#/chapter/modules). **Building real systems** turns it into services — [errors](#/chapter/errors), [HTTP](#/chapter/http), [performance](#/chapter/performance), [security](#/chapter/security), [production](#/chapter/production). And **Mastery** is fluency — [modern Node](#/chapter/modern-node), the [interview bank](#/interview), and the [mental-models gallery](#/mental-models).",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "Turn reading into recall",
+        md: "Understanding these pages isn't the same as *producing* them under pressure. Three tools here close that gap: the **[Mental-models gallery](#/mental-models)** (read the prompt, draw the diagram, then reveal), the **[Flashcards](#/flashcards)** (active recall over the key points), and the **[Interview bank](#/interview)** (senior/staff questions, filterable by topic and level). Space the practice over days, not hours — recall, not re-reading, is what makes the picture automatic.",
+      },
+      {
+        kind: "prose",
+        md: "The surprising thing about Node is how *small* the core model is: one thread, an event loop, the waiting offloaded below it, memory managed on the same thread. Mastery isn't more facts — it's **fluency** with that one model, until you can trace any program, predict any ordering, and design any service straight from it. You now have the whole picture. Go [draw it from memory](#/mental-models).",
+      },
     ],
-    seeAlso: ["event-loop", "what-is-node", "mental-models"],
-  }),
+    keyPoints: [
+      "One sentence holds the guide: one thread runs your JS, the event loop schedules it, the waiting is offloaded below — never block the thread.",
+      "Don't-block-the-loop is the master rule: sync CPU and *Sync calls freeze every connection; push CPU to worker_threads, bound memory with streams.",
+      "Know six pictures cold: event-loop phases, micro/macro order, pool-vs-kernel, GC generations, backpressure, architecture layers.",
+      "Node's sweet spot is I/O-bound high concurrency; its weakness is CPU-bound work on the main thread.",
+      "Errors and shutdown are design, not afterthoughts: handle the four async error channels, fail fast on programmer bugs, drain on SIGTERM.",
+      "The runtime is a dependency: build on the Active LTS line (Node 24 in 2026) and delete packages the standard library now covers.",
+      "Mastery = fluency with the model: practice recall (mental models, flashcards, interview bank) until tracing, predicting and designing are automatic.",
+    ],
+    pitfalls: [
+      {
+        title: "Blocking the event loop",
+        body: "The single most common production failure: one slow synchronous path — a CPU burst, a *Sync call, a catastrophic-backtracking regex — stalls every in-flight request, because they all share one thread. If it can block, move it off the loop.",
+      },
+      {
+        title: "Assuming all async uses the thread pool",
+        body: "Network I/O is threadless — the OS kernel watches sockets — while only fs, crypto, zlib and dns.lookup use libuv's pool of 4. Mixing these up produces wrong capacity plans and phantom 'slow' diagnoses.",
+      },
+      {
+        title: "Ignoring backpressure",
+        body: "Piping a fast source into a slow sink without honoring write() === false (or using pipeline()) lets the buffer grow unbounded until the process OOMs. Bounded memory is a design choice, not a default.",
+      },
+      {
+        title: "Swallowing async errors",
+        body: "try/catch is a synchronous tool; a floating promise rejection, an ignored err-first callback, or an unlistened EventEmitter 'error' fails silently or crashes later. Each async channel needs its own handling.",
+      },
+      {
+        title: "Shipping on an EOL or experimental footing",
+        body: "Running an end-of-life line (no security patches) or leaning on an experimental API as a load-bearing dependency is self-inflicted risk. Build on the Active LTS line; isolate anything experimental behind an adapter.",
+      },
+    ],
+    interview: [
+      {
+        q: "Explain Node.js in 60 seconds, from first principles.",
+        a: "Node is a JavaScript runtime built on V8 and libuv. Your JS runs on a single thread driven by an event loop; anything that waits — file, network, timers — is offloaded below that thread (to libuv's pool or the OS kernel) and its callback is queued back when ready. That's why Node excels at I/O-bound, high-concurrency work (thousands of sockets on one thread) and struggles with CPU-bound work (which blocks the one thread). The consequences — don't block the loop, stream big data, push CPU to workers, fail safe on shutdown — all fall out of that single fact.",
+        level: "senior",
+      },
+      {
+        q: "What's the single most important rule, and name three consequences.",
+        a: "Don't block the event loop. Consequences: (1) push CPU-bound work to worker_threads or a separate service, because one busy thread stalls everyone; (2) bound memory with streams and backpressure instead of buffering, so a fast producer can't OOM you; (3) keep handlers asynchronous and non-blocking, and measure event-loop lag so you can see when you're violating the rule. Almost every Node performance problem is a form of blocking the loop.",
+        level: "staff",
+      },
+      {
+        q: "Trace the causal chain from 'one thread' to 'graceful shutdown'.",
+        a: "One thread runs your JS → so you must never block it → so the waiting is offloaded (pool for fs/crypto/dns.lookup, kernel for sockets) → so large data is streamed with backpressure rather than buffered → V8 and the GC work on that same thread, so pauses and lag are shared latency → and because the process is mortal and stateless-per-instance, production means draining in-flight work on SIGTERM, one loop per core, with the lag observed. Each link forces the next.",
+        level: "staff",
+      },
+      {
+        q: "If you could keep only a handful of diagrams, which, and why?",
+        a: "The six event-loop phases, micro-vs-macro ordering, thread-pool-vs-kernel, GC generations, backpressure, and the architecture layers. They're the load-bearing pictures: from them you can reconstruct execution order, capacity behavior, memory dynamics and where every API lives. Memorizing facts is brittle; holding these diagrams lets you re-derive the facts on demand.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["event-loop", "what-is-node", "mental-models", "modern-node"],
+    sources: [
+      { title: "Node.js — About", url: "https://nodejs.org/en/about" },
+      { title: "Node.js — Don't block the event loop", url: "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop" },
+      { title: "libuv — Design overview", url: "https://docs.libuv.org/en/v1.x/design.html" },
+      { title: "Node.js — process signal events (SIGTERM)", url: "https://nodejs.org/api/process.html#signal-events" },
+    ],
+  },
 ];
 
 export const CHAPTER_BY_ID: Record<string, Chapter> = Object.fromEntries(
