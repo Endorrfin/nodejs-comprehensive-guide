@@ -17,6 +17,8 @@ const routes = [
   "#/chapter/async-model",
   "#/chapter/v8-gc",
   "#/chapter/concurrency",
+  "#/chapter/streams",
+  "#/chapter/modules",
   "#/chapter/summary",
   "#/interview",
   "#/mental-models",
@@ -88,6 +90,37 @@ for (const must of [
   const has = cc.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} concurrency contains "${must}"`);
+}
+
+// streams (S4): backpressure prose + the pipeline figure + the backpressure sim
+const st = render("#/chapter/streams");
+for (const must of [
+  "highWaterMark",
+  "Backpressure simulator",
+  "Respect backpressure",
+  "pipeline",
+  "Readable",
+  "Writable",
+  "drain",
+]) {
+  const has = st.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} streams contains "${must}"`);
+}
+
+// modules (S4): CJS vs ESM tables + the resolver sim + the modules quiz
+const md = render("#/chapter/modules");
+for (const must of [
+  "CommonJS",
+  "ES Modules",
+  "Module resolver simulator",
+  "require.cache",
+  "live",
+  "Predict the output",
+]) {
+  const has = md.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} modules contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");

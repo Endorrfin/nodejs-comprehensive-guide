@@ -19,7 +19,7 @@ QA.txt
 .idea/
 .vscode/
 
-# dev/test artifacts
+# dev/test artifacts (scratch build/SSR output dirs are all prefixed with _)
 scripts/ssr/
-scripts/_prev/
+scripts/_*
 preview-*.html

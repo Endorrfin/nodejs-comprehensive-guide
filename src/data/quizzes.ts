@@ -176,3 +176,74 @@ fs.readFile(__filename, () => {
       "The callback's synchronous body logs 'read cb' first. After the callback returns, microtasks drain before the loop advances — nextTick before the Promise queue — so 'nextTick' then 'promise'. Only then does the loop reach the check phase: 'immediate'. The microtask-before-macrotask rule applies after every callback, including those on the pool's I/O path.",
   },
 ];
+
+/* Modules quiz — CJS vs ESM cache, live bindings and circular loads. Every
+   output was captured from real Node 22 (scripts/node-truth-modules.mjs and the
+   live-binding / circular checks recorded there). */
+export const modulesQuiz: QuizQuestion[] = [
+  {
+    id: "mq-1",
+    level: "senior",
+    prompt: "CommonJS. app.js is the entry; left.js and right.js each require('./base').",
+    code: `// base.js
+console.log('base'); module.exports = 42;
+// left.js
+require('./base'); console.log('left');
+// right.js
+require('./base'); console.log('right');
+// app.js (entry)
+require('./left'); require('./right'); console.log('app');`,
+    choices: [
+      ["base", "left", "right", "app"],
+      ["base", "left", "base", "right", "app"],
+      ["left", "right", "app", "base"],
+      ["base", "base", "left", "right", "app"],
+    ],
+    correct: 0,
+    explain:
+      "require() is synchronous and depth-first, and the require.cache means a module body runs at most once. app requires left → left requires base (runs 'base', caches it) → 'left'. app then requires right → base is a CACHE HIT (no re-run) → 'right'. Finally 'app'. The shared base prints once, not twice.",
+  },
+  {
+    id: "mq-2",
+    level: "staff",
+    prompt: "ES modules. counter.mjs exports a mutable binding and a mutator.",
+    code: `// counter.mjs
+export let n = 0;
+export function inc() { n++; }
+// main.mjs (entry)
+import { n, inc } from './counter.mjs';
+console.log(n);
+inc();
+console.log(n);`,
+    choices: [
+      ["0", "1"],
+      ["0", "0"],
+      ["1", "1"],
+      ["undefined", "1"],
+    ],
+    correct: 0,
+    explain:
+      "ESM imports are LIVE read-only bindings to the exporter's variable, not value copies. After inc() mutates n inside counter.mjs, the imported n reflects it: 0 then 1. The classic contrast: CommonJS const { n } = require('./counter') copies the number 0, so it would print 0 then 0. (Verified on Node 22.)",
+  },
+  {
+    id: "mq-3",
+    level: "staff",
+    prompt: "CommonJS circular dependency. a.js is the entry.",
+    code: `// a.js (entry)
+const b = require('./b');      // runs b.js now
+exports.hi = () => 'hi';
+console.log('b.early =', b.early);
+// b.js
+const a = require('./a');      // a is only half-evaluated here
+exports.early = typeof a.hi;   // read at load time`,
+    choices: [
+      ["b.early = undefined"],
+      ["b.early = function"],
+      ["b.early = hi"],
+      ["(throws: Maximum call stack exceeded)"],
+    ],
+    correct: 0,
+    explain:
+      "When a requires b, b runs immediately and requires a back — but a hasn't reached `exports.hi = …` yet, so a's exports are PARTIAL. b reads typeof a.hi === 'undefined' (Node even warns about accessing a non-existent property in a circular dependency). In ESM the function binding is hoisted and live, so the same shape would read 'function' — ESM handles circular references more gracefully.",
+  },
+];

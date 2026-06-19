@@ -899,40 +899,389 @@ parentPort.postMessage(hash);       // send the result home`,
       { title: "Node.js — DNS implementation considerations (lookup vs resolve)", url: "https://nodejs.org/api/dns.html#implementation-considerations" },
     ],
   },
-  stub({
+  {
     id: "streams",
     group: "runtime",
     order: 10,
     title: "Streams & Buffers",
     full: "Streams, Buffers & backpressure",
-    tagline: "Process data in chunks; backpressure keeps memory bounded.",
-    readMins: 10,
+    tagline: "Process data in chunks; backpressure keeps memory bounded no matter the size.",
+    readMins: 12,
     mentalModel:
-      "Producer faster than consumer → the buffer fills → write() returns false → pause until the 'drain' event.",
-    keyPoints: [
-      "Four stream types: Readable, Writable, Duplex, Transform.",
-      "Backpressure: write() returns false past highWaterMark; wait for 'drain' before writing more.",
-      "pipeline() propagates backpressure AND cleans up on error (prefer it over pipe()).",
-      "Default highWaterMark is 64 KiB for byte streams in modern Node.",
+      "A stream moves data in chunks, not all at once. When a fast producer outruns a slow consumer the buffer fills to highWaterMark, write() returns false, and a backpressure-aware producer pauses until 'drain' — so memory stays bounded whether the source is 1 MB or 1 TB.",
+    sections: [
+      {
+        kind: "prose",
+        md: "A stream is how Node processes data that is **too big, or arrives too gradually, to hold all at once**. Instead of loading a whole file into memory and then writing it, a stream moves it in **chunks** — read a piece, handle it, release it, repeat. Two payoffs follow: **bounded memory** (you hold one chunk, not the whole 4 GB file) and **composability** (pipe a source through a gzip transform into a socket). This isn't a niche API — it *is* Node's I/O: an HTTP request is a Readable, the response is a Writable, TCP sockets are Duplex, `fs` and `zlib` and `crypto` all expose streams.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `const fs = require('node:fs');
+
+// ❌ Buffers the ENTIRE file into RAM before sending — a 4 GB file needs 4 GB.
+const data = fs.readFileSync('big.log');
+res.end(data);
+
+// ✅ Streams it in ~64 KiB chunks — constant memory, starts sending immediately.
+fs.createReadStream('big.log').pipe(res);`,
+        note: "Same result, completely different memory profile. readFile's peak memory grows with the file; the stream's peak memory is ~one highWaterMark, regardless of file size.",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Buffers are the cargo; streams are the conveyor belt",
+        md: "A **`Buffer`** is a fixed-length chunk of **raw bytes allocated outside the V8 heap** (so big binary payloads don't pressure GC). Streams are the machinery that moves Buffers (or strings, or — in **objectMode** — arbitrary JS values) from a source to a sink. Don't confuse the two: the Buffer is *what* flows; the stream is *how* it flows, one chunk at a time.",
+      },
+      {
+        kind: "table",
+        caption: "The four stream types.",
+        head: ["Type", "Direction", "You call / handle", "Example"],
+        rows: [
+          ["Readable", "source (read from)", "for await…of · .on('data') · .read()", "fs.createReadStream, req"],
+          ["Writable", "sink (write to)", ".write(chunk) · .end()", "fs.createWriteStream, res"],
+          ["Duplex", "both, independent sides", "read AND write", "net.Socket"],
+          ["Transform", "Duplex: output = f(input)", "pipe data through it", "zlib.createGzip, crypto Hash"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "Now the part interviews probe: what happens when the **producer is faster than the consumer**? Downloading at 100 MB/s but writing to a slow disk at 10 MB/s — where do the other 90 MB/s *go*? They pile up in the writable's internal **buffer**. If nothing pushes back, that buffer grows without bound until the process runs out of memory. The mechanism that prevents this is **backpressure**.",
+      },
+      { kind: "figure", fig: "stream-pipeline", caption: "Data flows forward in chunks; backpressure flows backward — a full sink makes write() return false, pausing the source. pipeline() wires both directions and cleans up on error." },
+      {
+        kind: "prose",
+        md: "Every writable has a **`highWaterMark`** — a soft buffer-size limit (default **64 KiB / 65536 bytes** for byte streams, **16** for objectMode, verified on Node 22). Each `write(chunk)` returns a **boolean**: `true` while the buffer is below the mark, and **`false`** the moment a write brings the buffered amount to or past it. That `false` is the stream saying *\"I'm full — stop.\"* A well-behaved producer **stops writing** and waits for the **`'drain'`** event, which fires once the buffer has emptied below the mark. Crucially, `false` is only **advisory**: further writes are still accepted and queued — so a producer that ignores it grows the buffer without limit.",
+      },
+      {
+        kind: "prose",
+        md: "Toggle between **respecting** and **ignoring** backpressure below, and resize the `highWaterMark`. Watch the buffer (memory): respecting it pins the buffer just under the mark; ignoring it lets the whole backlog pile up.",
+      },
+      { kind: "sim", sim: "backpressure" },
+      {
+        kind: "prose",
+        md: "Doing that `write()`/`'drain'` dance by hand is tedious and easy to get wrong — so you almost never should. **`pipe()`** forwards both data and backpressure for you; **`pipeline()`** does the same **and destroys every stream on error or completion**, giving you one error path and no leaked file descriptors. Reach for `pipeline` (its promise form lives in `node:stream/promises`).",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `const { createReadStream, createWriteStream } = require('node:fs');
+const { createGzip } = require('node:zlib');
+const { pipeline } = require('node:stream/promises');
+
+// Gzip a huge file with BOUNDED memory — backpressure AND cleanup handled.
+await pipeline(
+  createReadStream('big.log'),       // Readable  (source)
+  createGzip(),                      // Transform (gzip)
+  createWriteStream('big.log.gz'),   // Writable  (sink)
+);
+// One await, one error path. No 'drain' bookkeeping, no leaked fds.`,
+        note: "stream/promises.pipeline rejects on ANY stream's error and destroys all of them — the cleanup .pipe() never did. This is the production default.",
+      },
+      {
+        kind: "compare",
+        a: ".pipe(dest)",
+        b: "pipeline(...streams)",
+        rows: [
+          ["Backpressure", "forwarded for you", "forwarded for you"],
+          ["On error", "does NOT destroy the chain — leaks fds/sockets", "destroys every stream, single error path"],
+          ["Completion", "no unified 'done' signal", "callback fires / promise resolves when finished"],
+          ["Use it", "throwaway scripts where you manage lifecycle", "production — essentially always"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "The classic stream OOM",
+        md: "Two ways teams blow up memory with streams: (1) a **`'data'` handler that writes to a slower sink and ignores the `false` return** — the producer never pauses, the buffer balloons; (2) **collecting an entire stream into a string or array** (`chunks.push(c)` then `Buffer.concat`) — which throws away the whole point and reintroduces the unbounded memory you used a stream to avoid. If you find yourself accumulating, you probably want `pipeline` into the real sink instead. Also: attach an **`'error'` handler to every stream** — an unhandled stream `'error'` is an uncaught exception that crashes the process.",
+      },
+      {
+        kind: "prose",
+        md: "Modern Node makes streams much friendlier. A Readable is an **async iterable**, so `for await…of` consumes it *with backpressure built in*. **`Readable.from()`** turns any (async) iterable or generator into a stream. And an **async generator** can serve as a Transform inside `pipeline`. Together these let you express a streaming data pipeline as ordinary `for await` loops.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `const { Readable } = require('node:stream');
+const { pipeline } = require('node:stream/promises');
+
+// A Readable straight from an async generator — a million rows, never all in RAM.
+async function* rows() {
+  for (let i = 0; i < 1e6; i++) yield { id: i };
+}
+
+await pipeline(
+  Readable.from(rows()),                 // source
+  async function* (source) {             // a Transform, written as a generator
+    for await (const row of source) {    // for-await consumes WITH backpressure
+      if (row.id % 2 === 0) yield JSON.stringify(row) + '\\n';
+    }
+  },
+  process.stdout,                        // sink
+);`,
+        note: "for await…of pauses the source automatically when the consumer is slow — the async-iterator protocol is backpressure. Readable.from adapts any iterable; an async generator is the simplest Transform you can write.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "highWaterMark is a throughput/memory dial",
+        md: "A **bigger** `highWaterMark` means fewer pause/resume cycles (higher throughput) at the cost of more memory per stream; a **smaller** one bounds memory tighter but pauses more often (you can see this trade in the simulator — bigger mark, fewer `'drain'` events). For pipelines of records, set **`objectMode: true`** and a sensible object `highWaterMark`. Tune only when a profiler points here — the 64 KiB default is right for the vast majority of byte streams.",
+      },
     ],
-    seeAlso: ["event-loop", "http", "performance"],
-  }),
-  stub({
+    keyPoints: [
+      "A stream processes data in chunks → bounded memory + composability; most Node I/O (http, sockets, fs, zlib) IS a stream.",
+      "Four types: Readable (source), Writable (sink), Duplex (both), Transform (output = f(input)).",
+      "A Buffer is fixed-length raw bytes off the V8 heap; streams move Buffers/strings, or arbitrary values in objectMode.",
+      "Backpressure: write() returns false once buffered ≥ highWaterMark; stop and wait for the 'drain' event.",
+      "Default highWaterMark is 64 KiB (65536 bytes) for byte streams, 16 for objectMode.",
+      "pipeline() forwards data AND backpressure and destroys every stream on error — prefer it over pipe().",
+      "for await…of and Readable.from give you backpressure-correct streaming with ordinary loops.",
+    ],
+    pitfalls: [
+      {
+        title: "Ignoring write()'s return value",
+        body: "A 'data' handler (or any producer) that writes to a slower sink and never checks the false return never pauses — the buffer grows until the process OOMs. Respect false + 'drain', or just use pipeline().",
+      },
+      {
+        title: "Using .pipe() in production without cleanup",
+        body: ".pipe() forwards backpressure but does NOT destroy the source/destination when one errors, leaking file descriptors and sockets. Use stream.pipeline (or stream/promises) so every stream is torn down on error.",
+      },
+      {
+        title: "Buffering the whole stream into memory",
+        body: "Collecting chunks into an array/string and Buffer.concat-ing at the end defeats streaming and reintroduces unbounded memory. If you're accumulating, you probably want to pipeline into the real destination instead.",
+      },
+      {
+        title: "Forgetting 'error' handlers",
+        body: "An unhandled 'error' on any stream becomes an uncaught exception that crashes the process. Every stream needs error handling — pipeline() centralizes it into one rejection/callback.",
+      },
+      {
+        title: "Mixing flowing and paused mode",
+        body: "Adding a 'data' listener switches a Readable into flowing mode; also calling .read() or pausing/resuming inconsistently can drop or duplicate chunks. Pick one consumption model — ideally for await…of or pipeline.",
+      },
+    ],
+    interview: [
+      {
+        q: "What is backpressure and how do you respect it?",
+        a: "When a writable's buffered bytes reach highWaterMark, write() returns false — the signal that the consumer can't keep up. A correct producer stops writing and waits for the 'drain' event before continuing; otherwise the buffer grows unbounded and the process can OOM. In practice you let pipe()/pipeline() handle it rather than managing write()/'drain' by hand.",
+        level: "senior",
+      },
+      {
+        q: "Why prefer pipeline() over pipe()?",
+        a: "Both forward data and backpressure, but .pipe() does NOT destroy the streams when one errors, so a mid-stream failure leaks file descriptors/sockets and has no unified completion signal. stream.pipeline() (and its promises form) destroys every stream on error or completion and gives you a single error path — the right default for production.",
+        level: "staff",
+      },
+      {
+        q: "What are the stream types and what is objectMode?",
+        a: "Readable (source), Writable (sink), Duplex (both independent sides, e.g. a TCP socket), Transform (a Duplex whose output is a function of its input, e.g. gzip or a hash). By default streams carry Buffers/strings with a 64 KiB highWaterMark; in objectMode each chunk is an arbitrary JS value and highWaterMark counts objects (default 16).",
+        level: "senior",
+      },
+      {
+        q: "How does an HTTP server use streams, end to end?",
+        a: "The request is a Readable (the body arrives in chunks) and the response is a Writable. Writing a large response respects backpressure to the TCP socket: if the client/network is slow, res.write() returns false and you should pause the source — which pipeline(fileStream, res) does automatically. This is why a single Node process can serve many slow clients without buffering whole responses in memory.",
+        level: "staff",
+      },
+      {
+        q: "How would you process a multi-GB file line by line without loading it?",
+        a: "Stream it: createReadStream piped through a Transform (or readline) and into the sink via pipeline, so only ~one highWaterMark of data is resident at a time. With async generators you can write the transform as a for await…of loop and let Readable.from / pipeline handle backpressure and cleanup.",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["event-loop", "http", "performance", "concurrency"],
+    sources: [
+      { title: "Node.js — Stream", url: "https://nodejs.org/api/stream.html" },
+      { title: "Node.js — Backpressuring in Streams", url: "https://nodejs.org/en/learn/modules/backpressuring-in-streams" },
+      { title: "Node.js — stream.pipeline() and stream/promises", url: "https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-callback" },
+      { title: "Node.js — Buffer", url: "https://nodejs.org/api/buffer.html" },
+    ],
+  },
+  {
     id: "modules",
     group: "runtime",
     order: 11,
     title: "Modules: CJS vs ESM",
-    tagline: "require is sync, cached, value-copied; import is async with live bindings.",
-    readMins: 8,
-    mentalModel: "CJS = synchronous, cached, value copy. ESM = an async graph with live, read-only bindings.",
-    keyPoints: [
-      "CommonJS: require() is synchronous and cached; returns module.exports; __dirname exists.",
-      "ESM: import is asynchronous & statically analyzable; live read-only bindings; uses import.meta.url.",
-      "Modern Node allows require() of ESM; top-level await is ESM-only.",
-      "Interop traps: named exports from CJS, __dirname in ESM, the dual-package hazard.",
+    full: "Module system — CommonJS vs ES Modules",
+    tagline: "require is sync, cached, value-copied; import is an async graph with live bindings.",
+    readMins: 11,
+    mentalModel:
+      "CommonJS runs the dependency graph synchronously, depth-first, caching a value copy of module.exports. ESM parses and links the WHOLE graph first (live, read-only bindings), then evaluates it — which is why import is async, hoisted, statically analyzable, and handles cycles gracefully.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Node has **two** module systems. **CommonJS** (`require` / `module.exports`) is the original, Node-specific system; **ES Modules** (`import` / `export`) is the JavaScript-language standard, shared with browsers. The temptation is to see them as the same idea with different keywords — but the real difference isn't syntax, it's the **loading model**. CommonJS is *synchronous and dynamic*; ESM is an *asynchronous, statically-analyzed graph*. Almost every interop surprise traces back to that one distinction.",
+      },
+      {
+        kind: "table",
+        caption: "The two systems, side by side. The loading model drives everything below it.",
+        head: ["Aspect", "CommonJS — require()", "ES Modules — import"],
+        rows: [
+          ["Loading", "synchronous, depth-first", "async graph: parse → link → evaluate"],
+          ["Exports are", "a value copy of module.exports", "live, read-only bindings"],
+          ["Resolution", "runtime, dynamic strings", "static (hoisted, analyzable) + dynamic import()"],
+          ["Cache key", "require.cache by resolved path", "module map by URL"],
+          ["Top-level await", "not allowed", "allowed"],
+          ["Dir / file", "__dirname, __filename, require, module", "import.meta.url / import.meta.dirname"],
+          ["JSON", "require('./x.json')", "import x from './x.json' with { type: 'json' }"],
+          ["Opt in via", '.cjs  or  "type":"commonjs"', '.mjs  or  "type":"module"'],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**CommonJS** is the simpler mental model: `require(path)` is an ordinary **synchronous function call**. The first time you require a module, Node loads it, **runs its body to completion**, and stores the resulting `module.exports` in **`require.cache`**, keyed by resolved path. Every later `require` of the same path returns that **cached value** without re-running. Because it's synchronous and depth-first, resolution and evaluation **interleave** — a module's body runs the instant it's first required, in the middle of its parent's execution.",
+      },
+      {
+        kind: "prose",
+        md: "**ESM** is a graph processed in **three distinct phases**, none of which is your code running until the last one: **(1) parse / construct** — read every module, statically extract its `import`/`export` statements, and recursively fetch the whole graph; **(2) instantiate / link** — allocate each module's exported names and wire every `import` to the exporter's **live binding** (still no code run); **(3) evaluate** — run module bodies in post-order, once each. Separating *link* from *evaluate* is what gives ESM its superpowers: imports are **hoisted**, the graph is **statically analyzable** (tree-shaking, bundling), `import` can be **asynchronous** (and support top-level `await`), and **circular** references resolve through the pre-wired bindings.",
+      },
+      {
+        kind: "prose",
+        md: "Step the **same diamond graph** (`app` imports `left` and `right`; both import `base`) through each loader below. Watch *when* code runs: CommonJS interleaves resolution and evaluation and hits the cache on the second `base`; ESM finishes parsing and linking the entire graph **before any body evaluates**. Both end with the same post-order `base → left → right → app`, `base` exactly once — the difference is the *timing*.",
+      },
+      { kind: "sim", sim: "module-resolver" },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Live bindings vs a value copy — the difference you can feel",
+        md: "An ESM `import` is a **live, read-only view** of the exporter's variable; a CommonJS `require` hands back a **snapshot copy** of `module.exports` at require-time. So if a module mutates an exported `let` after you import it, **ESM sees the new value; a destructured `require` is frozen at the old one.** This isn't trivia — it changes how shared mutable state and circular dependencies behave.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// counter.mjs — exports a LIVE binding
+export let count = 0;
+export function inc() { count++; }
+
+// main.mjs
+import { count, inc } from './counter.mjs';
+console.log(count);   // 0
+inc();
+console.log(count);   // 1   ← the binding is LIVE — it reflects the mutation
+
+// counter.cjs — the CommonJS shape
+let count = 0;
+module.exports = { count, inc: () => count++ };
+// const { count, inc } = require('./counter.cjs');
+// console.log(count); inc(); console.log(count);   // 0 then 0 — a value COPY`,
+        note: "Verified on Node 22. ESM imports track the exporter's variable; require() gives you a snapshot, and destructuring it copies primitives by value.",
+      },
+      {
+        kind: "compare",
+        a: "require() — CommonJS",
+        b: "import — ES Modules",
+        rows: [
+          ["Timing", "synchronous, runs on the spot", "async; bodies run after the graph links"],
+          ["Binding", "value copy of module.exports", "live, read-only binding"],
+          ["Circular dep", "sees a PARTIAL exports object", "hoisted bindings resolve (graceful)"],
+          ["Dynamic path", "require(variable) — always", "only via import(variable)"],
+          ["Cache", "require.cache by path", "module map by URL"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "The two systems **interoperate**, with rules worth memorizing. `import` of a CommonJS module works: its `module.exports` becomes the **default** export, and Node uses static analysis (`cjs-module-lexer`) to expose **named** exports best-effort. Going the other way, **`require()` of an ES module is now unflagged and stabilized** in current LTS lines — it landed in **Node 22.12** — *unless* the target (or its deps) uses **top-level `await`**, which throws `ERR_REQUIRE_ASYNC_MODULE` because `require` can't be synchronous over an async module. Always prefer the **`node:` prefix** for built-ins (`require('node:fs')`, `import … from 'node:fs'`) so a rogue npm package named `fs` can't shadow core.",
+      },
+      {
+        kind: "table",
+        caption: "Interop quick reference (current LTS).",
+        head: ["You want to load…", "…with require()", "…with import"],
+        rows: [
+          ["a CommonJS module", "✓ returns module.exports", "✓ default = module.exports; named via static analysis"],
+          ["an ES module", "✓ unflagged since 22.12 — throws if it uses top-level await", "✓ native, asynchronous"],
+        ],
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `// ESM-only conveniences
+const res = await fetch(url);        // top-level await — no async wrapper needed
+console.log(import.meta.url);        // the file:// URL of THIS module
+
+// __dirname / __filename do NOT exist in ESM. Modern Node:
+import.meta.dirname;                 // directory of this module (recent LTS)
+import.meta.filename;
+// portable fallback for older lines:
+import { fileURLToPath } from 'node:url';
+const __dirname = fileURLToPath(new URL('.', import.meta.url));`,
+        note: "Top-level await is the feature that makes require(esm) refuse an async module. import.meta.dirname/​filename remove the usual fileURLToPath boilerplate on recent Node.",
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "Two real traps: the dual-package hazard & circular partial exports",
+        md: "**Dual-package hazard:** shipping *both* a CJS and an ESM build means a dependency can get loaded **both** ways, producing **two separate instances** with separate state — two caches, two `EventEmitter`s, failing `instanceof`. Mitigate by keeping state in a single CJS core that the ESM wrapper re-exports, or shipping **ESM-only**. **Circular partial exports (CJS):** in a cycle, `require` returns whatever the other module has assigned **so far** — read a not-yet-defined export and you get `undefined` (Node even warns). ESM avoids this for hoisted declarations because it links bindings before evaluating. Call these in the quiz below.",
+      },
+      {
+        kind: "prose",
+        md: "Now read the queues and the cache and call each output — three places CJS and ESM quietly diverge.",
+      },
+      { kind: "sim", sim: "modules-quiz" },
     ],
-    seeAlso: ["architecture", "modern-node", "async-model"],
-  }),
+    keyPoints: [
+      "Two systems: CommonJS (require/module.exports) and standard ESM (import/export); the real difference is the loading model, not syntax.",
+      "CJS require() is synchronous, depth-first, and cached in require.cache; it returns a value copy of module.exports.",
+      "ESM loads in three phases — parse → link (live bindings) → evaluate — over the whole graph, asynchronously.",
+      "ESM imports are LIVE read-only bindings; a destructured require() is a frozen snapshot copy.",
+      "ESM-only: top-level await, import.meta.url. CJS-only by default: __dirname, __filename, require, module.",
+      "require(esm) is unflagged/stabilized (landed in 22.12); it throws ERR_REQUIRE_ASYNC_MODULE only if the target uses top-level await.",
+      "Circular deps: CJS exposes a partial exports object; ESM resolves hoisted bindings via linking.",
+    ],
+    pitfalls: [
+      {
+        title: "Treating import as require with new syntax",
+        body: "The async graph, the parse/link/evaluate phases, live bindings, top-level await and cycle handling all behave differently. Porting a file by swapping keywords can change ordering and break circular dependencies.",
+      },
+      {
+        title: "Destructuring a CJS require and expecting live updates",
+        body: "const { x } = require('m') copies x's value at require-time. If the module later reassigns x, you won't see it (unlike an ESM live binding). Keep the namespace (const m = require('m'); use m.x) if you need the current value.",
+      },
+      {
+        title: "The dual-package hazard",
+        body: "Publishing both CJS and ESM builds can load a package twice as two instances with split state — failing instanceof, duplicated singletons/caches. Centralize state in one format, or ship ESM-only.",
+      },
+      {
+        title: "Reaching for __dirname / require in ESM",
+        body: "They don't exist in modules. Use import.meta.dirname/import.meta.filename (recent LTS) or fileURLToPath(import.meta.url); use import() for dynamic loading and createRequire if you truly need require.",
+      },
+      {
+        title: "Assuming every CJS named export is importable",
+        body: "Named imports from a CJS module are detected heuristically by cjs-module-lexer and can miss exports built dynamically. If a named import is undefined, import the default and destructure from it.",
+      },
+    ],
+    interview: [
+      {
+        q: "What are the key differences between CommonJS and ES Modules?",
+        a: "CJS require() is synchronous, depth-first and cached, returning a value copy of module.exports; __dirname/require exist. ESM import is an asynchronous, statically-analyzable graph loaded in three phases (parse → link → evaluate) with live read-only bindings, import.meta.url, and top-level await. The loading model — sync/dynamic vs async/static — is the root difference.",
+        level: "senior",
+      },
+      {
+        q: "Live bindings vs value copies — how do CJS and ESM differ on mutation and cycles?",
+        a: "ESM imports are live read-only bindings to the exporter's variables, so they observe later mutations; require() returns a snapshot, and destructuring copies primitives. On circular deps, CJS hands back a partial exports object (you can read undefined for a not-yet-assigned member), while ESM links bindings before evaluation so hoisted declarations resolve — cycles are handled more gracefully.",
+        level: "staff",
+      },
+      {
+        q: "Can you require() an ES module now, and what is the dual-package hazard?",
+        a: "Yes — require(esm) is unflagged and stabilized in current LTS (it landed in 22.12); it throws ERR_REQUIRE_ASYNC_MODULE only if the target uses top-level await. The dual-package hazard is shipping both CJS and ESM builds so a dependency loads both ways as two instances with separate state (split caches/singletons, failing instanceof). Mitigate by centralizing state in one format or shipping ESM-only.",
+        level: "staff",
+      },
+      {
+        q: "Why is import asynchronous, and what are ESM's three phases?",
+        a: "Because resolving the graph may involve async work and the spec separates structure from execution. Phase 1 parse/construct reads modules and finds imports/exports; phase 2 instantiate/link allocates exports and wires live bindings; phase 3 evaluate runs bodies post-order, once each. Doing link before evaluate is what enables hoisting, static analysis/tree-shaking, top-level await, and graceful cycles.",
+        level: "staff",
+      },
+      {
+        q: "How do you get __dirname in an ES module?",
+        a: "It isn't defined. Use import.meta.dirname (and import.meta.filename) on recent Node, or derive it portably with fileURLToPath(new URL('.', import.meta.url)). For dynamic requires use module.createRequire(import.meta.url); for dynamic loading use import().",
+        level: "senior",
+      },
+    ],
+    seeAlso: ["architecture", "modern-node", "async-model", "event-loop"],
+    sources: [
+      { title: "Node.js — Modules: CommonJS modules", url: "https://nodejs.org/api/modules.html" },
+      { title: "Node.js — Modules: ECMAScript modules", url: "https://nodejs.org/api/esm.html" },
+      { title: "Node.js 22.12.0 (LTS) — require(esm) unflagged", url: "https://nodejs.org/en/blog/release/v22.12.0" },
+      { title: "Joyee Cheung — require(esm) in Node.js: from experiment to stability", url: "https://joyeecheung.github.io/blog/2025/12/30/require-esm-in-node-js-from-experiment-to-stability/" },
+      { title: "MDN — JavaScript modules", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules" },
+    ],
+  },
 
   // ----------------------------------------------------------- Building systems
   stub({
