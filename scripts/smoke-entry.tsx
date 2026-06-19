@@ -15,6 +15,7 @@ const routes = [
   "#/map",
   "#/chapter/event-loop",
   "#/chapter/async-model",
+  "#/chapter/v8-gc",
   "#/chapter/concurrency",
   "#/chapter/summary",
   "#/interview",
@@ -56,6 +57,37 @@ for (const must of [
   const has = am.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} async-model contains "${must}"`);
+}
+
+// v8-gc (S3): JIT tiers + the generational-GC figure + the GC sim
+const gc = render("#/chapter/v8-gc");
+for (const must of [
+  "young generation",
+  "old generation",
+  "Scavenge",
+  "Mark-Sweep-Compact",
+  "Maglev",
+  "hidden class",
+  "minor GCs",
+]) {
+  const has = gc.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} v8-gc contains "${must}"`);
+}
+
+// concurrency (S3): the thread-pool-vs-kernel figure + sim + the concurrency quiz
+const cc = render("#/chapter/concurrency");
+for (const must of [
+  "libuv thread pool",
+  "UV_THREADPOOL_SIZE",
+  "worker_threads",
+  "kernel",
+  "dns.lookup",
+  "Predict the output",
+]) {
+  const has = cc.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} concurrency contains "${must}"`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");

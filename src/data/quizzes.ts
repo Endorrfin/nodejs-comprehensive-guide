@@ -114,3 +114,65 @@ console.log('sync');`,
       "one() and two() are invoked first (to build the array), printing 1 and 3 synchronously, then both suspend. 'sync' prints last in the synchronous pass. Microtasks resume in order: 2, 4. Only once both resolve does Promise.all settle, so 'done' prints after. Promise.all runs them concurrently, then joins.",
   },
 ];
+
+/* Concurrency quiz — outputs captured from real Node 22 (CommonJS); the pool and
+   the event loop make some orders GUARANTEED and others not. */
+export const concurrencyQuiz: QuizQuestion[] = [
+  {
+    id: "cq-1",
+    level: "senior",
+    prompt: "Started with UV_THREADPOOL_SIZE=1 (a one-thread pool).",
+    code: `const crypto = require('node:crypto');
+crypto.pbkdf2('p', 'a', 1, 16, 'sha512', () => console.log('A done'));
+crypto.pbkdf2('p', 'b', 1, 16, 'sha512', () => console.log('B done'));
+console.log('submitted');`,
+    choices: [
+      ["submitted", "A done", "B done"],
+      ["A done", "B done", "submitted"],
+      ["submitted", "B done", "A done"],
+      ["A done", "submitted", "B done"],
+    ],
+    correct: 0,
+    explain:
+      "Synchronous code first: 'submitted'. Both pbkdf2 calls are queued to the libuv pool, but with a single thread they run one at a time in submission order (FIFO) — A then B. With the default 4 threads they'd run concurrently and could finish in either order: pool size turns a non-deterministic race into a deterministic queue.",
+  },
+  {
+    id: "cq-2",
+    level: "senior",
+    code: `const fs = require('node:fs');
+console.log('start');                       // sync
+fs.readFile(__filename, () => {             // poll phase
+  setTimeout(() => console.log('timeout'), 0);
+  setImmediate(() => console.log('immediate'));
+});`,
+    choices: [
+      ["start", "immediate", "timeout"],
+      ["start", "timeout", "immediate"],
+      ["immediate", "timeout", "start"],
+      ["start", "timeout"],
+    ],
+    correct: 0,
+    explain:
+      "'start' is synchronous. The readFile callback runs in the poll phase; the very next phase in the same tick is check (setImmediate), so 'immediate' fires before the timer — which must wait for the next tick's timers phase. Inside an I/O callback this order is GUARANTEED (unlike the main module, where setTimeout(0)-vs-setImmediate is a race).",
+  },
+  {
+    id: "cq-3",
+    level: "staff",
+    code: `const fs = require('node:fs');
+fs.readFile(__filename, () => {
+  setImmediate(() => console.log('immediate'));
+  Promise.resolve().then(() => console.log('promise'));
+  process.nextTick(() => console.log('nextTick'));
+  console.log('read cb');
+});`,
+    choices: [
+      ["read cb", "nextTick", "promise", "immediate"],
+      ["read cb", "immediate", "nextTick", "promise"],
+      ["nextTick", "promise", "read cb", "immediate"],
+      ["read cb", "promise", "nextTick", "immediate"],
+    ],
+    correct: 0,
+    explain:
+      "The callback's synchronous body logs 'read cb' first. After the callback returns, microtasks drain before the loop advances — nextTick before the Promise queue — so 'nextTick' then 'promise'. Only then does the loop reach the check phase: 'immediate'. The microtask-before-macrotask rule applies after every callback, including those on the pool's I/O path.",
+  },
+];
