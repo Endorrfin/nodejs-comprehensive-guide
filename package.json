@@ -9,7 +9,7 @@
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts"
+    "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts && node --experimental-strip-types scripts/test-performance.ts && node --experimental-strip-types scripts/test-security.ts && node --experimental-strip-types scripts/test-production.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

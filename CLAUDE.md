@@ -401,4 +401,54 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   suites ALL PASS** · SSR smoke **17 routes** + errors/http content OK. (Scratch `scripts/_s6dist`,
   `scripts/_ssr_s6` gitignored via `scripts/_*`; sandbox can't `unlink`, delete locally.)
   **Next: S7 — Ch.14 Performance & profiling; Ch.15 Security & supply chain; Ch.16 Production patterns (+ graceful-shutdown sim). (web-search current tooling/CVEs.)**
+- **2026-06-19 · S7 Real systems B** — DONE. All three remaining `systems` stub chapters built to the
+  golden standard, each with a verified interactive (truth-first as always); user chose the "all 3 +
+  ~3 interactives" scope.
+  • **Ch.14 Performance & profiling** — measure-don't-guess; CPU-bound-vs-I/O-bound split; **event-loop
+    lag as the pulse** (`perf_hooks.monitorEventLoopDelay` ns histogram + `eventLoopUtilization`); **Event-loop
+    lag HERO sim** (`eloop-lag`: workload tabs + on-loop-CPU slider — once CPU/request exceeds the arrival
+    gap a queue forms ON the loop, p99 explodes, ELU→100%); **`FlameGraph` figure** (width = CPU samples,
+    widest tower = hot path); tool table (`--cpu-prof`/`--prof`/0x/Clinic/autocannon); optimization menu
+    (cache → worker_threads → stream → cut allocations → micro-opt); lag+ELU metric code; CPU-vs-I/O compare;
+    profiling-pitfalls callout; 7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  • **Ch.15 Security & supply chain** — "Node trusts any code it runs" → transitive tree IS the attack
+    surface (`SupplyChainTrust` figure); 2025–26 wave (Shai-Hulud, debug/chalk, Axios); **Supply-chain
+    defense sim** (`supply-chain`: 6 defenses × 5 real attack classes → blocked/contained/exposed; no single
+    control suffices); **provenance proves origin-not-intent** senior callout (wave-4 attested malware);
+    **Permission Model** (stable since 23.5: `--permission`; gates fs/child_process/worker/addons/wasi;
+    `process.permission.has`; **a seat belt, NOT a sandbox**; **`--allow-net` still experimental**) + least-priv
+    code + stable-flags table; app-hardening prose (input/ReDoS, eval, headers, secrets, OpenSSL); patch-fast
+    callout; 7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  • **Ch.16 Production patterns** — the SIGTERM contract (fail readiness → stop intake → drain → close →
+    exit0); `ShutdownSequence` figure (k8s lane + process lane + force-exit backstop); **Graceful-shutdown
+    HERO sim** (`graceful-shutdown`: graceful **drains 0 dropped / exit 0** vs abrupt **drops all 3 → 502s**;
+    live in-flight/dropped/exit-code meters); the k8s **endpoint-removal race** senior callout (fail readiness
+    + preStop sleep); correct handler code (`closeIdleConnections()` + `server.close` + force timer); scaling
+    (≈1 loop/core, cluster/replicas, stateless) + supervisor table; observability (liveness≠readiness, RED,
+    AsyncLocalStorage req-id, lag gauge); serverless (cold start, init-outside-handler, pool caps); graceful-vs-abrupt
+    compare; 7 key points, 5 pitfalls, 5 interview Q&A, verified sources.
+  **Three new truth-anchored engines (truth-first):** `eventLoopLagEngine.ts` (single-server FIFO CPU queue:
+  CPU < arrival-gap ⇒ lag 0 & flat p99; CPU > gap ⇒ unbounded lag, p99≫p50, ELU 100%) — invariants +
+  **live** `monitorEventLoopDelay`/ELU anchor in `scripts/test-performance.ts` (idle max ~12 ms vs blocked
+  ~62 ms; ELU idle 0.006 vs busy 1.0, captured in `node-truth-performance.mjs`). `supplyChainEngine.ts`
+  (defense×attack matrix: ignore-scripts blocks the worm, cooldown blocks hijacked-popular+attested-malware,
+  **provenance does NOT block attested malware**, audit blocks known-CVE, all-on ⇒ 0 exposed) — invariants +
+  **live Permission-Model anchor** in `scripts/test-security.ts` (stable `--allow-*` set = {fs-read,fs-write,
+  child-process,worker,addons,wasi}; **no `--allow-net`**; granting fs.read grants only fs.read — captured in
+  `node-truth-security.mjs`; openssl 3.5.6). `shutdownEngine.ts` (graceful drains 0/exit0 vs abrupt drops
+  all/exit≠0; in-flight monotonically drained) — invariants + **live** `server.close()` drains-an-in-flight-
+  request-before-its-callback + `closeIdleConnections`/`closeAllConnections` exist, in `scripts/test-production.ts`
+  (`node-truth-shutdown.mjs`). Sims `EventLoopLagSim`+`SupplyChainSim`+`GracefulShutdownSim` (+css) and figures
+  `FlameGraph`/`SupplyChainTrust`/`ShutdownSequence` registered in `lib/registry.tsx`; **+6 interview-bank entries**
+  (2 Performance, 2 Security, 2 Production) in `data/interview.ts`; smoke-entry extended to the 3 new routes +
+  content assertions. **`npm test` now runs 13 engine suites.**
+  **Web-verified mid-2026:** Permission Model **stable since Node 23.5** (`--permission`); **`--allow-net`
+  experimental**; `perf_hooks.monitorEventLoopDelay`/ELU; Clinic.js/0x/`--cpu-prof`; npm supply-chain wave
+  (Shai-Hulud/debug-chalk/Axios), provenance/Trusted Publishing, **pnpm `minimumReleaseAge` (default 1 day in
+  pnpm 11)**; k8s pod-termination (endpoint removal async, default grace 30 s); Node security releases (Jan &
+  Mar 2026, lines 20/22/24/25). **Verified:** `tsc` clean · `vite build` OK (JS ≈179 kB gzip, relative
+  `./assets`) · **all 13 engine suites ALL PASS** · SSR smoke **20 routes** + performance/security/production
+  content OK. (Scratch `scripts/_s7dist`, `scripts/_ssr_s7` gitignored via `scripts/_*`; sandbox can't `unlink`,
+  delete locally.)
+  **Next: S8 — Mastery + polish: Ch.17 Modern Node (2026, web-search versions); Ch.18 Interview bank (grow to 40 Q); Ch.19 Mental-models gallery; Ch.20 Summary; global search, flashcards, mobile/a11y/perf pass.**
 - *(Update this log at the end of every session/block — per user request.)*

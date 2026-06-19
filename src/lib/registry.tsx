@@ -10,6 +10,9 @@ import { ThroughputSim } from "../components/sims/ThroughputSim";
 import { RuntimePicker } from "../components/sims/RuntimePicker";
 import { ErrorPropagationSim } from "../components/sims/ErrorPropagationSim";
 import { HttpLifecycleSim } from "../components/sims/HttpLifecycleSim";
+import { EventLoopLagSim } from "../components/sims/EventLoopLagSim";
+import { SupplyChainSim } from "../components/sims/SupplyChainSim";
+import { GracefulShutdownSim } from "../components/sims/GracefulShutdownSim";
 import { EventLoopRing } from "../components/figures/EventLoopRing";
 import { AwaitTimeline } from "../components/figures/AwaitTimeline";
 import { GcHeap } from "../components/figures/GcHeap";
@@ -23,6 +26,9 @@ import { BlockingLoop } from "../components/figures/BlockingLoop";
 import { ErrorTaxonomy } from "../components/figures/ErrorTaxonomy";
 import { KeepAlivePool } from "../components/figures/KeepAlivePool";
 import { TimeoutTriad } from "../components/figures/TimeoutTriad";
+import { FlameGraph } from "../components/figures/FlameGraph";
+import { SupplyChainTrust } from "../components/figures/SupplyChainTrust";
+import { ShutdownSequence } from "../components/figures/ShutdownSequence";
 import { PredictOutputQuiz } from "../components/study/PredictOutputQuiz";
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../data/quizzes";
 
@@ -67,6 +73,9 @@ export const SIMS: Record<string, React.FC> = {
   "runtime-picker": RuntimePicker,
   "error-propagation": ErrorPropagationSim,
   "http-lifecycle": HttpLifecycleSim,
+  "eloop-lag": EventLoopLagSim,
+  "supply-chain": SupplyChainSim,
+  "graceful-shutdown": GracefulShutdownSim,
 };
 
 /** Static diagrams, referenced by key from concepts.ts sections (kind: 'figure'). */
@@ -84,4 +93,7 @@ export const FIGURES: Record<string, React.FC> = {
   "error-taxonomy": ErrorTaxonomy,
   "keep-alive-pool": KeepAlivePool,
   "timeout-triad": TimeoutTriad,
+  "flame-graph": FlameGraph,
+  "supply-chain-trust": SupplyChainTrust,
+  "shutdown-sequence": ShutdownSequence,
 };

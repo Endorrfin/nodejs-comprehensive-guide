@@ -2162,54 +2162,480 @@ http.get({ host: 'api.internal', agent }, (res) => res.resume());`,
       { title: "Use Keep-Alive by default in global agents (Node 19, PR #43522)", url: "https://github.com/nodejs/node/pull/43522" },
     ],
   },
-  stub({
+  {
     id: "performance",
     group: "systems",
     order: 14,
     title: "Performance & profiling",
-    tagline: "Measure first: flamegraphs, --prof, clinic, and event-loop lag.",
-    readMins: 9,
-    mentalModel: "Find the bottleneck with a profiler; the event-loop-lag meter is your service's pulse.",
-    keyPoints: [
-      "Measure before optimizing: flamegraphs (--prof, clinic, 0x), not guesses.",
-      "Watch event-loop lag — the key health signal for a Node service.",
-      "Avoid sync APIs on the hot path; stream large payloads; cache hot work.",
-      "Diagnose GC pressure & leaks with heap snapshots and retained-size analysis.",
+    full: "Performance & profiling — measure first, flamegraphs, and event-loop lag",
+    tagline: "Measure, don't guess: event-loop lag is the pulse, a flamegraph names the hot path.",
+    readMins: 11,
+    mentalModel:
+      "Event-loop lag is your service's pulse; a flamegraph names the hot path. Find the widest frame, move it off the loop, and re-measure — never optimize on a hunch.",
+    sections: [
+      {
+        kind: "prose",
+        md: "**Measure, don't guess.** Performance intuition is almost always wrong — the slow line is rarely the one you'd bet on. So the discipline is: reproduce the load, profile it, fix the frame the profiler actually points at, then measure again. Before any of that, ask one diagnostic question that splits Node performance in two: is the work happening **on the event-loop thread** (CPU-bound — the loop itself is the bottleneck, the classic Node failure mode from [Weaknesses](#/chapter/weaknesses)), or is the process **waiting** on a database or upstream (I/O-bound — the loop is idle and the latency lives elsewhere)? The two have different tools and different fixes, and the single best signal for telling them apart is **event-loop lag**.",
+      },
+      {
+        kind: "prose",
+        md: "**Event-loop lag: your service's pulse.** Because all your JavaScript shares [one thread](#/chapter/event-loop), any synchronous work delays *every* pending timer and callback. Lag is exactly that gap — how late the loop runs work that was already due. Measure it in-process with `perf_hooks.monitorEventLoopDelay()`, which returns a nanosecond **histogram** (`.mean`, `.max`, `.percentile(99)`), and pair it with **event-loop utilization** (ELU) from `performance.eventLoopUtilization()` — the busy fraction of the loop from 0 to 1. A healthy service keeps p99 lag in single-digit milliseconds and ELU well below 1; rising lag is the *leading* indicator of tail-latency blow-ups, usually visible before users complain.",
+      },
+      {
+        kind: "prose",
+        md: "Watch it happen. Pick a handler shape and dial its **synchronous** CPU cost. While per-request CPU stays under the gap between arrivals, the loop keeps up and lag stays flat. The moment it crosses that line, a queue forms *on the loop itself*: lag and p99 climb without bound while the loop pins at 100% utilization — even though you added no new traffic.",
+      },
+      { kind: "sim", sim: "eloop-lag" },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Lag is the symptom; the profiler finds the cause",
+        md: "`monitorEventLoopDelay()` tells you the loop is blocked and roughly how badly — it does **not** tell you *which function* did it. For that you capture a **CPU profile** and read a **flamegraph**. The metric is your always-on alarm; the profiler is what you reach for once it fires. Don't ship guesses between the two.",
+      },
+      {
+        kind: "prose",
+        md: "**Profilers & flamegraphs.** Reach for built-ins first — they need no dependencies and work in any environment. `node --cpu-prof app.js` writes a `.cpuprofile` (the V8 sampling profiler) you open in Chrome DevTools → Performance; `node --prof` + `node --prof-process` prints a V8 tick summary by function; `--heap-prof` captures allocations; `--inspect` attaches DevTools to a live process. Then the ecosystem: **0x** renders a one-command flamegraph, **Clinic.js** (Doctor diagnoses, Flame finds synchronous bottlenecks, Bubbleprof maps async delays), and **autocannon** generates the load you profile under. A **flamegraph** stacks frames by call depth with each box's width set by its share of CPU samples — so the widest tower is where the CPU goes.",
+      },
+      { kind: "figure", fig: "flame-graph", caption: "A flamegraph reads bottom-up; box width = share of CPU samples. The widest tower (here a huge JSON.parse) is the hot path — the frame to optimize. Narrow frames and GC are minor by comparison." },
+      {
+        kind: "table",
+        caption: "Pick the tool by the question you're asking.",
+        head: ["Tool", "Answers", "Reach for it when"],
+        rows: [
+          ["node --cpu-prof", "where CPU time goes (V8 sampler → .cpuprofile)", "first stop for a CPU spike; open it in Chrome DevTools"],
+          ["--prof / --prof-process", "V8 tick summary by function", "a quick, dependency-free profile anywhere"],
+          ["perf_hooks: monitorEventLoopDelay + ELU", "event-loop lag & utilization over time", "always-on saturation metric in production"],
+          ["0x", "one-command flamegraph", "see the hot path as a flamegraph, fast"],
+          ["Clinic.js (Doctor/Flame/Bubbleprof)", "guided CPU / sync-bottleneck / async diagnosis", "you don't yet know if it's CPU, I/O or the loop"],
+          ["--heap-prof / heap snapshot", "allocations & retained (kept-alive) memory", "leak hunting or GC pressure (see V8 & GC)"],
+          ["autocannon", "throughput & latency under load", "reproduce production load before profiling"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**The optimization menu, in order.** Once the flamegraph names the hot path, work top-down: **(1) don't do the work** — cache or memoize repeated computation; **(2) don't do it on the loop** — move CPU-bound work to [worker_threads](#/chapter/concurrency) and never run `*Sync` file/crypto/zlib calls on the hot path; **(3) stream instead of buffering** large payloads so memory and latency stay flat ([Streams](#/chapter/streams)); **(4) cut allocations** to ease [GC](#/chapter/v8-gc) pressure (fewer short-lived objects, reuse buffers); **(5) only then micro-optimize** the leaf. Re-measure after each step — most wins come from the first two, and steps 4–5 are wasted effort if the real cost was a blocking call.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
+
+const h = monitorEventLoopDelay({ resolution: 20 });
+h.enable();
+
+setInterval(() => {
+  const lagP99Ms = h.percentile(99) / 1e6;                     // ns → ms
+  const elu = performance.eventLoopUtilization().utilization;  // 0..1 busy fraction
+  metrics.gauge('eventloop.lag.p99', lagP99Ms);
+  metrics.gauge('eventloop.utilization', elu);
+  if (lagP99Ms > 100) log.warn({ lagP99Ms, elu }, 'event loop lagging');
+  h.reset();
+}, 5_000).unref();`,
+        note: "Export event-loop lag (a ns histogram) and ELU (the busy fraction) as gauges. Rising lag/ELU predicts tail latency before users feel it — and .unref() keeps this metric timer from holding the process open at shutdown.",
+      },
+      {
+        kind: "compare",
+        a: "CPU-bound",
+        b: "I/O-bound",
+        rows: [
+          ["Symptom", "high ELU, event-loop lag, p99 climbs", "low ELU, loop idle, latency from DB/upstream"],
+          ["Find it with", "CPU profile / flamegraph (0x, --cpu-prof)", "tracing, DB metrics, async map (Bubbleprof)"],
+          ["Fix", "offload to worker_threads, cache, stream", "parallelize I/O, pool connections, add timeouts/caching"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "How profiling lies to you",
+        md: "Four traps: **(1)** profiling without **representative load** (an idle process has no hot path); **(2)** trusting **dev over prod** — payload sizes, data shapes and JIT warmth all differ, so profile something prod-like; **(3)** **micro-benchmarks** the optimizer outwits — V8 can dead-code-eliminate work whose result you ignore, or report numbers before code reaches steady state; **(4)** optimizing a frame that *looks* heavy but isn't on the **critical path**. Always measure the whole request under load, not a function in isolation.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "The picture to keep",
+        md: "**Lag is the pulse; the flamegraph names the culprit; the fix is usually to get the work off the loop.** Measure under load → read the widest frame → cache it, offload it to a worker, or stream it → measure again. Next: [Security & supply chain](#/chapter/security) to keep it safe, and [Production patterns](#/chapter/production) to run it.",
+      },
     ],
-    seeAlso: ["v8-gc", "event-loop", "concurrency"],
-  }),
-  stub({
+    keyPoints: [
+      "Measure, don't guess: reproduce load, profile, fix the frame the profiler points at, re-measure.",
+      "First question: CPU-bound (loop is the bottleneck) or I/O-bound (loop idle, latency elsewhere)? Different tools, different fixes.",
+      "Event-loop lag (perf_hooks.monitorEventLoopDelay, a ns histogram) + ELU (eventLoopUtilization) are the saturation signals — export them always.",
+      "Built-in profilers first: --cpu-prof (.cpuprofile in DevTools), --prof/--prof-process, --heap-prof, --inspect.",
+      "Flamegraph (0x, Clinic Flame): width = share of CPU samples; the widest tower is the hot path.",
+      "Optimization order: cache it → offload CPU to worker_threads → stream big payloads → cut allocations → micro-optimize.",
+      "Profile under representative load; dev ≠ prod and naive micro-benchmarks get optimized away.",
+    ],
+    pitfalls: [
+      {
+        title: "Optimizing before measuring",
+        body: "Guessing the bottleneck wastes effort on frames that aren't hot. Capture a CPU profile under realistic load and let the widest flamegraph frame, not intuition, decide what to fix.",
+      },
+      {
+        title: "No event-loop-lag metric in production",
+        body: "Without monitorEventLoopDelay/ELU you find out the loop is blocked from user complaints, not a dashboard. Export lag p99 and utilization as first-class metrics and alert on them — they lead tail latency.",
+      },
+      {
+        title: "Blocking the loop with sync APIs on the hot path",
+        body: "fs.readFileSync, crypto.pbkdf2Sync, zlib.*Sync, JSON.parse of huge bodies and catastrophic regexes all run on the one thread and spike lag for every concurrent request. Use the async variants or move the work to a worker_thread.",
+      },
+      {
+        title: "Profiling in the wrong environment",
+        body: "A profile on dev data with a warm-but-tiny dataset rarely matches production. Profile against prod-like payloads and concurrency (autocannon), ideally a canary, or you'll optimize the wrong path.",
+      },
+      {
+        title: "Trusting micro-benchmarks",
+        body: "V8 can eliminate work whose result is unused and JIT behavior changes as code warms up, so isolated micro-benchmarks mislead. Benchmark whole requests under sustained load and compare p50/p99, not a single function call.",
+      },
+    ],
+    interview: [
+      {
+        q: "What is event-loop lag, how do you measure it, and why does it matter?",
+        a: "Event-loop lag is how late the loop runs work that was already scheduled, because it was busy doing something synchronous. Since all your JS shares one thread, any blocking work delays every pending timer and callback, so lag is the cleanest saturation signal for a Node service. You measure it in-process with perf_hooks.monitorEventLoopDelay(), which returns a nanosecond histogram (mean/max/percentile), and pair it with eventLoopUtilization() for the busy fraction. Rising lag predicts tail-latency blow-ups before users feel them, so it belongs on your dashboards and alerts.",
+        level: "senior",
+      },
+      {
+        q: "How do you read a flamegraph, and how would you capture one in Node?",
+        a: "A flamegraph stacks function frames by call depth; each box's width is its share of CPU samples, so you read bottom-up and look for the widest towers — those are where CPU time actually goes (self-time at the leaves). In Node I'd capture a V8 CPU profile with node --cpu-prof (open the .cpuprofile in Chrome DevTools) or use 0x / Clinic Flame for a rendered flamegraph, always under representative load via something like autocannon. Then I optimize the widest frame and re-profile to confirm the win.",
+        level: "senior",
+      },
+      {
+        q: "A service's p99 latency spikes under load but average CPU looks fine. How do you reason about it?",
+        a: "Average CPU hides a single-threaded bottleneck. I'd check event-loop lag and ELU first: if ELU is near 1 and lag is high, the loop is pinned and requests queue behind synchronous work — a classic head-of-line problem where p99 explodes while throughput plateaus. A CPU profile/flamegraph names the blocking frame (often sync crypto, a huge JSON.parse, or a bad regex). If instead ELU is low, the latency is I/O-bound — slow DB or upstream — and I'd look at connection pools, query plans and timeouts rather than CPU.",
+        level: "staff",
+      },
+      {
+        q: "When does moving work to worker_threads actually help, and when does it not?",
+        a: "It helps for CPU-bound work that would otherwise block the event loop — hashing, image/crypto/compression, heavy parsing — because that work moves off the main thread and the loop stays responsive. It does not help for I/O-bound work: async I/O already runs off-thread via libuv/the kernel, so wrapping a DB call in a worker just adds serialization and message-passing overhead. The decision is the same diagnostic: profile first, confirm it's CPU on the loop, then offload.",
+        level: "staff",
+      },
+      {
+        q: "Walk me through your methodology for a performance regression.",
+        a: "Reproduce it under representative load (autocannon against prod-like data), confirm whether it's CPU- or I/O-bound via ELU/lag, then capture the matching profile — a CPU flamegraph for CPU-bound, async tracing/DB metrics for I/O-bound. I fix the single widest contributor first, following the menu: cache, offload to a worker, stream, reduce allocations, micro-optimize last. After each change I re-measure p50/p99 to confirm the win and watch for regressions elsewhere, and I add a metric or test so the regression can't silently return.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["event-loop", "concurrency", "v8-gc", "weaknesses", "production"],
+    sources: [
+      { title: "Node.js — Profiling Node.js Applications", url: "https://nodejs.org/en/learn/getting-started/profiling" },
+      { title: "Node.js — perf_hooks (monitorEventLoopDelay, eventLoopUtilization)", url: "https://nodejs.org/api/perf_hooks.html" },
+      { title: "Node.js — Don't block the event loop", url: "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop" },
+      { title: "Clinic.js — performance profiling suite", url: "https://clinicjs.org/" },
+      { title: "0x — single-command flamegraphs", url: "https://github.com/davidmarkclements/0x" },
+      { title: "Node.js — CLI (--cpu-prof, --prof, --heap-prof)", url: "https://nodejs.org/api/cli.html" },
+    ],
+  },
+  {
     id: "security",
     group: "systems",
     order: 15,
     title: "Security & supply chain",
-    tagline: "CVEs, the npm supply chain, the permission model, hardening.",
-    readMins: 9,
-    mentalModel: "Your dependencies are your attack surface. Least privilege + patch fast.",
-    keyPoints: [
-      "Supply chain is the top risk: lockfiles, npm audit, fewer deps, verify provenance.",
-      "Validate all input; avoid eval / child_process with untrusted data; set security headers.",
-      "The permission model (--permission) restricts fs/net/child_process access.",
-      "Keep Node patched — security releases fix real, exploited CVEs.",
+    full: "Security & supply chain — dependencies, the permission model, hardening",
+    tagline: "Your dependencies are your attack surface. Install less, let it age, run least-privilege, patch fast.",
+    readMins: 11,
+    mentalModel:
+      "Node trusts every line it runs, so your transitive dependency tree IS your attack surface. Defend in layers — lockfile, cooldown, no install scripts, least privilege — because no single control covers every attack.",
+    sections: [
+      {
+        kind: "prose",
+        md: "**The threat model.** Per the Node.js Security Policy, Node **trusts any code it is asked to run** — there is no sandbox between your application and its dependencies. So your real attack surface isn't the code you wrote and reviewed; it's the **transitive dependency tree** you execute. The 2025–26 wave made that concrete: self-replicating npm worms (**Shai-Hulud**), the **debug/chalk** compromise that hit 200+ packages, and the **Axios** compromise of a top-downloaded package. The lesson the whole industry took: implicit trust in `npm install` is over.",
+      },
+      { kind: "figure", fig: "supply-chain-trust", caption: "You review a handful of direct dependencies; npm pulls in hundreds-to-thousands of transitive ones that Node runs with full trust. That gap — not your own code — is the supply chain." },
+      {
+        kind: "prose",
+        md: "**Supply-chain defenses, layered.** Pin with a **lockfile** and install with `npm ci` (exact versions + integrity hashes — never `npm install` in CI); **minimize and review** what you add; gate on **`npm audit`** / a scanner for known CVEs; add a **release-age cooldown** so brand-new versions can't reach you before they're caught (pnpm's `minimumReleaseAge`, default **1 day** in pnpm 11 — a one-day cooldown would have skipped both the debug/chalk and Axios versions, which were detected and unpublished within hours); **disable install scripts** with `npm ci --ignore-scripts`, the number-one worm execution vector; and prefer packages published with **provenance / Trusted Publishing** (Sigstore + CI OIDC) — with one important caveat below.",
+      },
+      {
+        kind: "prose",
+        md: "No single control is enough — that's the whole point. Toggle the defenses against the real attack classes and find the smallest set that leaves nothing exposed:",
+      },
+      { kind: "sim", sim: "supply-chain" },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Provenance proves origin, not intent",
+        md: "Provenance attests **who built a package and from which commit** — invaluable against typosquats and forged uploads. But the 2026 'wave-four' packages shipped malware carrying **valid provenance**: a real maintainer, a real CI pipeline. Origin is not safety. So provenance is necessary, not sufficient — you still need a **cooldown** (time for the bad version to be reported), an **audit gate**, and runtime **least privilege** to contain whatever slips through.",
+      },
+      {
+        kind: "prose",
+        md: "**Runtime least privilege: the Permission Model.** Since **Node 23.5 it is stable** — the flag is now `--permission` (formerly `--experimental-permission`). It denies by default and you grant explicitly: filesystem (`--allow-fs-read`, `--allow-fs-write`), child processes (`--allow-child-process`), worker threads (`--allow-worker`), native addons (`--allow-addons`) and WASI. Query it at runtime with `process.permission.has('fs.read')`. Two senior-level caveats: it is a **seat belt, not a sandbox** — the docs are explicit that it does **not** stop determined malicious code (which can bypass it); its job is to prevent *unintended* access and **shrink blast radius**. And **network permission (`--allow-net`) is still experimental**, so don't yet rely on it to block exfiltration.",
+      },
+      {
+        kind: "code",
+        lang: "bash",
+        code: `# deny everything by default, then grant ONLY what this service needs
+node --permission \\
+     --allow-fs-read=/app/config \\
+     --allow-fs-write=/app/tmp \\
+     server.js
+# a compromised transitive dep now cannot read /etc, spawn a shell,
+# or start a worker — those scopes were never granted.`,
+        note: "Least privilege contains a supply-chain compromise: code you didn't authorize can't touch resources you didn't grant. Verify scopes at startup with process.permission.has(scope, reference) and fail fast if something expected is missing.",
+      },
+      {
+        kind: "table",
+        caption: "The stable Permission Model scopes (verified against this Node's --allow-* flags). Network is intentionally absent.",
+        head: ["Flag", "Grants", "Status"],
+        rows: [
+          ["--allow-fs-read=<path>", "read the given files/dirs (or * for all)", "stable (Node ≥23.5)"],
+          ["--allow-fs-write=<path>", "write the given files/dirs", "stable"],
+          ["--allow-child-process", "spawn child processes", "stable"],
+          ["--allow-worker", "start worker_threads", "stable"],
+          ["--allow-addons", "load native (C++) addons", "stable"],
+          ["--allow-wasi", "use WASI", "stable"],
+          ["--allow-net", "outbound network to hosts/ports", "experimental — do not rely on it yet"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**Application hardening.** Beyond the supply chain: validate and **bound all input** (injection, and **ReDoS** from catastrophic regexes — see [Weaknesses](#/chapter/weaknesses)); never feed untrusted data to `eval`, `vm`, or `child_process` with `shell: true`; set HTTP **security headers** (helmet) and strict **body-size limits** ([HTTP internals](#/chapter/http)); keep **secrets** in env vars / a secret manager, never in code or container images; terminate TLS with an up-to-date **OpenSSL** (Node bundles it — `process.versions.openssl`); and enforce **authorization on every request**, carrying identity via [AsyncLocalStorage](#/chapter/errors) rather than passing it by hand.",
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "Patch fast — it's the one risk fully in your control",
+        md: "Node ships scheduled **security releases** (for example in January and March 2026), usually patching every maintained line at once (20.x, 22.x, 24.x, 25.x). Subscribe to the security mailing list, **rebuild images on release**, pin base images by digest, and stay on a **maintained LTS** ([Modern Node](#/chapter/modern-node)). A zero-day in a dependency is hard to prevent; running a knowingly-unpatched runtime is a self-inflicted wound.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "The picture to keep",
+        md: "**Dependencies are the attack surface; Node trusts them all; defend in layers.** Lockfile + `npm ci`, `--ignore-scripts`, a release-age cooldown, an audit gate, provenance (origin, not intent), and the Permission Model as a runtime seat belt — then patch fast. Next: [Production patterns](#/chapter/production) to deploy and operate it safely.",
+      },
     ],
-    seeAlso: ["production", "modern-node", "http"],
-  }),
-  stub({
+    keyPoints: [
+      "Node trusts any code it runs: your transitive dependency tree, not your own code, is the attack surface.",
+      "Pin + install clean: lockfile + npm ci (integrity hashes), minimize deps, never npm install in CI.",
+      "Add a release-age cooldown (pnpm minimumReleaseAge ~1 day) — most malicious versions are caught within hours.",
+      "Disable install scripts (npm ci --ignore-scripts): lifecycle scripts are the #1 worm execution vector.",
+      "Provenance / Trusted Publishing proves ORIGIN, not intent — attested malware exists; layer other controls.",
+      "Permission Model is stable since Node 23.5 (--permission): a seat belt gating fs/child_process/worker/addons/wasi — net is still experimental.",
+      "Patch fast: take Node security releases across all maintained lines; harden input, secrets, headers, TLS.",
+    ],
+    pitfalls: [
+      {
+        title: "Treating the permission model as a sandbox",
+        body: "The Node docs are explicit that --permission does not defend against malicious code, which can bypass it. It's a seat belt against unintended access and a blast-radius limiter — use it alongside supply-chain controls, not as a substitute for them.",
+      },
+      {
+        title: "npm install in CI instead of npm ci",
+        body: "npm install can resolve new versions and mutate the lockfile, so a hijacked release can slip in. npm ci installs exactly what's locked and verifies integrity hashes, failing if the lockfile and manifest disagree — that's the deterministic, reviewable path for CI.",
+      },
+      {
+        title: "Running install scripts on untrusted dependencies",
+        body: "Postinstall scripts execute arbitrary code at install time and are the main vector for npm worms like Shai-Hulud. Use --ignore-scripts and allow-list only the packages that genuinely need a build step.",
+      },
+      {
+        title: "Trusting a provenance badge as proof of safety",
+        body: "Provenance proves a package was built by a known pipeline from a known commit — not that the code is benign. 2026 'wave-four' malware carried valid provenance. Combine it with a cooldown, audit gate and least-privilege runtime.",
+      },
+      {
+        title: "Running an unpatched Node or unpinned base image",
+        body: "Security releases fix real, exploited CVEs across maintained lines. Staying on an EOL line or a floating base-image tag leaves known holes open. Track a maintained LTS, rebuild on security releases, and pin images by digest.",
+      },
+    ],
+    interview: [
+      {
+        q: "Why is the npm supply chain considered Node's biggest security risk, and what concretely reduces it?",
+        a: "Because Node trusts any code it runs and a typical app pulls in hundreds to thousands of transitive dependencies, any one of which executes with full privileges — install scripts included. So a single compromised maintainer or hijacked release (debug/chalk, Axios, the Shai-Hulud worm) can run code in everyone's builds. Concretely: pin with a lockfile and install with npm ci, minimize dependencies, gate on npm audit, disable install scripts, add a release-age cooldown so brand-new malicious versions don't reach you before they're pulled, prefer provenance, and run with the permission model so a compromise can't read secrets or exfiltrate.",
+        level: "staff",
+      },
+      {
+        q: "What does the Node permission model protect against, and what doesn't it?",
+        a: "Stable since Node 23.5, --permission denies access by default and you grant scopes explicitly: --allow-fs-read/--allow-fs-write, --allow-child-process, --allow-worker, --allow-addons, --allow-wasi, checked at runtime via process.permission.has(). It protects against unintended access and limits blast radius — a compromised dependency can't touch resources you didn't grant. What it doesn't do is sandbox malicious code: the docs say so explicitly, malicious code can bypass it, and network permission is still experimental. It's a seat belt layered with supply-chain controls, not a security boundary on its own.",
+        level: "staff",
+      },
+      {
+        q: "Does package provenance stop supply-chain attacks?",
+        a: "It stops some and not others. Provenance (Trusted Publishing via Sigstore and CI OIDC) cryptographically proves a package was built by a specific pipeline from a specific commit, which defeats typosquats and forged uploads from a stolen laptop. But it proves origin, not intent: in 2026, attackers published malware through legitimate pipelines so it carried valid provenance. So provenance is one necessary layer; you still need a cooldown, an audit/CVE gate, --ignore-scripts and runtime least privilege.",
+        level: "staff",
+      },
+      {
+        q: "How would you harden a Node service handling untrusted input?",
+        a: "Validate and bound every input (schemas, size limits) and watch for ReDoS from catastrophic regexes; never pass untrusted data to eval, vm, or child_process with shell:true. Set security headers and strict body limits at the HTTP layer, keep secrets in a secret manager rather than code or images, and terminate TLS with an up-to-date OpenSSL. Enforce authorization on every request with identity carried in AsyncLocalStorage. Then wrap the whole thing in supply-chain hygiene and the permission model so a vulnerable dependency can't escalate.",
+        level: "senior",
+      },
+      {
+        q: "A popular dependency you use was just compromised with a malicious new version. What limits the damage?",
+        a: "Several layers, which is the argument for defense in depth. A lockfile + npm ci means you don't float onto the new version automatically. A release-age cooldown skips a version this new until it's vetted — most compromises are caught within hours. --ignore-scripts stops a postinstall payload from running at all. And if it does run, the permission model denies it the fs/child_process/worker access it needs to steal tokens or spread, while an audit gate catches it once the CVE lands. Provenance, notably, wouldn't help if the attacker published through the real pipeline.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["production", "modern-node", "http", "weaknesses"],
+    sources: [
+      { title: "Node.js — Permissions (Permission Model, --allow-*)", url: "https://nodejs.org/api/permissions.html" },
+      { title: "Node.js — Security best practices", url: "https://nodejs.org/en/learn/getting-started/security-best-practices" },
+      { title: "npm — generating provenance / Trusted Publishing", url: "https://docs.npmjs.com/generating-provenance-statements" },
+      { title: "pnpm — supply-chain security & minimumReleaseAge", url: "https://pnpm.io/supply-chain-security" },
+      { title: "Node.js — security releases (2026)", url: "https://nodejs.org/en/blog/vulnerability" },
+    ],
+  },
+  {
     id: "production",
     group: "systems",
     order: 16,
     title: "Production patterns",
-    tagline: "Graceful shutdown, scaling, serverless cold starts.",
-    readMins: 9,
-    mentalModel: "On SIGTERM: stop intake → finish in-flight → close resources → exit(0).",
-    keyPoints: [
-      "Graceful shutdown: stop accepting, drain in-flight, close DB/sockets, then exit (handle SIGTERM).",
-      "Scale with cluster or an orchestrator (≈one Node per core); keep handlers stateless.",
-      "Health checks, structured logs, metrics, and a supervisor (PM2/systemd/k8s).",
-      "Serverless: cold starts, statelessness, reuse connections outside the handler.",
+    full: "Production patterns — graceful shutdown, scaling, observability, serverless",
+    tagline: "On SIGTERM: fail readiness → stop intake → drain in-flight → close resources → exit(0).",
+    readMins: 11,
+    mentalModel:
+      "Every deploy sends SIGTERM. Fail readiness, stop accepting, drain in-flight, close resources, exit(0) — with a force-exit backstop. One loop per core, stateless, observable.",
+    sections: [
+      {
+        kind: "prose",
+        md: "**The shutdown contract.** In production your process is killed *constantly* — every rolling deploy, scale-down and node drain sends **SIGTERM**. Handle it correctly and zero requests are lost; ignore it, or call `process.exit()` the instant it arrives, and every in-flight request is cut mid-response → `ECONNRESET` → **502s**, plus half-finished database writes. The contract every service must honour is five steps: **fail readiness → stop accepting → drain in-flight → close resources → exit(0)**, with a force-exit timer as a backstop.",
+      },
+      { kind: "figure", fig: "shutdown-sequence", caption: "The orchestrator removes the pod from its Service, optionally sleeps, then sends SIGTERM and counts down to SIGKILL. Your process must fail readiness, stop accepting, drain in-flight work, close resources and exit(0) within that grace period." },
+      {
+        kind: "prose",
+        md: "Same moment, two endings. SIGTERM arrives with three requests in flight — step the **graceful** drain against the **abrupt** exit and watch the *dropped* counter:",
+      },
+      { kind: "sim", sim: "graceful-shutdown" },
+      {
+        kind: "prose",
+        md: "**The four steps, precisely.** **(1)** Catch `SIGTERM`/`SIGINT` once (make the handler idempotent). **(2)** Flip **readiness** to 503 so the load balancer stops routing new requests and Kubernetes removes the pod from the Service endpoints. **(3)** Call **`server.close()`** — it stops accepting new connections and fires its callback only once in-flight requests finish; but HTTP keep-alive idle sockets won't close on their own, so also call **`server.closeIdleConnections()`** (Node ≥18.2) so they don't hold the drain open. **(4)** Close the **DB pool**, message consumers and timers, let the loop empty, and `exit(0)`. Always arm a **force-exit timer** — `setTimeout(() => process.exit(1), 10_000).unref()` — so one hung request can't make you wait for SIGKILL.",
+      },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "The Kubernetes endpoint-removal race",
+        md: "SIGTERM and Service-endpoint removal happen **concurrently**, and endpoint propagation is **asynchronous** — for a moment *after* SIGTERM the load balancer may still route new traffic to you. If you stop accepting immediately you 502 the very requests you meant to save. The fix: **fail readiness first**, add a small **preStop sleep** (≈5 s) so routes settle before you close the server, and set `terminationGracePeriodSeconds` comfortably above your worst-case drain time. Shutdown is a *handshake* with the orchestrator, not a unilateral exit.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `import http from 'node:http';
+const server = http.createServer(app);
+server.listen(3000);
+
+let shuttingDown = false;
+export const isReady = () => !shuttingDown;       // wire to GET /readyz → 200/503
+
+async function shutdown(signal) {
+  if (shuttingDown) return;                        // idempotent
+  shuttingDown = true;                             // readiness now returns 503
+  log.info({ signal }, 'graceful shutdown');
+
+  const force = setTimeout(() => process.exit(1), 10_000).unref(); // backstop
+
+  server.closeIdleConnections?.();                 // drop idle keep-alive sockets
+  server.close(async () => {                        // fires once in-flight requests drain
+    await pool.end();                               // close DB pool, queues, timers
+    clearTimeout(force);
+    process.exit(0);                                // clean exit
+  });
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));`,
+        note: "Catch the signal, fail readiness, closeIdleConnections() + server.close() to drain in-flight work, close resources, exit 0 — with a force-exit backstop so a hung request can't block the deploy.",
+      },
+      {
+        kind: "prose",
+        md: "**Scaling: one loop per core.** A single Node process saturates roughly **one core** (the [event loop](#/chapter/event-loop) is one thread), so to use a 16-core box you run ~16 processes — via the built-in **`cluster`** module (workers share one listening socket) or, more commonly today, **N stateless replicas** behind an orchestrator. Keep handlers **stateless** — session and shared state live in Redis/Postgres, not process memory — so any replica can serve any request and scaling out is just changing a number. This is the same single-threaded model from [Concurrency](#/chapter/concurrency), applied at the process level.",
+      },
+      {
+        kind: "table",
+        caption: "How processes get supervised and scaled.",
+        head: ["Tool", "What it gives you", "Use when"],
+        rows: [
+          ["cluster (core)", "fork ~1 worker/core sharing a port; in-process restarts", "use all cores from a single deployable on one host"],
+          ["PM2 / systemd", "process supervision, restart-on-crash, logs", "VM / bare-metal without an orchestrator"],
+          ["Kubernetes / ECS", "replicas, health probes, rolling deploys, autoscaling", "the modern default; scale replicas, not threads"],
+          ["Serverless (Lambda)", "per-request scaling, no servers to manage", "spiky/low-baseline load; accept cold starts"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**Observability: you can't operate what you can't see.** Expose **liveness** (am I alive? — restart if not) and **readiness** (should I get traffic? — drain on shutdown) as *separate* endpoints; conflating them breaks deploys. Emit **structured JSON logs** with a **request id** propagated via [AsyncLocalStorage](#/chapter/errors), the **RED** metrics (Rate, Errors, Duration) per route, and — your saturation signal — the **event-loop-lag** gauge from [Performance](#/chapter/performance). Distributed tracing ties a slow request across services. The rule: instrument before you need it, because you debug production from dashboards, not a debugger.",
+      },
+      {
+        kind: "prose",
+        md: "**Serverless sharpens the same rules.** On Lambda (the model behind many NestJS deployments), a **cold start** pays Node boot + your init on the first request, so do expensive setup — DB pool, config, clients — **in module scope, outside the handler**, where warm invocations reuse it. But **cap pool sizes**: a thousand concurrent function instances each opening a big pool will exhaust the database, so keep pools tiny or front them with a proxy (e.g. RDS Proxy). Stay **stateless** and never rely on local disk between invocations — the same statelessness that lets replicas scale lets functions scale.",
+      },
+      {
+        kind: "compare",
+        a: "Graceful shutdown",
+        b: "Abrupt exit",
+        rows: [
+          ["In-flight requests", "drained — finish and flush", "cut mid-response → ECONNRESET"],
+          ["Clients / load balancer", "clean 200s", "burst of 502s every deploy"],
+          ["Data integrity", "writes complete, resources closed", "half-finished writes, leaked connections"],
+          ["Deploys", "zero-downtime rolling deploys", "flaky, error-spiking deploys"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "The picture to keep",
+        md: "**Treat SIGTERM as a handshake: fail readiness → stop intake → drain → close → exit(0), with a backstop.** Run one loop per core, keep every handler stateless, and instrument lag/RED so you can see what's happening. That closes *Building real systems* — [errors](#/chapter/errors) → [HTTP](#/chapter/http) → [performance](#/chapter/performance) → [security](#/chapter/security) → production. Next is **Mastery**: [Modern Node](#/chapter/modern-node), the [interview bank](#/interview), and the [mental-models gallery](#/mental-models).",
+      },
     ],
-    seeAlso: ["concurrency", "errors", "security"],
-  }),
+    keyPoints: [
+      "Every deploy sends SIGTERM; handle it or drop in-flight requests (ECONNRESET → 502s) and corrupt half-done writes.",
+      "Graceful shutdown = fail readiness → server.close() (stop accepting) → drain in-flight → close pools/timers → exit(0).",
+      "Keep-alive idle sockets don't self-close: call server.closeIdleConnections() (Node ≥18.2) so the drain can finish.",
+      "Always arm a force-exit timer (process.exit on timeout, .unref()) so a hung request can't wait for SIGKILL.",
+      "Kubernetes removes endpoints asynchronously — fail readiness first + a preStop sleep, and size terminationGracePeriodSeconds above drain time.",
+      "Scale with ~one process per core (cluster or replicas) and keep handlers stateless so any replica serves any request.",
+      "Observe with separate liveness/readiness probes, structured logs + request id (AsyncLocalStorage), RED metrics, and event-loop lag.",
+    ],
+    pitfalls: [
+      {
+        title: "No SIGTERM handler (or process.exit() on the first line of one)",
+        body: "Either way, in-flight requests are killed mid-response on every deploy: clients get ECONNRESET/502 and writes can be left half-done. Catch SIGTERM, stop accepting, and drain before exiting.",
+      },
+      {
+        title: "server.close() without closing idle keep-alive sockets",
+        body: "server.close() waits for existing connections, but idle keep-alive sockets won't close themselves, so the callback may never fire and you hit the grace-period SIGKILL. Call server.closeIdleConnections() (Node ≥18.2) and keep a force-exit backstop.",
+      },
+      {
+        title: "keepAliveTimeout below the load balancer's idle timeout",
+        body: "If Node closes idle upstream sockets before the LB does, the LB reuses a dead socket and clients get 502/ECONNRESET — the keep-alive race from the HTTP chapter. Set Node's keepAliveTimeout (and headersTimeout above it) greater than the LB's idle timeout.",
+      },
+      {
+        title: "Conflating liveness and readiness probes",
+        body: "If liveness fails during shutdown the orchestrator restarts you instead of draining; if readiness never fails you keep getting traffic while shutting down. Keep them separate: liveness = am I alive, readiness = should I receive traffic (flip it to 503 on SIGTERM).",
+      },
+      {
+        title: "Per-request DB connections in serverless",
+        body: "Opening a connection (or a large pool) inside the handler multiplies by every concurrent function instance and exhausts the database. Initialize clients in module scope so warm invocations reuse them, keep pools tiny, and front the DB with a proxy.",
+      },
+    ],
+    interview: [
+      {
+        q: "Walk me through a correct graceful shutdown in Node.",
+        a: "Catch SIGTERM (and SIGINT) with an idempotent handler. First flip readiness to 503 so the load balancer/k8s stops sending new requests. Then stop accepting at the server: call server.close(), which fires its callback once in-flight requests finish, and server.closeIdleConnections() so idle keep-alive sockets don't hold the drain open. When the drain completes, close the DB pool, consumers and timers, then process.exit(0). Critically, arm a force-exit timer (e.g. exit(1) after 10s, unref'd) so a hung request can't make you wait for SIGKILL. The result is zero dropped requests on a rolling deploy.",
+        level: "senior",
+      },
+      {
+        q: "Why does a naive 'process.exit() on SIGTERM' cause 502s, and how does Kubernetes factor in?",
+        a: "Exiting immediately destroys open sockets mid-response, so in-flight clients get ECONNRESET and the load balancer returns 502s — every deploy sheds a burst of errors and may leave writes half-done. Kubernetes makes it subtler: it sends SIGTERM and removes the pod from Service endpoints concurrently, and endpoint propagation is async, so for a moment the LB still routes to you. That's why you fail readiness first and add a small preStop sleep before closing the server, and set terminationGracePeriodSeconds above your drain time — shutdown is a handshake with the orchestrator.",
+        level: "staff",
+      },
+      {
+        q: "How do you scale a Node service across cores and machines?",
+        a: "One Node process uses about one core because JS runs on a single thread, so you run roughly one process per core — the cluster module forks workers that share a listening socket, or, more commonly, you run N stateless replicas behind an orchestrator and scale the replica count. The key enabler is statelessness: session and shared state live in Redis/Postgres, not process memory, so any replica handles any request and horizontal scaling is just a number. CPU-bound work inside a request still belongs in worker_threads, not on the request thread.",
+        level: "senior",
+      },
+      {
+        q: "What's the difference between liveness and readiness probes, and why does it matter for deploys?",
+        a: "Liveness answers 'is this process alive?' — if it fails, the orchestrator restarts the pod. Readiness answers 'should this pod receive traffic?' — if it fails, the pod is pulled from the load-balancer rotation but not killed. They matter at shutdown: on SIGTERM you flip readiness to 503 so traffic drains away while you finish in-flight requests, but you keep liveness healthy so you aren't force-restarted mid-drain. Conflating them either restarts you during shutdown or keeps sending you traffic while you're trying to stop.",
+        level: "staff",
+      },
+      {
+        q: "What changes when you run the same service on serverless (Lambda)?",
+        a: "The shutdown/scaling concerns become init and connection concerns. Each instance pays a cold start (Node boot + your init) on first use, so you move expensive setup — DB pool, SDK clients, config — into module scope outside the handler so warm invocations reuse it. Because the platform scales by spinning up many concurrent instances, you must keep connection pools tiny (or use a proxy like RDS Proxy) or you exhaust the database, and stay fully stateless with no reliance on local disk between invocations. Same principles as graceful shutdown and stateless replicas, just enforced by the platform.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["concurrency", "errors", "security", "performance", "http"],
+    sources: [
+      { title: "Node.js — process (signal events: SIGTERM/SIGINT)", url: "https://nodejs.org/api/process.html#signal-events" },
+      { title: "Node.js — http (server.close, server.closeIdleConnections)", url: "https://nodejs.org/api/http.html#serverclosecallback" },
+      { title: "Node.js — cluster", url: "https://nodejs.org/api/cluster.html" },
+      { title: "Kubernetes — Pod termination & lifecycle", url: "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination" },
+      { title: "Node.js — Don't block the event loop (production guidance)", url: "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop" },
+    ],
+  },
 
   // -------------------------------------------------------------------- Mastery
   stub({
