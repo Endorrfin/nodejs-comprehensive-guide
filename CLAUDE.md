@@ -558,4 +558,16 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   `twitter:image` (absolute Pages URLs). **Verified:** `tsc` clean · `vite build` OK · built `index.html` carries
   the tags · `og.png` (72 kB) copied to dist. (Scratch `scripts/_s9d6` gitignored.) **Note:** after deploy, refresh
   scraper caches via LinkedIn Post Inspector / X Card Validator so the new card shows.
+- **2026-06-21 · S9e Mobile chapter-nav drawer** — User asked for mobile adaptation. Audit: it was NOT
+  desktop-only — base responsiveness already exists (layout collapses to 1 col <900px, nav wraps <560px,
+  tables/figures/code scroll-x globally, and the sims carry their OWN breakpoints — architecture/async/backpressure
+  etc. stack to 1 col <720–820px). The real gap was navigation: the chapter sidebar is hidden <900px with no
+  replacement. Added (additive, desktop untouched): a mobile-only **hamburger (☰)** in `TopBar` (shown <900px) that
+  opens a **slide-in drawer** reusing the existing `Sidebar` — close on backdrop / Esc / ✕ / navigation; drawer
+  state in `App` (`navOpen`), gated so it can NEVER show ≥901px. CSS: `.nav-toggle` / `.drawer-backdrop` /
+  `.drawer-panel` + a `.drawer-panel .sidebar` override (neutralizes the desktop sticky/full-height AND the <900px
+  `display:none`). Deliberately did NOT do a blind sim-CSS pass (sims already responsive; content already scrolls)
+  — fine-tuning deferred to real-device screenshots. **Verified:** `tsc` clean · `vite build` OK · SSR smoke
+  23 routes / 148 / 0 fail (drawer is closed in SSR → unaffected). (Scratch `scripts/_s9d7|8`, `scripts/_ssr_s9g|h`
+  gitignored.) **Next:** user device-tests + sends mobile screenshots to iterate (cramped sims, drawer feel).
 - *(Update this log at the end of every session/block — per user request.)*

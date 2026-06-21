@@ -1006,3 +1006,71 @@ table.data td code {
   gap: 8px;
   margin-top: auto;
 }
+
+/* ----- mobile chapter-nav drawer (additive; desktop is unaffected) -------- */
+.nav-toggle {
+  display: none; /* desktop: hidden — shown only <900px below */
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+  color: var(--tx);
+  font-size: 17px;
+  cursor: pointer;
+}
+.nav-toggle:hover {
+  border-color: var(--accent-deep);
+}
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  background: rgba(0, 0, 0, 0.55);
+}
+.drawer-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(86vw, 300px);
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  box-shadow: 0 0 44px rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+}
+.drawer-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 14px;
+}
+/* neutralize the desktop sidebar's sticky/full-height + the <900px hide, inside the drawer */
+.drawer-panel .sidebar {
+  display: block;
+  position: static;
+  height: auto;
+  top: 0;
+  border-right: 0;
+  padding: 14px 10px 28px;
+}
+@media (max-width: 900px) {
+  .nav-toggle {
+    display: inline-flex;
+  }
+}
+@media (min-width: 901px) {
+  .drawer-backdrop {
+    display: none;
+  }
+}

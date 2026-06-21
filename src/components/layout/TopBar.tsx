@@ -116,10 +116,18 @@ function SearchBox(): React.ReactElement {
   );
 }
 
-export function TopBar({ route }: { route: Route }): React.ReactElement {
+export function TopBar({ route, onMenuOpen }: { route: Route; onMenuOpen?: () => void }): React.ReactElement {
   return (
     <header className="topbar">
       <div className="topbar-inner">
+        <button
+          className="nav-toggle"
+          onClick={onMenuOpen}
+          aria-label="Open chapters menu"
+          aria-haspopup="dialog"
+        >
+          <span aria-hidden="true">☰</span>
+        </button>
         <button className="brand" onClick={() => go("/map")} aria-label="Home — overview">
           <Logo />
           <span className="brand-text">
