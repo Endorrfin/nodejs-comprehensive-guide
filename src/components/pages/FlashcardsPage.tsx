@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { filterDeck, shuffle, SOURCE_LABEL, type Flashcard, type SourceFilter } from "../../lib/flashcards";
 import { CHAPTER_BY_ID, GROUPS } from "../../data/concepts";
 import { go } from "../../lib/hashRouter";
@@ -14,6 +14,7 @@ export function FlashcardsPage(): React.ReactElement {
   const [flipped, setFlipped] = useState(false);
   const [got, setGot] = useState(0);
   const [again, setAgain] = useState(0);
+  const deckRef = useRef<HTMLDivElement>(null); // CHANGED: focus target for keyboard shortcuts
 
   const groupsPresent = useMemo(() => {
     const ids = new Set(filterDeck(null, "all").map((c) => c.group));
@@ -31,6 +32,9 @@ export function FlashcardsPage(): React.ReactElement {
   // rebuild when filters change
   useEffect(() => {
     newRound(group, source);
+    // CHANGED: focus the deck so space / 1 / 2 work immediately, without first
+    // clicking a card (preventScroll avoids jumping past the intro on load).
+    deckRef.current?.focus({ preventScroll: true });
   }, [group, source, newRound]);
 
   const card = queue[pos];
@@ -102,7 +106,7 @@ export function FlashcardsPage(): React.ReactElement {
 
       {/* deck */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-      <div className="fc-deck" tabIndex={0} onKeyDown={onKeyDown} aria-label="Flashcard deck. Press space to flip, 1 for again, 2 for got it.">
+      <div ref={deckRef} className="fc-deck" tabIndex={0} onKeyDown={onKeyDown} aria-label="Flashcard deck. Press space to flip, 1 for again, 2 for got it.">
         {done ? (
           <div className="fc-done" aria-live="polite">
             <div className="fc-done-ttl">Round complete</div>
