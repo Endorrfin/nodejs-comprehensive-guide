@@ -84,6 +84,8 @@ export function EventLoopRing(): React.ReactElement {
           ) : null}
         </g>
       ))}
+      {/* ambient green token orbiting the six phases (freezes under prefers-reduced-motion via the global rule) */}
+      <circle className="el-ball" cx="340" cy="60" r="7" fill="#4ADE80" />
     </svg>
   );
 }
