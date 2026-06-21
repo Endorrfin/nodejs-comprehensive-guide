@@ -345,3 +345,10 @@
     grid-template-columns: 1fr;
   }
 }
+/* CHANGED: phones — the slot grid is inline-styled repeat(poolSize,1fr); cap it at 2 cols
+   so 4–6 slots don't squish. !important overrides the dynamic inline grid (mobile only). */
+@media (max-width: 560px) {
+  .tp-slots {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
