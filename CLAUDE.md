@@ -570,4 +570,11 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   — fine-tuning deferred to real-device screenshots. **Verified:** `tsc` clean · `vite build` OK · SSR smoke
   23 routes / 148 / 0 fail (drawer is closed in SSR → unaffected). (Scratch `scripts/_s9d7|8`, `scripts/_ssr_s9g|h`
   gitignored.) **Next:** user device-tests + sends mobile screenshots to iterate (cramped sims, drawer feel).
+- **2026-06-21 · S9f Sim mobile fine-tune** — From device screenshots: the drawer works great, and `architecture`
+  + `http-lifecycle` already adapt (native-tier → 1 col; actor lane wraps + arrows hidden). Two genuinely needed
+  work: **thread-pool** — its slot grid is inline-styled `repeat(poolSize,1fr)`, so capped to **2 cols on ≤560px**
+  (`!important` to beat the inline grid; mobile only); **backpressure** — pipeline already fit but tight, so on ≤560px
+  the Readable/Writable nodes get more room (narrower tank/buffer + smaller node padding), arrows left untouched so the
+  write()/flush pills stay intact. Both mobile-only; desktop unchanged. **Verified:** `tsc` clean · `vite build` OK
+  (rules present in minified CSS) · SSR smoke 23 / 148 / 0. Awaiting a device screenshot of Concurrency + Streams to confirm.
 - *(Update this log at the end of every session/block — per user request.)*

@@ -389,6 +389,25 @@
     flex-basis: 70px;
   }
 }
+/* CHANGED: phones — give the Readable/Writable nodes a touch more room (tighten the tank +
+   node padding) WITHOUT shrinking the arrow column, so the write()/flush pills stay intact. */
+@media (max-width: 560px) {
+  .bp-buffer {
+    flex-basis: 62px;
+  }
+  .bp-tank {
+    width: 52px;
+  }
+  .bp-node {
+    padding: 8px 5px;
+  }
+  .bp-node-ttl {
+    font-size: 11.5px;
+  }
+  .bp-node-sub {
+    font-size: 9px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .bp-fill,
   .bp-progress-bar {
