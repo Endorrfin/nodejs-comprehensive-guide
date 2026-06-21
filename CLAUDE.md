@@ -549,4 +549,13 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   a sidebar there would duplicate it); renamed the nav tab **Map → Overview** (+ aligned the brand aria-label, the
   not-found "Back to overview" button, and the About CTA). Route `#/map` and the `.map-*` CSS classes are unchanged.
   Re-verified: `tsc` clean · `vite build` OK · SSR smoke 23 routes / 148 / 0 fail.
+- **2026-06-21 · S9d og:image (rich social card)** — Built a 1200×630 branded OG image (black + Node-green,
+  hexagon logo, title, key-topics subtitle, chips: 20 chapters / 15 simulators / interview bank / flashcards,
+  Ukraine flag + author + domain) via a tracked **satori → resvg** generator (`scripts/ogtools/render.mjs` + its
+  own gitignored `node_modules`; @fontsource **.woff** — satori rejects woff2; literal `&`, not `&amp;`, per the
+  satori entity gotcha). Output committed at `public/og.png` → ships to dist root. Wired `index.html`:
+  `og:image` / `og:url` / `og:image:width|height|alt` + upgraded `twitter:card` to **summary_large_image** +
+  `twitter:image` (absolute Pages URLs). **Verified:** `tsc` clean · `vite build` OK · built `index.html` carries
+  the tags · `og.png` (72 kB) copied to dist. (Scratch `scripts/_s9d6` gitignored.) **Note:** after deploy, refresh
+  scraper caches via LinkedIn Post Inspector / X Card Validator so the new card shows.
 - *(Update this log at the end of every session/block — per user request.)*
