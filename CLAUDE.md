@@ -576,5 +576,16 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   (`!important` to beat the inline grid; mobile only); **backpressure** — pipeline already fit but tight, so on ≤560px
   the Readable/Writable nodes get more room (narrower tank/buffer + smaller node padding), arrows left untouched so the
   write()/flush pills stay intact. Both mobile-only; desktop unchanged. **Verified:** `tsc` clean · `vite build` OK
-  (rules present in minified CSS) · SSR smoke 23 / 148 / 0. Awaiting a device screenshot of Concurrency + Streams to confirm.
+  (rules present in minified CSS) · SSR smoke 23 / 148 / 0. **Confirmed via 400px screenshots:** thread-pool now 2-col,
+  backpressure roomy with the write()/flush pills intact, drawer perfect; wide 4-col tables scroll-x (standard mobile
+  pattern, left as-is per user).
+- **2026-06-21 · S9g Event-loop token in the real figure + a real .mp4** — Added the orbiting green token to the
+  **real `EventLoopRing`** (a CSS-rotated `<circle class="el-ball">` around the ring centre 340,190; shows in the
+  Event Loop chapter + mental-models gallery; freezes under prefers-reduced-motion via the global rule). Also produced
+  a real **`demo/event-loop.mp4`** (1280×720 · 4s · ~50 KB · h264) **without any screen capture**: a headless frame
+  renderer (`scripts/ogtools/render-eventloop.mjs`) draws 96 satori frames (token orbiting + active phase lighting up,
+  branded) → ffmpeg encodes. satori gotcha fixed: a large positioned `<svg>` background doesn't share the HTML
+  coordinate space (ring drifted right) → drew the dashed ring + centre as CSS-circle divs. `demo/_*` gitignored
+  (sandbox can't unlink the preview frame). **Verified:** tsc clean · build OK (`el-ball-orbit` in CSS) · SSR smoke
+  23 / 148 / 0.
 - *(Update this log at the end of every session/block — per user request.)*

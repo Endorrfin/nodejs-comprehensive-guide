@@ -1074,3 +1074,16 @@ table.data td code {
     display: none;
   }
 }
+
+/* ----- event-loop figure: a green token orbiting the six phases ----------- */
+.el-ball {
+  transform-box: view-box;
+  transform-origin: 340px 190px; /* ring centre in EventLoopRing's viewBox */
+  animation: el-ball-orbit 7.2s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.85));
+}
+@keyframes el-ball-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}

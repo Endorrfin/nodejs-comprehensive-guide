@@ -23,3 +23,4 @@ QA.txt
 scripts/ssr/
 scripts/_*
 preview-*.html
+demo/_*
