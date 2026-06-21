@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRoute } from "./lib/hashRouter";
 import { TopBar } from "./components/layout/TopBar";
 import { Sidebar } from "./components/layout/Sidebar";
@@ -21,12 +21,26 @@ export default function App(): React.ReactElement {
           ? "mental-models"
           : null;
 
+  // CHANGED: mobile chapter-nav drawer state (additive; the hamburger only shows <900px)
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => {
+    setNavOpen(false); // close the drawer on any navigation
+  }, [route]);
+  useEffect(() => {
+    if (!navOpen) return;
+    const onEsc = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [navOpen]);
+
   return (
     <div className="app">
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <TopBar route={route} />
+      <TopBar route={route} onMenuOpen={() => setNavOpen(true)} />
 
       {route.name === "map" ? (
         <main id="main" style={{ flex: 1 }}>
@@ -44,6 +58,27 @@ export default function App(): React.ReactElement {
           </main>
         </div>
       )}
+
+      {/* CHANGED: mobile-only chapter nav drawer (rendered only when open; hidden on desktop via CSS) */}
+      {navOpen ? (
+        <div className="drawer-backdrop" onClick={() => setNavOpen(false)}>
+          <div
+            className="drawer-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Chapters"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="drawer-head">
+              <span>Chapters</span>
+              <button className="btn" onClick={() => setNavOpen(false)} aria-label="Close menu">
+                ✕
+              </button>
+            </div>
+            <Sidebar activeId={activeId} />
+          </div>
+        </div>
+      ) : null}
 
       <Footer />
     </div>
