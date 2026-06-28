@@ -130,7 +130,7 @@ for (const c of CHAPTERS) {
   if (c.stub) continue; // seeded stubs may omit sources
   for (const s of c.sources) {
     check(!!s.title, `chapter "${c.id}" source missing title`);
-    let ok = false;
+    let ok: boolean;
     try { ok = new URL(s.url).protocol === "https:"; } catch { ok = false; }
     check(ok, `chapter "${c.id}" source bad url: ${s.url}`);
   }

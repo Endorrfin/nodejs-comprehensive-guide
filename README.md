@@ -69,9 +69,11 @@ cd nodejs-comprehensive-guide
 npm install
 npm run dev        # http://localhost:5173  (full interactivity)
 npm run build      # type-check + production build → dist/
+npm run lint       # ESLint (flat config)
 npm run preview    # serve the production build
 npm test           # engine truth-tests + content/link integrity (no browser)
 npm run qa         # content/link integrity only
+npm run verify     # typecheck + lint + qa + tests + build (full local gate, mirrors CI)
 ```
 
 > It's a bundled app, so opening `dist/index.html` straight off disk won't work
@@ -90,8 +92,8 @@ npm run qa         # content/link integrity only
 
 ### Deploy to GitHub Pages
 
-Push to `main`; the included GitHub Actions workflow runs `npm ci && npm run build` and publishes
-`dist/`. In **Settings → Pages**, set **Source = GitHub Actions**. Because `base` is `'./'` and
+Push to `main`; the included GitHub Actions workflow runs typecheck → lint → QA → engine tests → build,
+then publishes `dist/`. In **Settings → Pages**, set **Source = GitHub Actions**. Because `base` is `'./'` and
 routing is hash-based, the site works under any project sub-path.
 
 URL: `https://<user>.github.io/<repo>/`.
@@ -115,7 +117,8 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 
 ### Conventions
 
-- TypeScript strict (`noUnusedLocals/Parameters`); the build fails on type errors.
+- TypeScript strict (`noUnusedLocals/Parameters`) + **ESLint** (flat config). `npm run verify`
+  (typecheck + lint + QA + engine tests + build) gates every deploy in CI.
 - Content is edited **only** in `src/data/*`; never hand-edit rendered output.
 - Brand: black + Node green (`src/theme/tokens.css`); orange is a semantic "thread pool / CPU" accent only.
 
@@ -177,9 +180,11 @@ cd nodejs-comprehensive-guide
 npm install
 npm run dev        # http://localhost:5173  (повна інтерактивність)
 npm run build      # перевірка типів + продакшн-білд → dist/
+npm run lint       # ESLint (flat config)
 npm run preview    # віддати продакшн-білд
 npm test           # truth-тести рушіїв + перевірка цілісності контенту/лінків (без браузера)
 npm run qa         # лише перевірка цілісності контенту/лінків
+npm run verify     # typecheck + lint + qa + тести + build (повний локальний гейт, дзеркало CI)
 ```
 
 > Це зібраний застосунок, тож відкрити `dist/index.html` напряму з диска не вийде
@@ -199,8 +204,8 @@ npm run qa         # лише перевірка цілісності конте
 
 ### Деплой на GitHub Pages
 
-Запуш у `main`; доданий воркфлоу GitHub Actions виконає `npm ci && npm run build` і опублікує
-`dist/`. У **Settings → Pages** постав **Source = GitHub Actions**. Оскільки `base` дорівнює `'./'`,
+Запуш у `main`; доданий воркфлоу GitHub Actions виконає typecheck → lint → QA → тести рушіїв → build,
+потім опублікує `dist/`. У **Settings → Pages** постав **Source = GitHub Actions**. Оскільки `base` дорівнює `'./'`,
 а маршрутизація — на хешах, сайт працює під будь-яким під-шляхом проєкту.
 
 URL: `https://<user>.github.io/<repo>/`.
@@ -224,7 +229,8 @@ scripts/       test-*.ts (набори тестів рушіїв) · node-truth-
 
 ### Конвенції
 
-- TypeScript strict (`noUnusedLocals/Parameters`); білд падає на помилках типів.
+- TypeScript strict (`noUnusedLocals/Parameters`) + **ESLint** (flat config). `npm run verify`
+  (typecheck + lint + QA + тести рушіїв + build) гейтить кожен деплой у CI.
 - Контент редагується **лише** в `src/data/*`; ніколи не правиться згенерований вивід вручну.
 - Бренд: чорний + Node-зелений (`src/theme/tokens.css`); помаранчевий — лише семантичний акцент
   «thread pool / CPU».

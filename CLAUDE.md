@@ -51,7 +51,7 @@ remember* Node internals (deep-dive mode), and to prep senior/staff interviews.
 ```
 node-js_comprehensive-guide/            # = git repo root; deploy publishes dist/ only
   index.html                            # app shell (title, favicon, theme-color)
-  package.json  vite.config.ts  tsconfig.json  .eslintrc
+  package.json  vite.config.ts  tsconfig.json  eslint.config.js
   .github/workflows/deploy.yml          # Actions → Pages (Node 22, npm ci, build, upload dist)
   .gitignore                            # node_modules, dist, AND Examples/ (see gotchas)
   public/  favicon.svg  .nojekyll
@@ -194,7 +194,9 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
 
 ## 9. Conventions
 
-- TypeScript **strict** + `noUnusedLocals/Parameters`; ESLint clean (build fails otherwise).
+- TypeScript **strict** + `noUnusedLocals/Parameters`; **ESLint flat config** (`eslint.config.js`),
+  enforced as a CI gate (`npm run lint`) before every deploy. `npm run verify` runs typecheck + lint +
+  qa + engine tests + build locally.
 - Content edited **only** in `src/data/*`; never hand-edit rendered output.
 - Numbers/labels via shared formatters; links/cross-refs by id.
 - **Accessibility:** keyboard nav, focus rings, ARIA on sims, `prefers-reduced-motion`
@@ -588,4 +590,19 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   coordinate space (ring drifted right) → drew the dashed ring + centre as CSS-circle divs. `demo/_*` gitignored
   (sandbox can't unlink the preview frame). **Verified:** tsc clean · build OK (`el-ball-orbit` in CSS) · SSR smoke
   23 / 148 / 0.
+- **2026-06-28 · S10 Infra parity — cross-port Wave 1 (B→A, from the database guide)** — Made the
+  long-standing "ESLint clean" convention REAL: added `eslint.config.js` (flat: typescript-eslint +
+  react-hooks + react-refresh, `no-unused-vars` `^_` ignore) + `lint` script + 6 devDeps; fixed the false
+  claim in §3 (`.eslintrc` → `eslint.config.js`) and §9. Wired the existing QA into CI — `deploy.yml` now
+  gates on **typecheck → lint → qa → engine tests → build** (was build-only) with `cancel-in-progress:
+  false`. Added a `verify` aggregate + `homepage`/`author`/`license`. `vite.config.ts`: `react-vendor`
+  chunk + `target:es2022` + `sourcemap:false`. `.gitignore` += `dist-*/`, `*.tsbuildinfo`, `.eslintcache`.
+  README (EN+UA) commands/conventions/deploy updated. ESLint rules **aligned to the database guide's
+  proven set** (classic two hooks rules; intentionally no react-hooks v7 `set-state-in-effect`, which
+  flagged legitimate sim play/pause loops); fixed 3 script nits (`no-useless-assignment` ×2, `no-empty`)
+  + removed a stale `jsx-a11y` disable directive in `FlashcardsPage`. **Verified (sandbox, real ESLint
+  installed):** **0 lint errors** (4 non-blocking `react-refresh` warnings on `registry.tsx`, exactly as
+  in the database guide) · `qa-integrity` 829/0 · engine tests PASS. **Pending (owner):** `npm install`,
+  then `npm run verify`; commit + push. **Next: cross-port Wave 2 (A→B test layer into the database
+  guide) — new session.**
 - *(Update this log at the end of every session/block — per user request.)*

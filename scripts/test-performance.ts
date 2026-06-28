@@ -46,7 +46,7 @@ check("CPU below arrival gap ⇒ lag 0", belowGap.lagMaxMs === 0, `= ${belowGap.
 // ---- (2) LIVE anchor: monitorEventLoopDelay + eventLoopUtilization ----------
 const ms = (ns: number): number => +(ns / 1e6).toFixed(2);
 const sleep = (t: number): Promise<void> => new Promise((r) => setTimeout(r, t));
-const burn = (t: number): void => { const end = Date.now() + t; while (Date.now() < end) {} };
+const burn = (t: number): void => { const end = Date.now() + t; while (Date.now() < end) { /* busy-wait */ } };
 
 async function delay(work: () => Promise<void>): Promise<{ mean: number; max: number }> {
   const h = monitorEventLoopDelay({ resolution: 10 });
