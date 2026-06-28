@@ -104,8 +104,7 @@ export function FlashcardsPage(): React.ReactElement {
         </div>
       </div>
 
-      {/* deck */}
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+      {/* deck — focusable for keyboard control (space to flip, 1/2 to grade) */}
       <div ref={deckRef} className="fc-deck" tabIndex={0} onKeyDown={onKeyDown} aria-label="Flashcard deck. Press space to flip, 1 for again, 2 for got it.">
         {done ? (
           <div className="fc-done" aria-live="polite">

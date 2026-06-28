@@ -70,12 +70,13 @@ check("two uncaughtException scenarios", by("uncaughtException") === 2);
 check("one unhandledRejection scenario", by("unhandledRejection") === 1);
 
 // ---- (2) LIVE routing on this Node ---------------------------------------
-let syncOk = false;
-try {
-  throw new Error("s");
-} catch {
-  syncOk = true;
-}
+const syncOk = (() => {
+  try {
+    throw new Error("s");
+  } catch {
+    return true;
+  }
+})();
 check("live: sync throw caught by try/catch", syncOk);
 
 let awaitOk = false;

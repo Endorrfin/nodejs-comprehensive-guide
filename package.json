@@ -4,24 +4,35 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Node.js: Comprehensive Guide — deep, interactive, senior/staff-level. By Vasyl Krupka.",
+  "homepage": "https://endorrfin.github.io/nodejs-comprehensive-guide/",
+  "author": "Vasyl Krupka",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "preview": "vite preview",
     "qa": "node --experimental-strip-types scripts/qa-integrity.ts",
-    "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts && node --experimental-strip-types scripts/test-performance.ts && node --experimental-strip-types scripts/test-security.ts && node --experimental-strip-types scripts/test-production.ts && node --experimental-strip-types scripts/test-modern.ts && node --experimental-strip-types scripts/qa-integrity.ts"
+    "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts && node --experimental-strip-types scripts/test-performance.ts && node --experimental-strip-types scripts/test-security.ts && node --experimental-strip-types scripts/test-production.ts && node --experimental-strip-types scripts/test-modern.ts && node --experimental-strip-types scripts/qa-integrity.ts",
+    "verify": "npm run typecheck && npm run lint && npm run qa && npm test && npm run build"
   },
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.21",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.0",
+    "eslint": "^10.5.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.62.0",
     "vite": "^8.0.0"
   }
 }

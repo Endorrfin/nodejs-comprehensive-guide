@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # CHANGED (Wave 1): don't cancel an in-progress production deploy
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -24,7 +25,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # CHANGED (Wave 1): gate the deploy on the existing QA suite (previously CI ran build only)
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Content & link integrity
+        run: npm run qa
+      - name: Engine truth-tests
+        run: npm test
+      - name: Build
+        run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

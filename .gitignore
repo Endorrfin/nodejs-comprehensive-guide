@@ -1,7 +1,10 @@
 # dependencies & build
 node_modules
 dist
+dist-*/
 .vite
+*.tsbuildinfo
+.eslintcache
 
 # the two reference projects + posters (each has its own nested .git + heavy assets;
 # the live site ships only dist/, so these never reach Pages anyway)
