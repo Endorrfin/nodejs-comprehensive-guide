@@ -1,4 +1,4 @@
-/* Interview bank — seeded subset (grows to 40 in S8). Tagged by chapter + level. */
+/* Interview bank — 46 senior/staff Q&A, tagged by chapter + level. */
 export interface BankItem {
   id: string;
   chapter: string; // chapter id it maps to
@@ -352,6 +352,32 @@ export const INTERVIEW: BankItem[] = [
     level: "staff",
     q: "Why can a 'correct' shutdown still 502 on Kubernetes, and how do you fix it?",
     a: "Because SIGTERM and Service-endpoint removal happen concurrently and endpoint propagation is asynchronous, so for a moment after SIGTERM the load balancer still routes new traffic to the pod. If you stop accepting immediately you reset those requests. Fix it by failing readiness first and adding a small preStop sleep (~5s) so routes settle before you close the server, and set terminationGracePeriodSeconds above your worst-case drain time. Shutdown is a handshake with the orchestrator, not a unilateral exit.",
+  },
+
+  /* ------------------------------------------------------------ Express (S11) */
+  {
+    id: "express-dispatch",
+    chapter: "express",
+    topic: "Express",
+    level: "senior",
+    q: "Walk me through how Express dispatches a request, end to end.",
+    a: "An Express app is an ordered array of (req, res, next) layers in front of node:http — the app object is literally a request listener you could pass to http.createServer. The request walks the stack in registration order; a layer runs only if it matches (app.use('/api') mount-matches '/api' and '/api/…', routes match method + exact path). Each layer either responds (the walk ends — later layers never see the request), calls next() to pass on, or errors via throw/next(err), which flips dispatch into error mode: every remaining regular layer is skipped and the next 4-argument middleware receives the error. If the request falls off the end unanswered it is NOT an error — the built-in final handler returns 404 'Cannot GET …'. Registration order is the control flow.",
+  },
+  {
+    id: "express-async-v4v5",
+    chapter: "express",
+    topic: "Express",
+    level: "staff",
+    q: "What happens when an async Express handler throws — on Express 4 vs Express 5?",
+    a: "On Express 5 the framework awaits the handler's promise, so a rejection is forwarded to next(err) automatically and lands in the 4-arg error middleware — the trace is identical to a sync throw (verified against 5.2.1). On Express 4 the rejection escapes the framework entirely and becomes an unhandledRejection: on Node ≥15 that's fatal by default, so ONE unawaited throw crashes the whole process mid-request; if something swallows unhandledRejection instead, the request just hangs until a timeout reclaims it. The v4 medicine is try/catch + next(err) in every async handler or a wrapper (express-async-errors); the real fix is v5. This is the single most production-relevant reason to upgrade — and it ties straight into Node's fail-fast rejection semantics.",
+  },
+  {
+    id: "express-vs-fastify",
+    chapter: "express",
+    topic: "Express",
+    level: "staff",
+    q: "Express or Fastify for a new Node API — how do you decide?",
+    a: "They differ in model, not just speed. Express: one shared app, an ordered middleware pipeline, the largest ecosystem, v5 now handles async errors natively. Fastify: encapsulated plugins (decorators are scoped to a subtree, not global), schema-first validation on the way in and fast-json-stringify serialization on the way out — which is where most of its ~2–3× advantage on JSON microbenchmarks comes from — plus first-class TypeScript inference from schemas. I'd pick Fastify for high-RPS JSON services where serialization is a measured cost, Express for ecosystem/team familiarity and anything where the handler's I/O dominates — which is most apps: the routing layer is rarely the real bottleneck, so profile before switching frameworks (an @fastify/express bridge exists for gradual migration).",
   },
 ];
 

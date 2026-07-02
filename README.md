@@ -17,16 +17,16 @@ draw-from-memory **mental models** and **flashcards**.
 A static, offline-friendly web app: all content is bundled (no backend, no runtime fetches)
 and it deploys to GitHub Pages with no server. Built for **senior / staff engineers** — prose
 plus diagrams, mental models and **step-through simulators** to understand, internalize and
-remember how the runtime works, and to prep interviews. Twenty chapters across four parts share
+remember how the runtime works, and to prep interviews. Twenty-one chapters across four parts share
 one renderer; a concept-map landing, an interview bank, a mental-models gallery and flashcards
 sit alongside.
 
 ### Features
 
-1. **Twenty chapters, four parts.** Foundations & mental model → the runtime core → building
+1. **Twenty-one chapters, four parts.** Foundations & mental model → the runtime core → building
    real systems → mastery. Senior/staff depth, no hand-holding: event loop, V8 & GC, async,
    concurrency, streams & backpressure, modules, errors, HTTP internals, performance, security,
-   production patterns and modern Node.
+   production patterns, Express and modern Node.
 
 2. **Fifteen live simulators.** Step / play / pause interactives for the six event-loop phases,
    async ordering, V8 generational GC, the thread-pool-vs-kernel split, streams backpressure, the
@@ -129,16 +129,16 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 Статичний вебзастосунок, що працює офлайн: увесь контент вбудований (без бекенду й без запитів
 під час роботи), деплоїться на GitHub Pages без сервера. Зроблено для **senior / staff інженерів** —
 текст плюс діаграми, ментальні моделі та **покрокові симулятори**, щоб зрозуміти, засвоїти й
-запам'ятати, як працює рантайм, і підготуватися до співбесід. Двадцять розділів у чотирьох
+запам'ятати, як працює рантайм, і підготуватися до співбесід. Двадцять один розділ у чотирьох
 частинах ділять спільний рендерер; поруч — стартова концепт-мапа, банк інтерв'ю, галерея
 ментальних моделей і флешкарти.
 
 ### Можливості (Features)
 
-1. **Двадцять розділів, чотири частини.** Основи й ментальна модель → ядро рантайму → побудова
+1. **Двадцять один розділ, чотири частини.** Основи й ментальна модель → ядро рантайму → побудова
    реальних систем → майстерність. Senior/staff-глибина без спрощень: event loop, V8 & GC, async,
    конкурентність, потоки й backpressure, модулі, помилки, нутрощі HTTP, продуктивність, безпека,
-   продакшн-патерни та сучасний Node.
+   продакшн-патерни, Express та сучасний Node.
 
 2. **П'ятнадцять живих симуляторів.** Інтерактиви зі step / play / pause: шість фаз event loop,
    порядок async, генераційний GC у V8, поділ thread-pool-проти-kernel, backpressure у потоках,

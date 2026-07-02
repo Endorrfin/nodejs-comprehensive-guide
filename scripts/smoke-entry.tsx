@@ -29,6 +29,7 @@ const routes = [
   "#/chapter/performance",
   "#/chapter/security",
   "#/chapter/production",
+  "#/chapter/express",
   "#/chapter/modern-node",
   "#/chapter/summary",
   "#/interview",
@@ -209,7 +210,23 @@ for (const must of ["Graceful shutdown simulator", "SIGTERM", "server.close", "r
   console.log(`${has ? "PASS" : "FAIL"} production contains "${must}"`);
 }
 
-// ---- S8 Mastery (Ch.17 Modern Node, Ch.20 Summary) + study features --------
+// ---- S11 (Ch.17 Express): pipeline figure + hero sim + quiz -----------------
+const ex = render("#/chapter/express");
+for (const must of [
+  "Express",
+  "middleware pipeline simulator",
+  "registration order",
+  "error middleware",
+  "unhandledRejection",
+  "Fastify",
+  "Predict the output",
+]) {
+  const has = ex.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} express contains "${must}"`);
+}
+
+// ---- S8 Mastery (now Ch.18 Modern Node, Ch.21 Summary) + study features --------
 const mn = render("#/chapter/modern-node");
 for (const must of ["Modern Node", "Active LTS", "type stripping", "Permission Model", "require(esm)", "Node 27"]) {
   const has = mn.includes(must);

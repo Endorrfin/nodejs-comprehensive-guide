@@ -1,4 +1,4 @@
-/* "Draw from memory" gallery (Ch.19). One card per load-bearing picture in the
+/* "Draw from memory" gallery (Ch.20). One card per load-bearing picture in the
    guide — read the prompt, sketch the answer, then reveal the real diagram +
    the recap to check against. `figure` keys resolve via lib/registry FIGURES. */
 export interface ModelCard {
@@ -168,6 +168,15 @@ export const MODELS: ModelCard[] = [
     prompt: "Draw the graceful-shutdown sequence that drops zero in-flight requests.",
     answer:
       "On SIGTERM: fail readiness (so the LB stops sending new work) → stop accepting new connections → drain in-flight requests → close idle keep-alive sockets + server → exit(0), with a force-exit timer as a backstop. Abrupt exit drops in-flight requests as 502s.",
+  },
+  {
+    id: "middleware-pipeline",
+    title: "The Express middleware pipeline",
+    chapter: "express",
+    figure: "middleware-pipeline",
+    prompt: "Draw a request's path through an Express app: the ordered layer stack, next(), the error lane, and where the 404 comes from.",
+    answer:
+      "req → an ORDERED stack of (req, res, next) layers (registration order; app.use('/p') runs only under its mount) → the first matching route responds. throw / next(err) / a rejected async handler (v5) jumps over every regular layer to the next 4-ARG error middleware — selected by arity. Nothing matched + nothing sent → the built-in final handler → 404. Order is the control flow.",
   },
 
   // ------------------------------------------------------------------ Mastery

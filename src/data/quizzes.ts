@@ -247,3 +247,61 @@ exports.early = typeof a.hi;   // read at load time`,
       "When a requires b, b runs immediately and requires a back — but a hasn't reached `exports.hi = …` yet, so a's exports are PARTIAL. b reads typeof a.hi === 'undefined' (Node even warns about accessing a non-existent property in a circular dependency). In ESM the function binding is hoisted and live, so the same shape would read 'function' — ESM handles circular references more gracefully.",
   },
 ];
+
+/* Ch.21 (Express) — every answer captured from real Express 5.2.1
+   (scripts/node-truth-express.mjs, 2026-07-02). */
+export const expressQuiz: QuizQuestion[] = [
+  {
+    id: "eq-1",
+    level: "senior",
+    prompt: "Express 5. Which lines print for GET /health?",
+    code: `app.use((req, res, next) => { console.log('A'); next(); });
+app.use('/api', (req, res, next) => { console.log('B'); next(); });
+app.get('/health', (req, res) => { console.log('C'); res.send('ok'); });
+app.get('/api/users', (req, res) => { console.log('D'); res.json([]); });`,
+    choices: [
+      ["A", "C"],
+      ["A", "B", "C"],
+      ["A", "B", "C", "D"],
+      ["C"],
+    ],
+    correct: 0,
+    explain:
+      "Layers run in registration order, but only if they MATCH. The path-less middleware runs for every request (A). The second is mounted on '/api' — '/health' is outside it, so B is skipped. The '/health' route responds (C), ending the walk; D's route never matches. Captured trace: logger → handler, auth skipped.",
+  },
+  {
+    id: "eq-2",
+    level: "senior",
+    prompt: "Express 5. What prints for GET /r?",
+    code: `app.get('/r',
+  (req, res, next) => { console.log('one'); next('route'); },
+  (req, res)       => { console.log('two'); res.send('x'); });
+app.get('/r', (req, res) => { console.log('three'); res.send('y'); });`,
+    choices: [
+      ["one", "three"],
+      ["one", "two"],
+      ["one", "two", "three"],
+      ["one"],
+    ],
+    correct: 0,
+    explain:
+      "next('route') abandons the REST of the current route's handler sub-stack — 'two' never runs — and resumes the stack walk, so the next route on the same path answers: 'three'. Captured trace: r1-a → r2, with r1-b skipped. (It only works in app.METHOD/router.METHOD handlers, not in plain app.use.)",
+  },
+  {
+    id: "eq-3",
+    level: "staff",
+    prompt: "Express 5, async handler. What prints for GET /x?",
+    code: `app.get('/x', async () => { console.log('H'); throw new Error('boom'); });
+app.use((req, res, next) => { console.log('M'); next(); });
+app.use((err, req, res, next) => { console.log('E'); res.status(500).end(); });`,
+    choices: [
+      ["H", "E"],
+      ["H", "M", "E"],
+      ["H"],
+      ["H", "M"],
+    ],
+    correct: 0,
+    explain:
+      "Express 5 catches the rejected promise and forwards it as next(err). In error mode every regular (3-arg) layer is skipped — M never runs — and the next 4-ARG layer gets the error: E, then 500. Captured: the async trace is IDENTICAL to a sync throw. On Express 4 the rejection would escape the framework entirely and crash the process (unhandledRejection is fatal on Node ≥15) — E would never print.",
+  },
+];

@@ -1,0 +1,254 @@
+.ep-sim {
+  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #0e140d, var(--surface));
+  padding: 16px;
+  margin: 22px 0;
+}
+.ep-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ep-tabs button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--tx2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ep-tabs button.on {
+  border-color: var(--accent-deep);
+  background: var(--accent-dim);
+  color: var(--tx);
+}
+.ep-blurb {
+  font-size: 12.5px;
+  color: var(--tx2);
+  margin: 10px 2px 12px;
+}
+
+/* request line + outcome */
+.ep-callbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 2px 14px;
+}
+.ep-call {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent-bright);
+  background: #0c110b;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 5px 10px;
+}
+.ep-outcome {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.ep-outcome.ok {
+  color: var(--accent-bright);
+  border-color: var(--accent-deep);
+}
+.ep-outcome.bad {
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+.ep-outcome.info {
+  color: #38bdf8;
+  border-color: #155e75;
+}
+.ep-via {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+}
+
+/* the vertical layer stack (registration order = control flow) */
+.ep-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 2px;
+}
+.ep-req {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+  padding-left: 2px;
+}
+.ep-layer {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  opacity: 0.55;
+  transition: opacity 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.ep-layer.seen {
+  opacity: 0.85;
+}
+.ep-layer.on {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.04);
+}
+.ep-layer.err-lane {
+  border-style: dashed;
+  border-color: #7f1d1d;
+}
+.ep-layer.final-lane {
+  border-style: dashed;
+}
+.ep-layer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ep-layer-ttl {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx);
+}
+.ep-layer-sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tx3);
+  margin-top: 2px;
+}
+.ep-note {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 1.5px 8px;
+  white-space: nowrap;
+}
+.ep-handlers {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.ep-handler {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  opacity: 0.7;
+}
+.ep-handler.seen,
+.ep-handler.on {
+  opacity: 1;
+}
+.ep-handler.on {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* step caption */
+.ep-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 52px;
+  margin: 12px 2px;
+  border-left: 3px solid var(--line2);
+  padding-left: 12px;
+}
+.ep-stepttl {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.ep-detail {
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+
+/* controls */
+.ep-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.ep-progress {
+  flex: 1;
+  min-width: 80px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.ep-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+.ep-step {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+/* takeaway */
+.ep-takeaway {
+  margin-top: 14px;
+  border-top: 1px dashed var(--line2);
+  padding-top: 12px;
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+.ep-fate {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-right: 8px;
+}
+.ep-fate.ok {
+  color: var(--accent-bright);
+  border-color: var(--accent-deep);
+}
+.ep-fate.bad {
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+.ep-fate.info {
+  color: #38bdf8;
+  border-color: #155e75;
+}
+
+@media (max-width: 560px) {
+  .ep-sim {
+    padding: 12px;
+  }
+  .ep-layer {
+    padding: 7px 10px;
+  }
+  .ep-layer-ttl {
+    font-size: 11.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ep-layer,
+  .ep-progress-bar {
+    transition: none;
+  }
+}
