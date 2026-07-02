@@ -1123,3 +1123,241 @@ figure[id^="fig-"] {
     transform: rotate(360deg);
   }
 }
+
+/* ----- S13 living figures ---------------------------------------------------
+   CSS-keyframe tokens per the el-ball pattern. Every moving token has BASE
+   opacity 0 and fades in/out inside its keyframes, so the global
+   prefers-reduced-motion kill-switch (tokens.css) leaves each figure exactly
+   as static as before S13. Zero data/registry changes. */
+
+/* MiddlewarePipeline (express): a req token walks the chain, dwelling per layer */
+.mp-token {
+  opacity: 0;
+  filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.8));
+  animation: mp-walk 6s linear infinite;
+}
+@keyframes mp-walk {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  16% {
+    transform: translateX(110px); /* inside app.use(logger) */
+  }
+  23% {
+    transform: translateX(110px);
+  }
+  38% {
+    transform: translateX(250px); /* inside app.use('/api', auth) */
+  }
+  45% {
+    transform: translateX(250px);
+  }
+  60% {
+    transform: translateX(390px); /* inside app.get('/api/users') */
+  }
+  67% {
+    transform: translateX(390px);
+  }
+  80% {
+    transform: translateX(562px); /* res.json() → 200 box */
+    opacity: 1;
+  }
+  88%,
+  100% {
+    transform: translateX(562px);
+    opacity: 0;
+  }
+}
+
+/* StreamPipeline (streams): chunks flow forward; backpressure dashes march back */
+.sp-chunk {
+  opacity: 0;
+  filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.7));
+  animation: sp-flow 2.4s linear infinite;
+}
+.sp-chunk-2 {
+  animation-delay: -1.2s;
+}
+@keyframes sp-flow {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(88px);
+    opacity: 0;
+  }
+}
+.sp-bp {
+  animation: sp-march 1.4s linear infinite;
+}
+@keyframes sp-march {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -18; /* 2 × dash period (5+4) → seamless loop, sink → source */
+    opacity: 0.72;
+  }
+}
+
+/* KeepAlivePool (http): request dots ride the two pooled sockets, phase-shifted */
+.ka-dot {
+  opacity: 0;
+  filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.7));
+  animation: ka-ride 2.8s ease-in-out infinite;
+}
+.ka-dot-2 {
+  animation-delay: -1.4s;
+}
+@keyframes ka-ride {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(232px);
+    opacity: 0;
+  }
+}
+
+/* ThreadPoolKernel (concurrency): tokens follow the two Bézier split arrows via
+   offset-path — the orange task lands in the pool and DWELLS (a held thread),
+   green sockets stream past. Hidden entirely where offset-path is unsupported. */
+.tpk-task,
+.tpk-net {
+  visibility: hidden;
+}
+@supports (offset-path: path("M0 0 L1 1")) {
+  .tpk-task,
+  .tpk-net {
+    visibility: visible;
+    opacity: 0;
+  }
+  .tpk-task {
+    offset-path: path("M300,68 C 250,100 180,104 150,128");
+    filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.7));
+    animation: tpk-held 5.2s ease-in-out infinite;
+  }
+  .tpk-net {
+    offset-path: path("M380,68 C 430,100 500,104 530,128");
+    filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.7));
+    animation: tpk-pass 2.6s linear infinite;
+  }
+  .tpk-net-2 {
+    animation-delay: -1.3s;
+  }
+}
+@keyframes tpk-held {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  45% {
+    offset-distance: 100%;
+  }
+  78% {
+    offset-distance: 100%; /* dwell: the pool thread stays busy */
+    opacity: 1;
+  }
+  90%,
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+@keyframes tpk-pass {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+/* ShutdownSequence (production): drain progress draws along the process lane
+   while each step glows as the line reaches it */
+.sd-progress {
+  opacity: 0;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: sd-draw 7s linear infinite;
+}
+@keyframes sd-draw {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  3% {
+    opacity: 0.85;
+  }
+  70% {
+    stroke-dashoffset: 0;
+  }
+  86% {
+    opacity: 0.85;
+  }
+  95%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.sd-step {
+  animation: sd-glow 7s linear infinite;
+}
+.sd-step-2 {
+  animation-delay: 1s;
+}
+.sd-step-3 {
+  animation-delay: 2s;
+}
+.sd-step-4 {
+  animation-delay: 3.1s;
+}
+.sd-step-5 {
+  animation-delay: 4s;
+}
+@keyframes sd-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(74, 222, 128, 0));
+  }
+  5% {
+    filter: drop-shadow(0 0 7px rgba(74, 222, 128, 0.85));
+  }
+  12% {
+    filter: drop-shadow(0 0 0 rgba(74, 222, 128, 0));
+  }
+}

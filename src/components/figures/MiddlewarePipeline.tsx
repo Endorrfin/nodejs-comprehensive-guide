@@ -76,6 +76,9 @@ export function MiddlewarePipeline(): React.ReactElement {
       <text x="276" y="270" textAnchor="middle" fill="#9CB3A0" fontFamily="'JetBrains Mono',monospace" fontSize="8.5">404 · Cannot GET /nope — a miss is NOT an error</text>
       <path d="M396,258 L600,258 L600,206" fill="none" stroke="#38BDF8" strokeWidth="2" strokeDasharray="5 4" markerEnd="url(#mp-b)" />
       <text x="590" y="234" textAnchor="end" fill="#38BDF8" fontFamily="'JetBrains Mono',monospace" fontSize="8.5">404 res</text>
+      {/* CHANGED: S13 living figure — a req token walks the ordered chain, dwelling in each layer
+          (base opacity 0 in CSS, so prefers-reduced-motion shows the static figure unchanged) */}
+      <circle className="mp-token" cx="50" cy="72" r="5" fill="#4ADE80" />
     </svg>
   );
 }

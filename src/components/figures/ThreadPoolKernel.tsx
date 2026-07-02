@@ -83,6 +83,13 @@ export function ThreadPoolKernel(): React.ReactElement {
       <text x="28" y="308" fill="#6B7B6E" fontFamily="'JetBrains Mono',monospace" fontSize="10">
         Rule: the pool is for CPU/file/compress work — never use it to "speed up" network calls (the kernel already does).
       </text>
+      {/* CHANGED: S13 living figure — offset-path tokens along the two Bézier split arrows:
+          the orange task lands in the pool and DWELLS (a held thread) while green sockets
+          stream past continuously. Hidden where offset-path is unsupported (@supports guard)
+          and under prefers-reduced-motion (base opacity 0). */}
+      <circle className="tpk-task" r="5" fill="#FF7A00" />
+      <circle className="tpk-net" r="5" fill="#4ADE80" />
+      <circle className="tpk-net tpk-net-2" r="5" fill="#4ADE80" />
     </svg>
   );
 }

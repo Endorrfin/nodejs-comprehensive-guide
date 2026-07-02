@@ -51,8 +51,13 @@ export function StreamPipeline(): React.ReactElement {
         chunks →
       </text>
 
+      {/* CHANGED: S13 living figure — chunks flow forward along both links (hidden under reduced motion) */}
+      <circle className="sp-chunk" cx="176" cy="78" r="4.5" fill="#4ADE80" />
+      <circle className="sp-chunk sp-chunk-2" cx="416" cy="78" r="4.5" fill="#4ADE80" />
+
       {/* backward backpressure (red) */}
-      <path d="M508,150 L172,150" fill="none" stroke="#F87171" strokeWidth="1.8" strokeDasharray="5 4" markerEnd="url(#sp-back)" />
+      {/* CHANGED: S13 — sp-bp marches the dashes backward (sink → source) and gently pulses */}
+      <path className="sp-bp" d="M508,150 L172,150" fill="none" stroke="#F87171" strokeWidth="1.8" strokeDasharray="5 4" markerEnd="url(#sp-back)" />
       <text x="340" y="143" textAnchor="middle" fill="#F87171" fontFamily="'JetBrains Mono',monospace" fontSize="9.5">
         ← backpressure: buffer full → write() === false → pause the source
       </text>
