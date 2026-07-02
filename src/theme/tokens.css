@@ -34,6 +34,17 @@
   --sem-error: #f87171; /* errors / leaks / warnings */
   --sem-io: #fbbf24; /* I/O in flight */
 
+  /* CHANGED: S12 — code syntax-highlight tokens (derived from the §7 semantic
+     palette so code reads in the same color language as the diagrams) */
+  --code-cm: var(--tx3); /* comments — muted */
+  --code-str: var(--accent); /* strings — brand green */
+  --code-tpl: var(--accent); /* template literals — string family */
+  --code-kw: var(--sem-micro); /* keywords — violet */
+  --code-num: var(--sem-io); /* numbers — amber */
+  --code-type: #2dd4bf; /* Types / Capitalized — teal */
+  --code-fn: var(--sem-timer); /* function calls — blue */
+  --code-var: #2dd4bf; /* bash $vars / ENV_CAPS — teal */
+
   /* group accents (green-family — don't dilute the identity) */
   --grp-foundations: #6cc24a;
   --grp-runtime: #4ade80;

@@ -542,6 +542,32 @@
   color: var(--tx2);
   background: var(--surface);
 }
+/* CHANGED: S12 — syntax highlighting (spans emitted by lib/highlight.ts) */
+.code .hl-cm {
+  color: var(--code-cm);
+  font-style: italic;
+}
+.code .hl-str {
+  color: var(--code-str);
+}
+.code .hl-tpl {
+  color: var(--code-tpl);
+}
+.code .hl-kw {
+  color: var(--code-kw);
+}
+.code .hl-num {
+  color: var(--code-num);
+}
+.code .hl-type {
+  color: var(--code-type);
+}
+.code .hl-fn {
+  color: var(--code-fn);
+}
+.code .hl-var {
+  color: var(--code-var);
+}
 
 /* table */
 .tbl-wrap {
@@ -582,6 +608,16 @@ table.data td code {
   color: var(--tx3);
   margin-top: 7px;
   text-align: center;
+}
+/* CHANGED: S12 — numbered figure captions + anchor targets */
+.fig-cap .fig-n {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+figure[id^="fig-"] {
+  scroll-margin-top: 76px; /* clear the sticky TopBar when jumping to #fig-N */
 }
 
 /* compare */

@@ -2,11 +2,28 @@ import React from "react";
 import type { Section as Sec } from "../../data/concepts";
 import { Md } from "./Md";
 import { SIMS, FIGURES } from "../../lib/registry";
+import { tokenize } from "../../lib/highlight"; // CHANGED: S12
 
 const CALLOUT_ICON: Record<string, string> = { tip: "✓", warn: "▲", senior: "★" };
 const CALLOUT_WORD: Record<string, string> = { tip: "Tip", warn: "Watch out", senior: "Senior note" };
 
-export function SectionView({ section }: { section: Sec }): React.ReactElement {
+// CHANGED: S12 — zero-dep syntax highlighting: flat spans, text preserved
+// verbatim (React escapes it), unstyled tokens stay plain strings.
+function highlight(code: string, lang: string): React.ReactNode[] {
+  return tokenize(code, lang).map((t, i) =>
+    t.cls ? (
+      <span key={i} className={`hl-${t.cls}`}>
+        {t.text}
+      </span>
+    ) : (
+      t.text
+    ),
+  );
+}
+
+// CHANGED: S12 — figNum: per-chapter figure counter (passed by ChapterPage)
+// → "Fig. N" caption prefix + a stable #fig-N anchor id.
+export function SectionView({ section, figNum }: { section: Sec; figNum?: number }): React.ReactElement {
   switch (section.kind) {
     case "prose":
       return (
@@ -38,7 +55,8 @@ export function SectionView({ section }: { section: Sec }): React.ReactElement {
             {section.lang}
           </div>
           <pre>
-            <code>{section.code}</code>
+            {/* CHANGED: S12 — was a bare {section.code} */}
+            <code>{highlight(section.code, section.lang)}</code>
           </pre>
           {section.note ? <div className="note">{section.note}</div> : null}
         </div>
@@ -90,10 +108,16 @@ export function SectionView({ section }: { section: Sec }): React.ReactElement {
 
     case "figure": {
       const Fig = FIGURES[section.fig];
+      // CHANGED: S12 — numbered caption ("Fig. N — …") + anchor id (#fig-N)
       return (
-        <figure className="section" style={{ margin: "20px 0" }}>
+        <figure className="section" id={figNum ? `fig-${figNum}` : undefined} style={{ margin: "20px 0" }}>
           <div className="figure">{Fig ? <Fig /> : <em>figure: {section.fig}</em>}</div>
-          {section.caption ? <figcaption className="fig-cap">{section.caption}</figcaption> : null}
+          {figNum || section.caption ? (
+            <figcaption className="fig-cap">
+              {figNum ? <span className="fig-n">{`Fig. ${figNum}${section.caption ? " — " : ""}`}</span> : null}
+              {section.caption ?? null}
+            </figcaption>
+          ) : null}
         </figure>
       );
     }

@@ -1646,6 +1646,15 @@ await pipeline(
         md: "**ESM** is a graph processed in **three distinct phases**, none of which is your code running until the last one: **(1) parse / construct** — read every module, statically extract its `import`/`export` statements, and recursively fetch the whole graph; **(2) instantiate / link** — allocate each module's exported names and wire every `import` to the exporter's **live binding** (still no code run); **(3) evaluate** — run module bodies in post-order, once each. Separating *link* from *evaluate* is what gives ESM its superpowers: imports are **hoisted**, the graph is **statically analyzable** (tree-shaking, bundling), `import` can be **asynchronous** (and support top-level `await`), and **circular** references resolve through the pre-wired bindings.",
       },
       {
+        // CHANGED: S12 — the only fig-less content chapter gets its (already
+        // registered) diagram in-body; was previously reachable only from the
+        // mental-models gallery.
+        kind: "figure",
+        fig: "module-load-compare",
+        caption:
+          "CJS interleaves resolve + evaluate depth-first and caches by resolved path; ESM parses and links the whole graph before any body runs. Same post-order result — different timing.",
+      },
+      {
         kind: "prose",
         md: "Step the **same diamond graph** (`app` imports `left` and `right`; both import `base`) through each loader below. Watch *when* code runs: CommonJS interleaves resolution and evaluation and hits the cache on the second `base`; ESM finishes parsing and linking the entire graph **before any body evaluates**. Both end with the same post-order `base → left → right → app`, `base` exactly once — the difference is the *timing*.",
       },
