@@ -261,9 +261,36 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   typecheck → lint → qa → tests → build. (Cross-ported from the database guide.)
 - **S11 · Express (ExpressJS)** — DONE. Ch.17 `express` (end of Part III; Mastery renumbered 18–21 in S11b) built
   to the golden bar: truth captured vs REAL Express 5.2.1 + 4.22.2, middleware-pipeline hero sim driven by a real
-  dispatcher engine, figure, quiz, +3 bank entries, +1 model card. All gates green (see log). **Roadmap complete.**
-  Optional future: the single curated interview-prep PDF (§8); regenerate `public/og.png` (chips still say
-  "20 chapters / 15 simulators").
+  dispatcher engine, figure, quiz, +3 bank entries, +1 model card. All gates green (see log).
+  **Content roadmap (S0–S11) complete** — the visual track below continues it.
+
+**Visual track (S12–S15)** — from the 2026-07-02 visual audit (see log): 18 of 19 content chapters have exactly ONE
+static figure; `modules` has none in-body; code blocks render as plain text; only `EventLoopRing` is animated;
+`what-is-node` / `weaknesses` / `summary` have no interactive; `public/og.png` is stale. Ordered by impact/cost:
+
+- **S12 · Visual pass I — code highlighting + figure plumbing** — DONE (2026-07-02, see log).
+  (a) **Zero-dependency syntax highlighter** (~1–2 kB hand-rolled tokenizer: comments · strings · template
+  literals · keywords · numbers · types/caps · function calls; langs js/ts/bash) rendered by the `code` case in
+  `components/chapter/Section.tsx` (today it's a bare `<code>{section.code}</code>`); colors from the §7 semantic
+  palette as new `--code-*` tokens; SSR-safe (pure function → spans, no browser APIs). Add
+  `scripts/test-highlight.ts` (tokenizer snapshots + invariants: output text === input text, no nested spans;
+  suites 16 → 17). (b) **Numbered figure captions** ("Fig. N — …", counter per chapter in `ChapterPage`) + anchor
+  ids. (c) Insert the already-registered `module-load-compare` figure into Ch.11 `modules` body (1 data edit —
+  the only fig-less content chapter). Verify: full gate run + SSR smoke assertions on highlighted output.
+- **S13 · Visual pass II — living figures** — **NEXT (new session).** CSS-keyframe tokens per the proven `el-ball` pattern (S9g),
+  reduced-motion-safe (global kill-switch already covers it), zero data/qa changes: `MiddlewarePipeline` (req
+  token walks the chain), `StreamPipeline` (chunks flow; backpressure arrow pulses), `KeepAlivePool` (request
+  dots along the reuse arrows), `ThreadPoolKernel` (tasks queue into the pool vs stream past it), `GcHeap`
+  (scavenge copy young→old), `ShutdownSequence` (drain progress). Pick 4–6 at session start; verify in built CSS.
+- **S14 · Atlas + PNG export + og refresh.** New `/atlas` route: every diagram from the `FIGURES` registry
+  (data-driven like flashcards), part filter, click → owning chapter; per-figure **"⤓ PNG" client-side export**
+  (inline SVG → canvas → PNG, no deps) → branded poster/LinkedIn assets straight from the app. Regenerate
+  `public/og.png` via `scripts/ogtools` (chips still say "20 chapters / 15 simulators" — now 21/20). Wire the
+  route into smoke + qa KNOWN_ROUTES.
+- **S15 · Visual pass III (optional).** Ch.3 `weaknesses` "block the loop" interactive **reusing the existing
+  `eventLoopLagEngine`** (slider: sync ms per request → p99 of everyone else); Overview "graph view" toggle
+  (SVG graph of `seeAlso` edges — data already validated by qa); cross-port from the database guide (their S22):
+  light/dark/system **theme toggle** + **print stylesheet**. Scope to appetite at session start.
 
 ## 13. Status / progress log
 
@@ -673,4 +700,52 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   chapter **ids/URLs untouched**, so no links break (qa enforces contiguous 1..21). Stale "Ch.NN" code comments
   updated across engine/figures/registry/smoke; §5 renumbered. **Re-verified:** `tsc` clean · all 16 suites PASS ·
   QA **885/0** · SSR smoke **SMOKE OK** (24 routes).
+- **2026-07-02 · Visual audit → S12–S15 planned (docs only)** — Audited illustration coverage from the data layer
+  (per-chapter section kinds) + component sources. Findings, verified against the repo:
+  • **figures:** 18 of 19 content chapters have exactly ONE in-body figure; **`modules` (Ch.11) has ZERO**
+    (its `module-load-compare` diagram is registered but used only by the mental-models gallery);
+    `http` is the only 2-figure chapter. • **animation:** `EventLoopRing` is the ONLY animated figure (el-ball,
+    S9g) — the other 21 are fully static. • **code blocks:** `Section.tsx` renders `<code>{section.code}</code>`
+    — **no syntax highlighting anywhere** (~20 code blocks across the guide). • **sims:** `what-is-node`,
+    `weaknesses`, `summary` have none (`weaknesses` is the gap worth closing — `eventLoopLagEngine` can be
+    reused nearly for free). • **stale asset:** `public/og.png` chips say "20 chapters / 15 simulators"
+    (now 21 / 20). Wrote the **visual track S12–S15** into §12 (S12 highlighting + figure plumbing → S13 living
+    figures → S14 atlas + PNG export + og refresh → S15 optional extras) with scope details so a fresh session
+    can start from §12 alone. No source/behaviour changes this block.
+  **Next session: S12** — (a) zero-dep syntax highlighter in `Section.tsx` + `--code-*` theme tokens +
+  `scripts/test-highlight.ts` (suites 16 → 17); (b) "Fig. N" numbered captions + anchors in `ChapterPage`;
+  (c) add `module-load-compare` to the `modules` chapter body. Then full verify + SSR smoke as always.
+- **2026-07-02 · S12 Visual pass I — syntax highlighting + figure plumbing** — DONE, all three scope items:
+  • **(a) Zero-dep syntax highlighter** — new `src/lib/highlight.ts` (~2 kB): pure `tokenize(code, lang)` →
+    flat token list; sticky-regex scan + a manual template-literal scanner (`${}` interpolation re-scanned as
+    code; recursion handles nesting). Classes `cm/str/tpl/kw/num/type/fn/var`; langs **js/ts** (one scanner,
+    TS adds keywords) + **bash** (command-position tracking → `node`/`npm` as `fn`; ENV_CAPS + `$vars` as
+    `var`); unknown lang → single unstyled token. **Regex literals deliberately unsupported** (corpus has
+    none — verified; a `/` just stays plain). SSR-safe (no browser APIs). Rendered by the `code` case in
+    `Section.tsx` (was a bare `<code>{section.code}</code>`); unstyled tokens stay plain strings, so React
+    escaping keeps text verbatim. New `--code-*` tokens in `tokens.css` derived from the §7 semantic palette
+    (kw=violet/micro, str+tpl=brand green, num=amber/io, fn=blue/timer, type+var=teal, cm=muted italic) +
+    `.code .hl-*` rules in `global.css`.
+  • **(b) Numbered figures** — `ChapterPage` computes a per-chapter figure counter → `figNum` prop on
+    `SectionView`; each in-body figure renders `id="fig-N"` + a "**Fig. N — caption**" prefix (`.fig-n`,
+    mono/green); `figure[id^="fig-"] { scroll-margin-top: 76px }` clears the sticky TopBar on anchor jumps.
+    Anchors are **ids only** — no `href="#fig-N"` links (they'd fight the hash router; same reason ChapterPage
+    jump-links preventDefault + scrollIntoView).
+  • **(c) modules figure** — `module-load-compare` inserted into Ch.11 body (after the ESM 3-phase prose,
+    before the resolver sim) with a timing-contrast caption; every content chapter now has ≥1 in-body figure.
+  **New suite `scripts/test-highlight.ts` (suites 16 → 17, wired before qa in `npm test`):** invariants over
+  the REAL corpus — all **19** `code` sections: concat(tokens.text) === input, non-empty tokens, valid classes
+  only, every block gets SOME highlighting — plus 44 classification snapshots (line/block comments, strings w/
+  escapes + unterminated, templates incl. nesting, hex/bin/underscore/BigInt numbers, Caps→type, `if(`→kw-not-fn,
+  bash `PORT=3000 node`→fn / `${HOME}`→var, unknown-lang passthrough, determinism, token merging).
+  **Verified:** `tsc` clean · eslint **0 errors** (4 known react-refresh warnings in `registry.tsx`) ·
+  **17 suites ALL PASS** · QA **886/0** (was 885; +1 = the new figure section; 21 chapters · 20 sims ·
+  22 figures · 46 IV Q · 19 models) · build OK (**≈219 kB gz** incl. react-vendor — +~1.5 kB for the
+  highlighter spans) · SSR smoke **24 routes SMOKE OK** incl. new S12 assertions (`hl-cm/str/fn/num` +
+  `Fig. 1` + `id="fig-1"` on event-loop · bash `hl-fn/cm` on security · `hl-kw` + the new figure caption on
+  modules). (Scratch `scripts/_s12dist|_ssr_s12` gitignored via `scripts/_*`; sandbox can't `unlink` — delete
+  locally.) **Pending (user):** `npm run verify` on the Mac, then commit + push to deploy.
+  **Next session: S13 — living figures**: pick 4–6 of MiddlewarePipeline · StreamPipeline · KeepAlivePool ·
+  ThreadPoolKernel · GcHeap · ShutdownSequence; CSS keyframes per the el-ball pattern, reduced-motion-safe,
+  zero data/qa changes (§12).
 - *(Update this log at the end of every session/block — per user request.)*

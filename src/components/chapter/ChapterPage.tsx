@@ -36,6 +36,10 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
   // several interactive widgets, e.g. a sim + a quiz — avoid duplicate ids).
   const firstSimIdx = ch.sections.findIndex((s) => s.kind === "sim");
   const hasSim = firstSimIdx !== -1;
+  // CHANGED: S12 — running per-chapter figure counter: section index → Fig. N
+  // (0 = not a figure), drives the "Fig. N" captions + #fig-N anchors.
+  let figCount = 0;
+  const figNums = ch.sections.map((s) => (s.kind === "figure" ? ++figCount : 0));
 
   return (
     <article className="chapter">
@@ -86,7 +90,8 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
       <div className="ch-sections">
         {ch.sections.map((s, i) => (
           <div key={i} id={i === firstSimIdx ? "simulator" : undefined}>
-            <SectionView section={s} />
+            {/* CHANGED: S12 — pass the figure number for captions/anchors */}
+            <SectionView section={s} figNum={figNums[i] || undefined} />
           </div>
         ))}
       </div>

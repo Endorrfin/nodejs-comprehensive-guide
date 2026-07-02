@@ -226,6 +226,28 @@ for (const must of [
   console.log(`${has ? "PASS" : "FAIL"} express contains "${must}"`);
 }
 
+// ---- S12 visual pass I: syntax highlighting + numbered figure anchors -------
+// event-loop has js code w/ comments+strings+calls and a figure → assert both
+// features land in SSR HTML (spans with hl-* classes, Fig. caption, #fig-N).
+for (const must of ['class="hl-cm"', 'class="hl-str"', 'class="hl-fn"', 'class="hl-num"', 'id="fig-1"', "Fig. 1"]) {
+  const has = el.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} event-loop (S12) contains '${must}'`);
+}
+// bash highlighting (security ch. has the --permission bash block)
+const secHl = render("#/chapter/security");
+for (const must of ['class="hl-fn"', 'class="hl-cm"']) {
+  const has = secHl.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} security (S12) contains '${must}'`);
+}
+// modules now carries its module-load-compare figure in-body (was fig-less)
+for (const must of ['id="fig-1"', "different timing", 'class="hl-kw"']) {
+  const has = md.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} modules (S12) contains '${must}'`);
+}
+
 // ---- S8 Mastery (now Ch.18 Modern Node, Ch.21 Summary) + study features --------
 const mn = render("#/chapter/modern-node");
 for (const must of ["Modern Node", "Active LTS", "type stripping", "Permission Model", "require(esm)", "Node 27"]) {
