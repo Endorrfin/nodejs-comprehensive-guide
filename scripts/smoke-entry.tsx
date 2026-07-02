@@ -248,6 +248,20 @@ for (const must of ['id="fig-1"', "different timing", 'class="hl-kw"']) {
   console.log(`${has ? "PASS" : "FAIL"} modules (S12) contains '${must}'`);
 }
 
+// ---- S13 visual pass II: living-figure tokens present in the figure SVGs ----
+// (classes only — the motion itself lives in CSS keyframes, not in SSR output)
+for (const [name, html, cls] of [
+  ["express", ex, "mp-token"],
+  ["streams", st, "sp-chunk"],
+  ["http", httpc, "ka-dot"],
+  ["concurrency", cc, "tpk-task"],
+  ["production", prod, "sd-progress"],
+] as const) {
+  const has = html.includes(cls);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} ${name} (S13) figure carries living token "${cls}"`);
+}
+
 // ---- S8 Mastery (now Ch.18 Modern Node, Ch.21 Summary) + study features --------
 const mn = render("#/chapter/modern-node");
 for (const must of ["Modern Node", "Active LTS", "type stripping", "Permission Model", "require(esm)", "Node 27"]) {

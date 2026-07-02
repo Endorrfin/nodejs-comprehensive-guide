@@ -277,11 +277,10 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   suites 16 → 17). (b) **Numbered figure captions** ("Fig. N — …", counter per chapter in `ChapterPage`) + anchor
   ids. (c) Insert the already-registered `module-load-compare` figure into Ch.11 `modules` body (1 data edit —
   the only fig-less content chapter). Verify: full gate run + SSR smoke assertions on highlighted output.
-- **S13 · Visual pass II — living figures** — **NEXT (new session).** CSS-keyframe tokens per the proven `el-ball` pattern (S9g),
-  reduced-motion-safe (global kill-switch already covers it), zero data/qa changes: `MiddlewarePipeline` (req
-  token walks the chain), `StreamPipeline` (chunks flow; backpressure arrow pulses), `KeepAlivePool` (request
-  dots along the reuse arrows), `ThreadPoolKernel` (tasks queue into the pool vs stream past it), `GcHeap`
-  (scavenge copy young→old), `ShutdownSequence` (drain progress). Pick 4–6 at session start; verify in built CSS.
+- **S13 · Visual pass II — living figures** — DONE (2026-07-02, see log). 5 of 6 candidates animated
+  (user picked all but `GcHeap` — its scavenge story is already animated by the GC hero sim): `MiddlewarePipeline`,
+  `StreamPipeline`, `KeepAlivePool`, `ThreadPoolKernel` (offset-path under an `@supports` guard), `ShutdownSequence`.
+  el-ball pattern, reduced-motion-safe (tokens have base `opacity:0`), zero data/qa changes.
 - **S14 · Atlas + PNG export + og refresh.** New `/atlas` route: every diagram from the `FIGURES` registry
   (data-driven like flashcards), part filter, click → owning chapter; per-figure **"⤓ PNG" client-side export**
   (inline SVG → canvas → PNG, no deps) → branded poster/LinkedIn assets straight from the app. Regenerate
@@ -748,4 +747,35 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   **Next session: S13 — living figures**: pick 4–6 of MiddlewarePipeline · StreamPipeline · KeepAlivePool ·
   ThreadPoolKernel · GcHeap · ShutdownSequence; CSS keyframes per the el-ball pattern, reduced-motion-safe,
   zero data/qa changes (§12).
+- **2026-07-02 · S13 Visual pass II — living figures** — DONE. **5 of 6 candidates** animated (user's session-start
+  pick: all but `GcHeap` — the GC hero sim already animates that exact scavenge→promote story). Pure CSS per the
+  el-ball pattern: figure TSX edits add only class-named tokens (`// CHANGED:`), all motion lives in a new
+  "S13 living figures" section of `global.css`; **zero data/registry/qa changes** (QA unchanged 886/0).
+  • **`MiddlewarePipeline`** — `mp-token` req dot walks the chain with dwells inside each layer, ends in the
+    200 box (`mp-walk` 6s). • **`StreamPipeline`** — two `sp-chunk` dots flow Readable→Transform→Writable
+    (phase-shifted −1.2s); `sp-bp` marches the backpressure dashes sink→source (`stroke-dashoffset` −18 = 2 dash
+    periods → seamless loop) with a gentle opacity pulse. • **`KeepAlivePool`** — two `ka-dot` requests ride the
+    two reused sockets, phase-shifted. • **`ThreadPoolKernel`** — the only curved-path figure: tokens follow the
+    two Bézier split arrows via **CSS `offset-path`/`offset-distance`** inside an **`@supports (offset-path:
+    path(…))` guard** (unsupported browsers: `visibility:hidden` → today's static figure); the orange task lands
+    in the pool and **dwells** (a held thread, `tpk-held` 5.2s) while two green sockets stream past continuously
+    (`tpk-pass` 2.6s). • **`ShutdownSequence`** — `sd-progress` line (pathLength 100 + dashoffset draw) grows
+    along the process lane while `sd-step-1..5` glow in sequence (delays 0/1/2/3.1/4s ≈ synced to the line
+    reaching each box).
+  **Reduced-motion invariant:** every moving token has BASE `opacity:0` and fades in/out only inside its
+  keyframes — the global kill-switch (tokens.css: duration .001ms, 1 iteration, fill-mode none → base styles)
+  therefore renders each figure **exactly as static as before S13** (el-ball itself stays the one visible-frozen
+  exception, as before). Animated properties are compositor/paint-cheap (transform · opacity · dashoffset ·
+  offset-distance · drop-shadow on 5 tiny rects).
+  **Wired:** smoke-entry += 5 S13 class assertions (mp-token/sp-chunk/ka-dot/tpk-task/sd-progress on their
+  chapters). **Verified (sandbox):** `tsc` clean · eslint **0 errors** (4 known react-refresh warnings) ·
+  **all 16 engine suites PASS** · **QA 886/0** · `vite build` OK (CSS 82.6 kB / 13.1 kB gz; all 8 keyframes
+  `mp-walk/sp-flow/sp-march/ka-ride/tpk-held/tpk-pass/sd-draw/sd-glow` + `@supports`+`offset-path` present in
+  the minified CSS) · SSR smoke **24 routes / 172 PASS / 0 FAIL — SMOKE OK** incl. the 5 new S13 assertions.
+  (Scratch `scripts/_s13dist|_ssr_s13` gitignored via `scripts/_*`; sandbox can't `unlink` — delete locally.
+  Sandbox needed `npm i --no-save @rolldown/binding-linux-arm64-gnu` as in S11/S12; lockfile untouched.)
+  **Pending (user):** `npm run verify` on the Mac (plus a real-browser eyeball of the 5 figures and a
+  reduced-motion check), then commit + push to deploy.
+  **Next session: S14 — Atlas + PNG export + og refresh** (§12): `/atlas` route over the `FIGURES` registry,
+  per-figure client-side PNG export, regenerate stale `public/og.png` (chips say 20/15 → now 21/20).
 - *(Update this log at the end of every session/block — per user request.)*

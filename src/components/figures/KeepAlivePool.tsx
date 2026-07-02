@@ -39,6 +39,10 @@ export function KeepAlivePool(): React.ReactElement {
       {/* reuse arrows to origin */}
       <path d="M230,82 L470,82" fill="none" stroke="#6CC24A" strokeWidth="2" markerEnd="url(#ka-g)" />
       <path d="M230,116 L470,116" fill="none" stroke="#6CC24A" strokeWidth="2" markerEnd="url(#ka-g)" />
+      {/* CHANGED: S13 living figure — request dots ride the two reused sockets, phase-shifted
+          (base opacity 0 in CSS → static under prefers-reduced-motion) */}
+      <circle className="ka-dot" cx="234" cy="82" r="4.5" fill="#4ADE80" />
+      <circle className="ka-dot ka-dot-2" cx="234" cy="116" r="4.5" fill="#4ADE80" />
       <text x="350" y="73" textAnchor="middle" fill="#6CC24A" fontFamily="'JetBrains Mono',monospace" fontSize="9.5">reuse open socket → no handshake</text>
       <text x="350" y="135" textAnchor="middle" fill="#9CB3A0" fontFamily="'JetBrains Mono',monospace" fontSize="9">requests share the pooled connections</text>
 

@@ -45,13 +45,18 @@ export function ShutdownSequence(): React.ReactElement {
       ))}
 
       {/* process steps */}
+      {/* CHANGED: S13 living figure — sd-step-N rects glow in sequence as the drain progresses */}
       {proc.map((s, i) => (
         <g key={s.t}>
-          <rect x={s.x - 54} y="136" width="108" height="40" rx="8" fill="#101810" stroke={i === proc.length - 1 ? "#6CC24A" : "#3C873A"} strokeWidth={i === proc.length - 1 ? 1.7 : 1.2} />
+          <rect className={`sd-step sd-step-${i + 1}`} x={s.x - 54} y="136" width="108" height="40" rx="8" fill="#101810" stroke={i === proc.length - 1 ? "#6CC24A" : "#3C873A"} strokeWidth={i === proc.length - 1 ? 1.7 : 1.2} />
           <text x={s.x} y="154" textAnchor="middle" fill="#cdebbf" fontFamily="'JetBrains Mono',monospace" fontSize="9.5">{s.t}</text>
           <text x={s.x} y="167" textAnchor="middle" fill="#6B7B6E" fontFamily="'JetBrains Mono',monospace" fontSize="8">{s.t2}</text>
         </g>
       ))}
+
+      {/* CHANGED: S13 living figure — drain progress draws left→right under the process lane
+          (pathLength 100 + dashoffset; base opacity 0 → static under prefers-reduced-motion) */}
+      <line className="sd-progress" x1="120" y1="183" x2="660" y2="183" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" pathLength={100} />
 
       {/* SIGTERM → catch link */}
       <path d="M450,72 L450,100 L150,100 L150,134" fill="none" stroke="#38BDF8" strokeWidth="1.5" strokeDasharray="4 3" />
