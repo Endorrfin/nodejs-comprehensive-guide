@@ -106,7 +106,7 @@ so content stays declarative and widgets stay reusable.
 
 ## 5. Curriculum (maps `list of concepts.txt` → chapters)
 
-Four groups (each with an accent), ~20 chapters:
+Four groups (each with an accent), 21 chapters:
 
 **I · Foundations & mental model**
 1. What is Node.js — definition, purpose, scale
@@ -129,12 +129,15 @@ Four groups (each with an accent), ~20 chapters:
 14. Performance & profiling — flamegraphs, `--prof`, clinic, event-loop lag
 15. Security & supply chain — CVEs, npm, permissions model, hardening
 16. Production patterns — graceful shutdown · scaling · serverless *(graceful-shutdown sim)*
+17. **Express (ExpressJS)** — routing · the middleware pipeline (`next()` + 4-arg error lane) · `Router` ·
+    vs raw `http`/Fastify *(middleware-pipeline hero sim + predict-output quiz; added in S11)*
 
 **IV · Mastery**
-17. Modern Node (2026) — versions & capabilities *(web-search to verify)*
-18. 40 senior/staff interview questions — filterable bank
-19. Mental models — the gallery you must be able to draw from memory
-20. Summary — the whole picture on one page
+18. Modern Node (2026) — versions & capabilities *(web-search to verify)*
+19. 40 senior/staff interview questions — filterable bank
+20. Mental models — the gallery you must be able to draw from memory
+21. Summary — the whole picture on one page
+
 
 ## 6. Hero simulators (priority interactives)
 
@@ -251,8 +254,16 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
 - **S6 · Real systems A** — Ch.12 Errors; Ch.13 Networking & HTTP internals (+ HTTP-lifecycle interactive).
 - **S7 · Real systems B** — Ch.14 Performance & profiling; Ch.15 Security & supply chain; Ch.16 Production patterns (+ graceful-shutdown sim). *(web-search current tooling/CVEs.)*
 - **S8 · Mastery + polish** — Ch.17 Modern Node 2026 *(web-search versions)*; Ch.18 Interview bank (40 Q); Ch.19 Mental-models gallery; Ch.20 Summary; global search, flashcards, mobile/a11y/perf pass.
-- **S9–S10 · Deep-dive PDFs** — satori pipeline; one golden PDF, then batch by group; link `pdf` per chapter.
-- **S11–S12 · Buffer** — extra "maximal" interactives, final QA, optional LinkedIn pack.
+- **S9 · Polish & ship** — DONE (PDF plan **dropped**, see §8 + log). Content-complete guide hardened: content/link
+  integrity QA gate, About page, LinkedIn link, rich `og:image`, mobile chapter-nav drawer + sim mobile fine-tune,
+  animated token on the event-loop ring figure. Live on GitHub Pages.
+- **S10 · Infra parity** — DONE. Real ESLint (flat config) + `lint`/`verify` scripts; CI gates on
+  typecheck → lint → qa → tests → build. (Cross-ported from the database guide.)
+- **S11 · Express (ExpressJS)** — DONE. Ch.17 `express` (end of Part III; Mastery renumbered 18–21 in S11b) built
+  to the golden bar: truth captured vs REAL Express 5.2.1 + 4.22.2, middleware-pipeline hero sim driven by a real
+  dispatcher engine, figure, quiz, +3 bank entries, +1 model card. All gates green (see log). **Roadmap complete.**
+  Optional future: the single curated interview-prep PDF (§8); regenerate `public/og.png` (chips still say
+  "20 chapters / 15 simulators").
 
 ## 13. Status / progress log
 
@@ -478,10 +489,10 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   • **Ch.19 Mental-models** — gallery expanded **5 → 19 cards** (one+ per major concept, each tied to its real
     figure); `MentalModelsPage` upgraded — **group filter**, **reveals the actual diagram** (not just text),
     group chip, `aria-expanded`, reduced-motion.
-  • **Ch.18 Interview** — bank already at **44 Q** (target 40 met, found pre-built) so **no new content**; fixed the
+  • **Ch.18 Interview** — bank already at **43 Q** (target 40 met, found pre-built) so **no new content**; fixed the
     stale "growing to 40" copy and added **free-text search** over Q+A on `InterviewPage`.
   • **Flashcards** (new study feature) — `/flashcards` route + nav; unified deck (`lib/flashcards.ts`) assembled
-    from the 19 mental models + 44 interview Qs (**63 cards**, no new content to maintain); reveal-then-grade where
+    from the 19 mental models + 43 interview Qs (**62 cards**, no new content to maintain); reveal-then-grade where
     **"Again" re-queues** the card so a round repeats what you miss; group/source filters, shuffle/restart,
     keyboard (space=flip · 1=again · 2=got it · ←=prev), progress + counts, reduced-motion.
   • **Global search upgrade** — `lib/search.ts` indexes chapters **incl. section prose/callouts/tables**, the
@@ -605,4 +616,61 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
   in the database guide) · `qa-integrity` 829/0 · engine tests PASS. **Pending (owner):** `npm install`,
   then `npm run verify`; commit + push. **Next: cross-port Wave 2 (A→B test layer into the database
   guide) — new session.**
+- **2026-07-02 · Docs consolidation + Express planned** — Project now lives at `guides/Node-js guide/` (moved into
+  the multi-guide family; the old top-level `node-js_comprehensive-guide/` path is a stale leftover — work here).
+  Re-verified current state green in the new location: `tsc` clean · engine tests **ALL PASS** · `qa-integrity`
+  **829/0** (20 chapters · 18 sims · 21 figures · 43 interview Q · 18 models). Corrected S8's log miscounts
+  (44 Q / 63 cards → **43 / 62** — a grep had counted the `q:` *interface field*; git shows the bank at 43 since S8;
+  gallery 19 → 18 as of S9c). Updated **§5** (added planned
+  **Express** chapter #21) and **§12** (marked S9 polish + S10 infra-parity DONE; PDF track dropped). **Next session:
+  add the Express (ExpressJS) section** — likely a Part III chapter (routing · middleware pipeline · `next()` + error
+  middleware · `Router` · vs raw `http`/Fastify) with a middleware-pipeline sim; finalize scope + chapter id/order at
+  start, build to the golden-chapter bar, then `npm run verify` + deploy.
+- **2026-07-02 · S11 Express (ExpressJS)** — DONE. **Ch.21 `express`** (group `systems`, order 21 — appended at the
+  end of Part III per session-start decision, no renumbering; full golden bar + quiz scope). Truth-first as always:
+  • **Ground truth captured vs REAL Express 5.2.1 + 4.22.2** (`scripts/node-truth-express.mjs`; scratch installs in
+    gitignored `scripts/_s11truth/e5|e4`): registration order + mount scoping (`/api` matches `/api(/…)`, not
+    `/apix`); `next('route')` (r1-a → r2, r1-b skipped); **arity selects the error lane** (a decoy 3-arg "error
+    handler" ran as REGULAR mw — even on the 404 path); **v5 auto-forwards rejected async handlers** (trace
+    IDENTICAL to a sync throw → 4-arg mw, 500) while **v4's same throw crashed the process** (forked child, exit 1;
+    unhandledRejection fatal on Node ≥15) and merely **hangs** when something swallows the event; 404 fallthrough
+    runs all matching regular mw then `finalhandler` ("Cannot GET /nope" — a miss is NOT an error); Router **strips
+    the mount prefix** (`req.url` `/users/42`, `baseUrl` `/api/v2`); default handler honors `err.status` (418);
+    **v5 query parser default 'simple'** (`?a[b]=1` → literal `"a[b]"` key); `X-Powered-By: Express`;
+    `typeof app === 'function'`, `http.createServer(app)` works, `app.listen` returns a real `http.Server`.
+  • **`expressEngine.ts`** — a real deterministic DISPATCHER (not hand-written steps): mount/route matching, the
+    three moves (respond / next() / error mode), `next('route')` sub-stack skipping, arity-gated error lane,
+    default-handler + final-404 tails; 4 sim scenarios computed from it. **`scripts/test-express.ts` (38 checks)**
+    rebuilds the captured app as engine layers and asserts the computed traces equal the capture VERBATIM,
+    + mount semantics + per-scenario invariants. Express is not a repo dep — the live capture stays in the truth
+    script (own scratch node_modules).
+  • **UI:** `ExpressPipelineSim` (+css) — vertical layer stack in registration order, 4 tabs (happy path ·
+    next('route') · throw → error lane · 404 fallthrough), note-colored chips + route handler pills, play/step,
+    ARIA + reduced-motion + ≤560px pass; **`MiddlewarePipeline` figure** (green next() spine, dashed red 4-arg
+    error lane, dashed teal 404 fallthrough); **express quiz** (3 Qs, answers = captured traces). Registered as
+    `express-pipeline` / `express-quiz` / `middleware-pipeline`.
+  • **Content:** 14 sections (pipeline contract, arity callout, v4→v5 async story, production skeleton code,
+    Router + path-to-regexp 8 migration traps, middleware-kinds table, vs raw http / vs **Fastify 5** compare
+    with measure-first framing), 7 KP, 5 pitfalls, 5 in-chapter IV; **+3 bank entries** (topic "Express" → 46),
+    **+1 model card** (19); systems group blurb + README (EN/UA) now say 21 chapters incl. Express.
+    **Web-verified:** Express 5.2 = TC-endorsed production release (5.1 npm `latest` + LTS timeline, Mar 2025);
+    v5 = path-to-regexp 8 (`/*splat`, `{braces}`, no inline regexp) + auto-forwarded rejections; Fastify 5.x
+    current (encapsulated plugins, schema-first validation/serialization, ~2–3× JSON microbench).
+  • **Wired:** `npm test` += test-express (**16 scripts: 15 engine + qa**); qa checks the express quiz bank;
+    smoke += `#/chapter/express` + 7 content assertions. **Verified:** `tsc` clean · **eslint 0 errors** (4 known
+    react-refresh warnings) · **all 16 suites PASS** · **QA 885/0** (21 chapters · 20 sims · 22 figures ·
+    46 interview Q · 19 models · 91 in-prose links) · `vite build` OK (JS ≈217.5 kB gz incl. react-vendor chunk) ·
+    SSR smoke **24 routes / 156 checks / 0 fail**. Sandbox note: mounted `node_modules` are darwin-arm64, so the
+    sandbox build needed `npm i --no-save @rolldown/binding-linux-arm64-gnu` (lockfile untouched; Mac unaffected).
+    (Scratch `scripts/_s11truth|_s11dist|_ssr_s11` gitignored via `scripts/_*`; sandbox can't `unlink` — delete
+    locally.) Also fixed the stale interview.ts header comment (now "46 Q&A").
+  **Pending (user):** `npm run verify` on the Mac, then commit + push to deploy. **Roadmap S0–S11 complete.**
+  Optional next: curated interview-prep PDF booklet (§8) · regenerate `og.png` (chips say 20 chapters / 15 sims) ·
+  database-guide cross-port Wave 2 lives in that repo's plan, not here.
+- **2026-07-02 · S11b Renumbering** — User flagged the sidebar jump (…16 → 21 with Mastery still 17–20) from the
+  original "append as #21, no renumbering" decision. Fixed properly: **Express = 17** (end of Part III), **Mastery
+  shifted to 18–21** (Modern Node 18 · Interview 19 · Mental models 20 · Summary 21). Only `order` values changed —
+  chapter **ids/URLs untouched**, so no links break (qa enforces contiguous 1..21). Stale "Ch.NN" code comments
+  updated across engine/figures/registry/smoke; §5 renumbered. **Re-verified:** `tsc` clean · all 16 suites PASS ·
+  QA **885/0** · SSR smoke **SMOKE OK** (24 routes).
 - *(Update this log at the end of every session/block — per user request.)*

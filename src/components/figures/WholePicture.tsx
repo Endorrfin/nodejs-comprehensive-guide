@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Ch.20 (Summary): the whole guide as one causal spine. From a single fact —
+/** Ch.21 (Summary): the whole guide as one causal spine. From a single fact —
     one thread runs your JS — every other lesson follows in order: don't block it,
     offload the waiting, stream big data, observe the pulse, fail safe. V8 + GC
     sit underneath, on that same thread. */

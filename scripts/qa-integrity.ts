@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { CHAPTERS, GROUPS } from "../src/data/concepts.ts";
 import { INTERVIEW } from "../src/data/interview.ts";
 import { MODELS } from "../src/data/mentalModels.ts";
-import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../src/data/quizzes.ts";
+import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz, expressQuiz } from "../src/data/quizzes.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -149,7 +149,7 @@ for (const mm of MODELS) {
 
 /* ---- 7. quiz answer indices in range --------------------------------------*/
 section("Quiz banks: correct index in range, choices non-empty");
-for (const [name, bank] of [["async", asyncOrderingQuiz], ["concurrency", concurrencyQuiz], ["modules", modulesQuiz]] as const) {
+for (const [name, bank] of [["async", asyncOrderingQuiz], ["concurrency", concurrencyQuiz], ["modules", modulesQuiz], ["express", expressQuiz]] as const) {
   for (const q of bank) {
     check(q.choices.length >= 2, `${name} quiz "${q.id}" has <2 choices`);
     check(q.correct >= 0 && q.correct < q.choices.length, `${name} quiz "${q.id}" correct index ${q.correct} out of range`);

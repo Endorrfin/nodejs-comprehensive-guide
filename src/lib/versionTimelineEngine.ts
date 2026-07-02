@@ -1,5 +1,5 @@
 /* ===========================================================================
-   Version-timeline model — the "Modern Node (2026)" hero (Ch.17).
+   Version-timeline model — the "Modern Node (2026)" hero (Ch.18).
 
    A scrub-able timeline of the Node.js release lines (18 → 26) and the
    capabilities that landed in each. The point isn't trivia — it's the SHAPE of

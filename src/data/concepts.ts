@@ -75,7 +75,7 @@ export const GROUPS: Group[] = [
     id: "systems",
     name: "Building Real Systems",
     accent: "var(--grp-systems)",
-    blurb: "Errors, HTTP internals, performance, security, production patterns.",
+    blurb: "Errors, HTTP internals, performance, security, production patterns, Express.",
   },
   {
     id: "mastery",
@@ -2639,10 +2639,199 @@ process.on('SIGINT',  () => shutdown('SIGINT'));`,
   },
 
   // -------------------------------------------------------------------- Mastery
+  /* ------------------------------------------------------------------------
+     Ch.17 · Express (S11) — end of Part III (order 17; Mastery shifted to 18–21).
+     Every behavioural claim below was captured from REAL Express 5.2.1 /
+     4.22.2 on 2026-07-02 (scripts/node-truth-express.mjs) and is reproduced
+     by src/lib/expressEngine.ts (asserted in scripts/test-express.ts).
+     ------------------------------------------------------------------------ */
+  {
+    id: "express",
+    group: "systems",
+    order: 17,
+    title: "Express (ExpressJS)",
+    full: "Express — routing, the middleware pipeline, error middleware, Router, vs raw http/Fastify",
+    tagline: "The middleware pipeline on top of node:http: next(), the 4-arg error lane, Router — and what v5 changed.",
+    readMins: 12,
+    mentalModel:
+      "An Express app is an ordered array of (req, res, next) functions in front of node:http. Each layer runs in registration order and either responds, passes on with next(), or errors into the 4-arg lane; nothing matched → 404. Order is the control flow.",
+    sections: [
+      {
+        kind: "prose",
+        md: "Express is the framework most Node servers actually use — and it is deliberately **thin**. It adds exactly two things to [raw `node:http`](#/chapter/http): **routing** (match a method + path to a handler) and the **middleware pipeline** (an ordered chain of functions the request flows through). Everything underneath is unchanged: llhttp still parses the bytes, the timeout triad still guards the socket, keep-alive still pools connections. The tell is in the types: `express()` returns a **function** — a `(req, res)` request listener you can hand straight to `http.createServer(app)`; `app.listen()` is just sugar that does exactly that and returns the real `http.Server`. (Both captured live in this chapter's truth script.) Current line: **Express 5** (5.1 became npm's `latest` in March 2025 with an LTS timeline; 5.2 is the endorsed production release — verified July 2026).",
+      },
+      {
+        kind: "figure",
+        fig: "middleware-pipeline",
+        caption: "One request, one ordered walk: regular layers run in registration order and pass the request on with next(); a throw jumps the dashed red lane to the 4-arg error middleware; an unmatched request falls off the end into the built-in 404.",
+      },
+      {
+        kind: "prose",
+        md: "**The whole framework is one contract.** A middleware is any function `(req, res, next)`. When its turn comes it does exactly one of three things: **respond** (`res.json(…)` — the walk ends, later layers never see the request), **pass** (`next()` — Express moves to the next *matching* layer), or **fail** (`throw` / `next(err)` — dispatch flips into error mode). Matching is positional and literal: a path-less `app.use(fn)` runs for every request; `app.use('/api', fn)` **mount-matches** `/api` and `/api/…` but not `/apix`; `app.get('/api/users', fn)` needs method **and** exact path. Because layers are tried strictly in **registration order**, the order of your `app.use` lines *is* your control flow — which is why the error lane is registered last. Step the four fates of a request:",
+      },
+      { kind: "sim", sim: "express-pipeline" },
+      {
+        kind: "callout",
+        tone: "senior",
+        title: "Error middleware is selected by counting your parameters",
+        md: "Express decides what is an error handler by **arity** — literally `fn.length === 4`. `(err, req, res, next)` joins the error lane; write `(err, req, res)` or a 3-arg function and it is **regular middleware that will happily run on normal requests and never receive an error** (captured: our decoy 3-arg \"error handler\" executed on the 404 path like any other layer). Two corollaries: never drop the unused `next` from an error handler's signature, and register error middleware **after everything else**. With no error middleware at all, the built-in default handler answers `err.status ?? 500` — a thrown `{status: 418}` really returns 418 — and includes the stack **unless** `NODE_ENV=production`.",
+      },
+      {
+        kind: "prose",
+        md: "**The v5 change that matters: async errors.** In Express 4, `app.get('/x', async () => { throw … })` is a production incident: v4 never looks at the returned promise, so the rejection **escapes the framework entirely** and becomes an [unhandledRejection](#/chapter/errors) — **fatal on Node ≥ 15**. Captured on 4.22.2: the process **crashed** (exit 1) mid-request; when something swallows `unhandledRejection`, the request instead **hangs** until a timeout reclaims it. The v4 medicine was `try/catch + next(err)` in every async handler, or a wrapper like `express-async-errors`. **Express 5 fixes this at the framework level**: it awaits the handler, and a rejection is forwarded as `next(err)` automatically — captured trace identical to a sync throw (`… → handler → error middleware`, 500). One line of history worth knowing in reviews: most Express code in the wild still assumes v4 semantics.",
+      },
+      {
+        kind: "code",
+        lang: "js",
+        code: `import express from 'express';
+
+const app = express();
+app.disable('x-powered-by');          // fingerprint header is ON by default
+app.use(express.json({ limit: '1mb' })); // body parser BEFORE the routes that need req.body
+
+// Router = a mountable mini-app with its own middleware + routes
+const api = express.Router();
+api.use(requireAuth);                 // runs only under the mount
+api.get('/users/:id', async (req, res) => {
+  const user = await db.users.get(req.params.id); // throws? v5 forwards it — no try/catch
+  if (!user) return res.status(404).json({ error: 'not found' });
+  res.json(user);
+});
+app.use('/api', api);                 // inside the router, req.url is '/users/42'
+
+// custom 404 — LAST regular layer: only reached when nothing above responded
+app.use((req, res) => res.status(404).json({ error: 'no such route' }));
+
+// error lane — 4 args, registered after EVERYTHING (keep next in the signature)
+app.use((err, req, res, next) => {
+  req.log?.error({ err });
+  res.status(err.status ?? 500).json({ error: 'internal error' });
+});
+
+const server = app.listen(3000);      // a real node:http Server —
+server.keepAliveTimeout = 65_000;     // so ALL the http-chapter tuning still applies
+server.headersTimeout = 66_000;`,
+        note: "The production skeleton: parsers before routes, Router per resource, custom 404 as the last regular layer, the 4-arg error lane dead last — and the server object is plain node:http, so the keep-alive/timeout rules from the HTTP chapter apply unchanged.",
+      },
+      {
+        kind: "prose",
+        md: "**Router: a mountable mini-app.** `express.Router()` carries its own middleware stack and routes, and mounts under a prefix: `app.use('/api/v2', router)`. Inside the router the mount prefix is **stripped** — captured: for `GET /api/v2/users/42` the router sees `req.url = '/users/42'` with `req.baseUrl = '/api/v2'` — so routers compose without knowing where they live. Params declared as `:id` arrive in `req.params` (`'42'` — always a **string**); a router nested under a parent's params needs `Router({ mergeParams: true })` to see them. One migration trap: v5 swapped in **path-to-regexp 8**, which tightened route syntax — a bare `*` wildcard must now be named (`/*splat`), optional segments use braces (`/users{/:id}`) instead of `?`, and inline regexp characters are gone. Old v4 patterns fail at startup with `Missing parameter name` — a loud, easy fix, but it *is* the first thing you hit when upgrading.",
+      },
+      {
+        kind: "table",
+        caption: "The five kinds of middleware — same contract, different attachment point.",
+        head: ["Kind", "Attached via", "Runs"],
+        rows: [
+          ["Application-level", "app.use(fn) / app.use('/path', fn)", "every request, or every request under the mount"],
+          ["Router-level", "router.use(fn), router.get(…)", "only for requests routed into that router"],
+          ["Route handlers", "app.get('/p', h1, h2)", "for the matched route; a sub-stack — next('route') skips the rest of it"],
+          ["Error-handling", "app.use((err, req, res, next))", "only in error mode — selected by 4-arg arity, registered last"],
+          ["Built-in / third-party", "express.json(), express.static(), helmet, cors, morgan", "wherever you mount them — they are ordinary middleware"],
+        ],
+      },
+      {
+        kind: "prose",
+        md: "**Where Express sits.** Against [raw `node:http`](#/chapter/http), Express is pure ergonomics: with the bare module you hand-roll URL parsing, method dispatch, 404s and error plumbing — exactly the four things the pipeline gives you declaratively. Against **Fastify**, the trade is real. Fastify's model differs in two deep ways: **encapsulated plugins** (a plugin's decorators and hooks are scoped to its subtree — nothing leaks into the shared app object the way `app.use` mutations do) and **schema-first I/O** — JSON-Schema validation on the way in and compiled `fast-json-stringify` serialization on the way out, which is where most of its **~2–3× advantage on JSON microbenchmarks** lives, and which also powers its TypeScript inference. The honest sizing, per [the performance chapter](#/chapter/performance): the routing layer is rarely your bottleneck — a handler that awaits a database dwarfs either framework's overhead. Pick Fastify when high-RPS JSON serialization is a *measured* cost or you want schema-enforced contracts; pick Express for the ecosystem, team familiarity, and v5's now-sane async story. (`@fastify/express` bridges old middleware if you migrate.)",
+      },
+      {
+        kind: "compare",
+        a: "Express 5",
+        b: "Fastify 5",
+        rows: [
+          ["Extension model", "shared app + ordered middleware (app.use)", "encapsulated plugins — decorators scoped to a subtree"],
+          ["Validation", "bring your own (zod/joi middleware)", "JSON-Schema per route, validated before your handler"],
+          ["Serialization", "res.json → JSON.stringify", "compiled fast-json-stringify from the response schema"],
+          ["Async errors", "auto-forwarded to the 4-arg lane (since v5)", "async-first: throw in a handler → error hook"],
+          ["Throughput (JSON microbench)", "baseline", "~2–3× — but your handler's I/O usually dominates"],
+          ["Ecosystem", "the largest middleware ecosystem in Node", "curated @fastify/* plugins + an Express bridge"],
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "warn",
+        title: "The classic Express bugs are ORDER bugs",
+        md: "Almost every \"Express is broken\" ticket is a registration-order bug. `req.body` undefined? `express.json()` was mounted **after** the route that reads it. API returns your custom 404 page? The catch-all was registered **before** the API routes. Error handler never fires? It's not **last**, or it has 3 parameters, or (v4) the handler was async and the rejection never entered the pipeline at all. CORS headers missing on errors? The cors middleware sits after the route that threw. When dispatch confuses you, read your `app.use` lines top to bottom — that list *is* the program.",
+      },
+      {
+        kind: "callout",
+        tone: "tip",
+        title: "The picture to keep",
+        md: "**req → ordered (req, res, next) layers → first match responds; throw jumps to the 4-arg lane; nothing matched → built-in 404.** Express is a ~thin pipeline over `node:http` — the app object is literally the request listener — so everything from [HTTP internals](#/chapter/http) (timeouts, keep-alive) and [Production patterns](#/chapter/production) (graceful shutdown via `server.close`) applies to the returned server unchanged. v5 made async errors take the same lane as sync ones; order remains the whole control flow.",
+      },
+      { kind: "sim", sim: "express-quiz" },
+    ],
+    keyPoints: [
+      "Express adds routing + the middleware pipeline to node:http — the app IS a request listener (typeof app === 'function'; http.createServer(app) works).",
+      "Registration order is the control flow: layers run top to bottom, and only when they match — app.use('/p') mount-matches '/p' and '/p/…', never '/px'.",
+      "Each layer responds, passes with next(), or errors; a response ends the walk — layers after it never see the request.",
+      "Error middleware is selected by ARITY: exactly (err, req, res, next). It runs only in error mode, skipping every regular layer; the default handler answers err.status ?? 500.",
+      "Express 5 forwards rejected async handlers to the error lane automatically; the same throw on Express 4 escapes the framework and crashes the process (unhandledRejection is fatal on Node ≥15).",
+      "A miss is not an error: unmatched requests still run matching middleware, then the built-in final handler answers 404 Cannot GET.",
+      "Router is a mountable mini-app with its own stack: the mount prefix is stripped inside it (req.url is relative, req.baseUrl keeps the mount); mergeParams exposes parent :params.",
+    ],
+    pitfalls: [
+      {
+        title: "async handlers on Express 4",
+        body: "v4 ignores the returned promise, so one unawaited throw becomes an unhandledRejection — a process CRASH on Node ≥15 (captured: exit 1 mid-request), or a hung request if something swallows the event. Wrap every v4 async handler (try/catch + next(err), or express-async-errors) — or upgrade: v5 forwards rejections natively.",
+      },
+      {
+        title: "An 'error handler' with the wrong number of parameters",
+        body: "Express selects the error lane by fn.length === 4. A 3-arg function is regular middleware: it runs on normal requests and never receives errors (captured). Keep the unused next in the signature, and register error middleware after everything — including your custom 404.",
+      },
+      {
+        title: "Registration-order bugs",
+        body: "Body parser after the routes that read req.body, catch-all 404 before the API routes, cors after the handler that throws — all the same disease. The app.use list is executed top to bottom; when behaviour makes no sense, audit the order, not the handlers.",
+      },
+      {
+        title: "v4 route patterns break on the path-to-regexp 8 upgrade",
+        body: "Express 5 tightened route syntax: '*' must be named ('/*splat'), '?' optional segments become braces ('/users{/:id}'), inline regexp characters are gone. Old patterns fail at startup with 'Missing parameter name' — hit it in CI, not in prod, by booting the app in a smoke test.",
+      },
+      {
+        title: "Trusting the defaults",
+        body: "X-Powered-By: Express ships on every response until you app.disable('x-powered-by') (fingerprinting). v5's query parser default is 'simple': ?a[b]=1 stays a literal 'a[b]' key (captured) — code that expected v4's nested objects breaks silently. And behind a proxy, req.ip/req.protocol lie until you set trust proxy.",
+      },
+    ],
+    interview: [
+      {
+        q: "What IS an Express app, mechanically?",
+        a: "A request-listener function with methods hung off it. express() returns a function (typeof app === 'function') that you can pass directly to http.createServer; app.listen is sugar for exactly that and returns the real node:http Server. The framework itself is an ordered stack of (req, res, next) layers plus a router — routing and the pipeline are the only things Express adds; parsing, sockets, timeouts and keep-alive are all still node:http underneath.",
+        level: "senior",
+      },
+      {
+        q: "Walk me through Express's error-handling model.",
+        a: "Two lanes. Regular layers are (req, res, next); throwing, or calling next(err), flips dispatch into error mode, which skips every remaining regular layer and hands the error to the next 4-argument middleware — selection is literally by fn.length === 4. Error middleware is registered last so it can catch everything above it. With none registered, the default handler answers err.status ?? 500 and hides the stack when NODE_ENV=production. Since Express 5, rejected async handlers are forwarded into this same lane automatically; on v4 they escaped the framework and killed the process.",
+        level: "senior",
+      },
+      {
+        q: "Why did upgrading to Express 5 remove a whole class of production crashes?",
+        a: "Because v4 never awaited handlers. An async handler that threw produced an unhandled promise rejection outside the framework — and Node ≥15 terminates on unhandledRejection by default, so one bad await crashed the process mid-request (or hung the request where the event was swallowed). Teams papered over it with try/catch boilerplate or express-async-errors. v5 awaits the handler and routes rejections to next(err), making async and sync failures take the identical error lane — verified: the two traces are the same.",
+        level: "staff",
+      },
+      {
+        q: "What does next('route') do, and where does it NOT work?",
+        a: "It abandons the remaining handlers of the CURRENT route's sub-stack and resumes walking the outer stack, so a later route on the same path can answer — the guard-then-fallback pattern (captured trace: guard → second route, the guarded handler skipped). It only means something inside app.METHOD/router.METHOD handlers; in a plain app.use middleware there is no current route to skip, so it behaves like next().",
+        level: "senior",
+      },
+      {
+        q: "You're choosing between raw node:http, Express and Fastify for a new service. Reason it out.",
+        a: "Raw http means hand-rolling routing, 404s and error plumbing — justified only for the tiniest single-purpose servers or when every dependency must go. Express buys the pipeline, the ecosystem and (since v5) sane async errors; its overhead is trivial next to a handler that awaits a database. Fastify buys encapsulated plugins and schema-first I/O — validation in, compiled serialization out — which is where its 2–3× JSON microbenchmark edge lives, plus strong TS inference. So: default to Express for general CRUD and team familiarity; take Fastify when JSON throughput is a measured bottleneck or schema contracts matter; and in either case profile before crediting the framework — per the performance chapter, the hot path is usually your I/O.",
+        level: "staff",
+      },
+    ],
+    seeAlso: ["http", "errors", "production", "performance"],
+    sources: [
+      { title: "Express — Writing middleware / using middleware", url: "https://expressjs.com/en/guide/writing-middleware.html" },
+      { title: "Express — Error handling", url: "https://expressjs.com/en/guide/error-handling.html" },
+      { title: "Express — Migrating to Express 5 (async forwarding, path-to-regexp 8)", url: "https://expressjs.com/en/guide/migrating-5.html" },
+      { title: "Express 5.1 as npm latest + the LTS timeline (Express blog, 2025)", url: "https://expressjs.com/en/blog/2025-03-31-v5-1-latest-release/" },
+      { title: "Express — Routing (Router, route parameters)", url: "https://expressjs.com/en/guide/routing.html" },
+      { title: "Fastify — documentation (plugins, validation & serialization)", url: "https://fastify.dev/docs/latest/" },
+    ],
+  },
   {
     id: "modern-node",
     group: "mastery",
-    order: 17,
+    order: 18,
     title: "Modern Node (2026)",
     full: "Modern Node (2026) — batteries included, and the line to stand on",
     tagline: "What's now in the box, and which release line to build on.",
@@ -2820,7 +3009,7 @@ npx tsc --noEmit`,
   stub({
     id: "interview",
     group: "mastery",
-    order: 18,
+    order: 19,
     title: "40 Senior/Staff Questions",
     tagline: "A filterable interview bank, tagged by topic and level.",
     readMins: 4,
@@ -2835,7 +3024,7 @@ npx tsc --noEmit`,
   stub({
     id: "mental-models",
     group: "mastery",
-    order: 19,
+    order: 20,
     title: "Mental Models",
     tagline: "The diagrams you must be able to draw from memory.",
     readMins: 4,
@@ -2850,7 +3039,7 @@ npx tsc --noEmit`,
   {
     id: "summary",
     group: "mastery",
-    order: 20,
+    order: 21,
     title: "Summary",
     full: "Summary — the whole picture on one page",
     tagline: "The whole guide compressed into one chain you can redraw from memory.",

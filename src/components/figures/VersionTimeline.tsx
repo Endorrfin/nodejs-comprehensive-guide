@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Ch.17 (Modern Node): the release-line lifecycles on one time axis, with a
+/** Ch.18 (Modern Node): the release-line lifecycles on one time axis, with a
     "today" marker (mid-2026). The picture's point: 18 and 20 have ended, 22 is
     in maintenance, 24 is the Active-LTS line to build on, and 26 is Current and
     reaches furthest. Dates are the published support windows (web-verified). */

@@ -14,6 +14,7 @@ import { EventLoopLagSim } from "../components/sims/EventLoopLagSim";
 import { SupplyChainSim } from "../components/sims/SupplyChainSim";
 import { GracefulShutdownSim } from "../components/sims/GracefulShutdownSim";
 import { VersionTimelineSim } from "../components/sims/VersionTimelineSim";
+import { ExpressPipelineSim } from "../components/sims/ExpressPipelineSim";
 import { EventLoopRing } from "../components/figures/EventLoopRing";
 import { AwaitTimeline } from "../components/figures/AwaitTimeline";
 import { GcHeap } from "../components/figures/GcHeap";
@@ -35,8 +36,9 @@ import { WholePicture } from "../components/figures/WholePicture";
 import { MicrotaskLadder } from "../components/figures/MicrotaskLadder";
 import { JitTiers } from "../components/figures/JitTiers";
 import { ModuleLoadCompare } from "../components/figures/ModuleLoadCompare";
+import { MiddlewarePipeline } from "../components/figures/MiddlewarePipeline";
 import { PredictOutputQuiz } from "../components/study/PredictOutputQuiz";
-import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz } from "../data/quizzes";
+import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz, expressQuiz } from "../data/quizzes";
 
 /** A concrete quiz instance, registered as a sim so chapters embed it declaratively. */
 const AsyncOrderingQuiz: React.FC = () => (
@@ -63,6 +65,14 @@ const ModulesQuiz: React.FC = () => (
   />
 );
 
+const ExpressQuiz: React.FC = () => (
+  <PredictOutputQuiz
+    questions={expressQuiz}
+    title="Predict the output"
+    intro="Mounts, next('route') and the error lane — each answer was captured from real Express 5. Call the trace."
+  />
+);
+
 /** Interactive widgets, referenced by key from concepts.ts sections (kind: 'sim'). */
 export const SIMS: Record<string, React.FC> = {
   "event-loop": EventLoopSim,
@@ -83,6 +93,8 @@ export const SIMS: Record<string, React.FC> = {
   "supply-chain": SupplyChainSim,
   "graceful-shutdown": GracefulShutdownSim,
   "version-timeline": VersionTimelineSim,
+  "express-pipeline": ExpressPipelineSim,
+  "express-quiz": ExpressQuiz,
 };
 
 /** Static diagrams, referenced by key from concepts.ts sections (kind: 'figure'). */
@@ -109,4 +121,6 @@ export const FIGURES: Record<string, React.FC> = {
   "microtask-ladder": MicrotaskLadder,
   "jit-tiers": JitTiers,
   "module-load-compare": ModuleLoadCompare,
+  // Ch.17 Express (S11)
+  "middleware-pipeline": MiddlewarePipeline,
 };
