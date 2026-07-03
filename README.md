@@ -54,10 +54,12 @@ sit alongside.
 
 9. **Global search.** Ranked results across chapters, Q&A and models, with keyboard navigation.
 
-10. **Concept-map landing.** A clickable overview of all four parts and every chapter.
+10. **Concept-map landing.** A clickable overview of all four parts and every chapter — with a
+    toggleable **graph view** showing how chapters cross-reference each other.
 
 11. **Accessible & responsive.** Keyboard navigation, focus rings, a skip link, `prefers-reduced-motion`
-    fallbacks on every animation, and phone/tablet breakpoints.
+    fallbacks on every animation, phone/tablet breakpoints — plus a **light/dark/system theme**
+    switch and a print stylesheet for clean paper/PDF chapters.
 
 12. **Shareable deep links, fully offline.** Hash routing (`#/chapter/event-loop`, `#/interview`,
     `#/flashcards`, `#/atlas`, `#/about`); no backend and no runtime fetches.
@@ -168,10 +170,12 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 
 9. **Глобальний пошук.** Ранжовані результати по розділах, Q&A та моделях, з навігацією з клавіатури.
 
-10. **Стартова концепт-мапа.** Клікабельний огляд усіх чотирьох частин і кожного розділу.
+10. **Стартова концепт-мапа.** Клікабельний огляд усіх чотирьох частин і кожного розділу — з
+    перемикачем **graph view**, що показує, як розділи посилаються один на одного.
 
 11. **Доступність і адаптивність.** Навігація з клавіатури, focus-кільця, skip-лінк, фолбеки
-    `prefers-reduced-motion` на кожній анімації та брейкпойнти для телефона/планшета.
+    `prefers-reduced-motion` на кожній анімації, брейкпойнти для телефона/планшета — плюс перемикач
+    теми **light/dark/system** і print-стилі для чистого друку/PDF розділів.
 
 12. **Посилання, якими можна ділитися, повністю офлайн.** Маршрутизація на хешах
     (`#/chapter/event-loop`, `#/interview`, `#/flashcards`, `#/atlas`, `#/about`); без бекенду й запитів під час роботи.

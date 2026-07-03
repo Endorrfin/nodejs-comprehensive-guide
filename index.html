@@ -4,8 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <!-- CHANGED: S15 — both schemes supported; effective one is resolved below -->
+    <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#0A0C0A" />
+    <!-- CHANGED: S15 — resolve the theme before first paint to avoid a flash
+         (mirrors src/lib/theme.ts; dark is the brand default) -->
+    <script>
+      (function () {
+        try {
+          var m = localStorage.getItem("nodeguide.theme");
+          var light =
+            m === "light" ||
+            (m !== "dark" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: light)").matches);
+          document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+          if (light) {
+            var mc = document.querySelector('meta[name="theme-color"]');
+            if (mc) mc.setAttribute("content", "#f4f7f3");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta
       name="description"
       content="Node.js: a deep, interactive, senior/staff-level guide — event loop, V8 & GC, async model, streams, concurrency, HTTP internals, performance, security, with live simulators. By Vasyl Krupka."

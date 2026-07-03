@@ -11,6 +11,7 @@ import { RuntimePicker } from "../components/sims/RuntimePicker";
 import { ErrorPropagationSim } from "../components/sims/ErrorPropagationSim";
 import { HttpLifecycleSim } from "../components/sims/HttpLifecycleSim";
 import { EventLoopLagSim } from "../components/sims/EventLoopLagSim";
+import { BlockTheLoopSim } from "../components/sims/BlockTheLoopSim"; // CHANGED: S15
 import { SupplyChainSim } from "../components/sims/SupplyChainSim";
 import { GracefulShutdownSim } from "../components/sims/GracefulShutdownSim";
 import { VersionTimelineSim } from "../components/sims/VersionTimelineSim";
@@ -90,6 +91,8 @@ export const SIMS: Record<string, React.FC> = {
   "error-propagation": ErrorPropagationSim,
   "http-lifecycle": HttpLifecycleSim,
   "eloop-lag": EventLoopLagSim,
+  // Ch.3 weaknesses "block the loop" (S15)
+  "block-the-loop": BlockTheLoopSim,
   "supply-chain": SupplyChainSim,
   "graceful-shutdown": GracefulShutdownSim,
   "version-timeline": VersionTimelineSim,

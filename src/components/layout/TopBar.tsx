@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import type { Route } from "../../lib/hashRouter";
 import { go } from "../../lib/hashRouter";
 import { search, KIND_LABEL, type SearchHit } from "../../lib/search";
+import { useThemeMode, type ThemeMode } from "../../lib/theme"; // CHANGED: S15
 import { cx } from "../../lib/utils";
 
 function Logo(): React.ReactElement {
@@ -116,6 +117,34 @@ function SearchBox(): React.ReactElement {
   );
 }
 
+// CHANGED: S15 — the theme segmented switch (system ◐ · dark ☾ · light ☼)
+const THEME_SEGMENTS: [ThemeMode, string, string][] = [
+  ["system", "◐", "System theme"],
+  ["dark", "☾", "Dark theme"],
+  ["light", "☼", "Light theme"],
+];
+
+function ThemeSwitch(): React.ReactElement {
+  const { mode, setMode } = useThemeMode();
+  return (
+    <div className="themeseg" role="radiogroup" aria-label="Color theme">
+      {THEME_SEGMENTS.map(([m, glyph, label]) => (
+        <button
+          key={m}
+          role="radio"
+          aria-checked={mode === m}
+          className={cx("themeseg-btn", mode === m && "on")}
+          onClick={() => setMode(m)}
+          title={label}
+          aria-label={label}
+        >
+          <span aria-hidden="true">{glyph}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function TopBar({ route, onMenuOpen }: { route: Route; onMenuOpen?: () => void }): React.ReactElement {
   return (
     <header className="topbar">
@@ -161,6 +190,8 @@ export function TopBar({ route, onMenuOpen }: { route: Route; onMenuOpen?: () =>
         </nav>
 
         <SearchBox />
+        {/* CHANGED: S15 */}
+        <ThemeSwitch />
       </div>
     </header>
   );

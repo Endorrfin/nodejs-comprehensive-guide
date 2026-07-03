@@ -8,6 +8,7 @@
   /* surfaces */
   --bg: #0a0c0a;
   --bg-grad: radial-gradient(1200px 600px at 70% -10%, #10180f 0%, #0a0c0a 55%);
+  --topbar-bg: rgba(10, 12, 10, 0.82); /* CHANGED: S15 fix — token so light mode can flip it */
   --surface: #111511;
   --s2: #161b16;
   --s3: #1b221b;
@@ -62,6 +63,75 @@
   --r-lg: 16px;
   --maxw: 1180px;
 }
+
+/* === ADDED: S15 — light theme (cross-ported from the database guide S22) ====
+   Dark above is the brand default. src/lib/theme.ts (+ the pre-paint script in
+   index.html) resolves system|dark|light and sets [data-theme] on <html>; this
+   block overrides only the tokens that must flip. The bright dark-theme greens
+   and semantic hues are DARKENED so text/labels keep ≥4.5:1 on light surfaces.
+   NOTE: the 22 SVG figures use hardcoded poster hex colors (light text on
+   near-black) — they deliberately keep a dark canvas below, like a code editor
+   that stays dark inside a light IDE. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* surfaces (green-tinted near-white) */
+  --bg: #f4f7f3;
+  --bg-grad: radial-gradient(1200px 600px at 70% -10%, #e7efe2 0%, #f4f7f3 55%);
+  --topbar-bg: rgba(244, 247, 243, 0.88); /* CHANGED: S15 fix — light header (was stuck dark) */
+  --surface: #ffffff;
+  --s2: #edf2ea;
+  --s3: #e2eadd;
+  --line: #d5e0d0;
+  --line2: #b7c8b0;
+
+  /* text (green-slate ink) */
+  --tx: #16211a; /* ~14:1 on #fff */
+  --tx2: #44584a; /* ~7:1 */
+  --tx3: #5f7266; /* ~5:1 */
+
+  /* brand green — darkened for contrast on white */
+  --accent: #2e7d32;
+  --accent-deep: #2a6f2e;
+  --accent-bright: #1d6b2f;
+  --accent-dim: rgba(46, 125, 50, 0.13);
+  --accent-glow: rgba(46, 125, 50, 0.26);
+
+  /* semantic palette — same hues, light-safe lightness */
+  --sem-runtime: #2e7d32;
+  --sem-pool: #b35c00;
+  --sem-timer: #0369a1;
+  --sem-micro: #6d4fc4;
+  --sem-error: #cf3b3b;
+  --sem-io: #96700a;
+
+  /* code tokens that don't derive via var() */
+  --code-type: #0f766e;
+  --code-var: #0f766e;
+
+  /* group accents */
+  --grp-foundations: #2e7d32;
+  --grp-runtime: #1f7a43;
+  --grp-systems: #0f766e;
+  --grp-mastery: #5f7d14;
+}
+
+/* the hand-drawn SVG figures are posters: light strokes on near-black. Keep
+   their canvas dark in light mode instead of stranding light text on white. */
+:root[data-theme="light"] .figure,
+:root[data-theme="light"] .mm-fig,
+:root[data-theme="light"] .atlas-fig {
+  background: #0a0c0a;
+  border-color: #243024;
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c3d0bd;
+}
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #a9bba1;
+}
+/* === end ADDED: S15 ======================================================== */
 
 * {
   box-sizing: border-box;
