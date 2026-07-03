@@ -45,7 +45,7 @@ const markup = html(`
     <div style="display:flex;font-family:SG;font-weight:700;font-size:86px;line-height:1.06;color:${C.green};">Comprehensive Guide</div>
     <div style="display:flex;font-size:30px;color:${C.tx2};margin-top:26px;max-width:1010px;line-height:1.4;">How the runtime really works — event loop, V8 & GC, async, streams, concurrency, HTTP internals — with live simulators.</div>
     <div style="display:flex;margin-top:32px;">
-      ${chip("20 chapters")}${chip("15 simulators")}${chip("interview bank")}${chip("flashcards")}
+      ${chip("21 chapters")}${chip("20 simulators")}${chip("interview bank")}${chip("flashcards")}
     </div>
   </div>
 

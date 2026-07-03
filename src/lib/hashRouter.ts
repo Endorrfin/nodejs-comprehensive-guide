@@ -6,6 +6,7 @@ export type Route =
   | { name: "interview" }
   | { name: "mental-models" }
   | { name: "flashcards" }
+  | { name: "atlas" } // CHANGED: S14
   | { name: "about" };
 
 export function parseHash(raw: string): Route {
@@ -15,6 +16,7 @@ export function parseHash(raw: string): Route {
   if (seg === "interview") return { name: "interview" };
   if (seg === "mental-models") return { name: "mental-models" };
   if (seg === "flashcards") return { name: "flashcards" };
+  if (seg === "atlas") return { name: "atlas" }; // CHANGED: S14
   if (seg === "about") return { name: "about" };
   return { name: "map" };
 }

@@ -281,11 +281,11 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   (user picked all but `GcHeap` — its scavenge story is already animated by the GC hero sim): `MiddlewarePipeline`,
   `StreamPipeline`, `KeepAlivePool`, `ThreadPoolKernel` (offset-path under an `@supports` guard), `ShutdownSequence`.
   el-ball pattern, reduced-motion-safe (tokens have base `opacity:0`), zero data/qa changes.
-- **S14 · Atlas + PNG export + og refresh.** New `/atlas` route: every diagram from the `FIGURES` registry
-  (data-driven like flashcards), part filter, click → owning chapter; per-figure **"⤓ PNG" client-side export**
-  (inline SVG → canvas → PNG, no deps) → branded poster/LinkedIn assets straight from the app. Regenerate
-  `public/og.png` via `scripts/ogtools` (chips still say "20 chapters / 15 simulators" — now 21/20). Wire the
-  route into smoke + qa KNOWN_ROUTES.
+- **S14 · Atlas + PNG export + og refresh** — DONE (2026-07-03, see log). New `/atlas` route: every diagram
+  from the `FIGURES` registry (data-driven like flashcards), part filter, click → owning chapter; per-figure
+  **"⤓ PNG" client-side export** (inline SVG → canvas → PNG, no deps) → branded poster/LinkedIn assets straight
+  from the app. `public/og.png` regenerated via `scripts/ogtools` (chips 20/15 → **21/20**). Route wired into
+  smoke + qa KNOWN_ROUTES (+ a new hard "atlas coverage" check).
 - **S15 · Visual pass III (optional).** Ch.3 `weaknesses` "block the loop" interactive **reusing the existing
   `eventLoopLagEngine`** (slider: sync ms per request → p99 of everyone else); Overview "graph view" toggle
   (SVG graph of `seeAlso` edges — data already validated by qa); cross-port from the database guide (their S22):
@@ -778,4 +778,44 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   reduced-motion check), then commit + push to deploy.
   **Next session: S14 — Atlas + PNG export + og refresh** (§12): `/atlas` route over the `FIGURES` registry,
   per-figure client-side PNG export, regenerate stale `public/og.png` (chips say 20/15 → now 21/20).
+- **2026-07-03 · S14 Atlas + PNG export + og refresh** — DONE, all three scope items (session-start decisions:
+  full-width layout · branded-poster export · og numbers-only).
+  • **`/atlas` route** (full-width like Overview, "Atlas" nav tab). New `src/lib/atlas.ts` — a data-driven
+    index in the flashcards mold, no new content to maintain: owner = first chapter whose body embeds the
+    figure (caption carried along); the two gallery-only figures (`microtask-ladder`, `jit-tiers`) inherit
+    their model card's chapter; card titles prefer the model card's title, else a humanized key (ACRONYMS
+    map for GC/JIT/V8/…). Pure data module (`.ts`-extension imports — `allowImportingTsExtensions`) so node
+    `--experimental-strip-types` can test it. `AtlasPage` + `atlas.css`: part-filter chips (global
+    `.filters/.fbtn`), each card = ONE anchor (chip "Ch. N · title" + card title + live figure — S13
+    animations run; no nested interactives) → owning chapter, footer = clamped caption + export button.
+  • **Per-figure "⤓ PNG" export** (`src/lib/exportPng.ts`, zero deps, browser-only by design): clones the
+    inline SVG and **strips every `[class]` element** — exactly the S9g/S13 overlay tokens whose base state
+    is CSS `opacity:0`; outside the page stylesheet they'd freeze as stray dots, so removal restores the
+    original static figure; embeds the three brand fonts as **data-URL @font-face** (latin woff2 fetched
+    once from Google css2 — SVG inside `<img>` can't fetch external resources — cached per session,
+    graceful system-font fallback); composes a 2× (2560×N) branded poster on canvas — og-style glow, logo,
+    mono eyebrow "NODE.JS COMPREHENSIVE GUIDE — CHAPTER", Space-Grotesk title, hairlines, 🇺🇦 + author +
+    domain footer — and downloads `nodejs-guide_<key>.png`.
+  • **`public/og.png` regenerated** via `scripts/ogtools/render.mjs` — chips **"21 chapters / 20 simulators"**
+    (were 20/15), everything else untouched; 73 kB, visually verified.
+  **Wired:** `scripts/test-atlas.ts` (suites 17 → **18**, before qa in `npm test`): registry↔atlas **1:1
+  coverage** (FIGURES keys parsed textually, as in qa), owner/group/order consistency vs `CHAPTER_BY_ID`,
+  reading-order sort, gallery-only + known-owner spot checks, filter partition ([5, 8, 7, 2] = 22). qa:
+  `KNOWN_ROUTES` += `/atlas`; new section 9 turns a figure-orphan **warning into a hard failure** (an
+  unreachable figure would silently vanish from the wall) — **QA 887/0** (was 886). smoke: routes += `#/atlas`
+  (**25**) + 6 assertions (avoid interpolated numbers — SSR comment markers — and apostrophes). README EN/UA:
+  feature #8 "Figure atlas", routes incl. `#/atlas`, structure lines (+atlas · exportPng · AtlasPage).
+  **Verified (sandbox):** `tsc` clean · eslint **0 errors** (4 known react-refresh warnings) · **18 suites
+  ALL PASS** · **QA 887/0** (21 chapters · 20 sims · 22 figures · 46 IV Q · 19 models · 91 links) · build OK
+  (CSS 84.4 kB / 13.4 kB gz · JS total ≈221.6 kB gz incl. react-vendor — +~2 kB for atlas+export) · SSR smoke
+  **25 routes / 179 PASS / 0 FAIL — SMOKE OK**. (Scratch `scripts/_s14dist|_ssr_s14` gitignored via
+  `scripts/_*`; sandbox can't `unlink` — delete locally. Sandbox needed the usual
+  `npm i --no-save @rolldown/binding-linux-arm64-gnu`; lockfile untouched.)
+  **Pending (user):** `npm run verify` on the Mac; browser eyeball of `/atlas` (filter, click-through, and a
+  couple of real PNG exports — one plain figure + one animated, e.g. `thread-pool-kernel`, to confirm token
+  stripping + embedded fonts); after deploy, refresh LinkedIn Post Inspector / X Card Validator so the new
+  og.png shows. Then commit + push.
+  **Next session: S15 (optional, scope to appetite)** — §12: Ch.3 "block the loop" interactive (reuse
+  `eventLoopLagEngine`) · Overview graph-view toggle · light/dark toggle + print stylesheet (database-guide
+  cross-port).
 - *(Update this log at the end of every session/block — per user request.)*

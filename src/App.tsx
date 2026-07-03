@@ -8,6 +8,7 @@ import { ChapterPage } from "./components/chapter/ChapterPage";
 import { InterviewPage } from "./components/pages/InterviewPage";
 import { MentalModelsPage } from "./components/pages/MentalModelsPage";
 import { FlashcardsPage } from "./components/pages/FlashcardsPage";
+import { AtlasPage } from "./components/pages/AtlasPage"; // CHANGED: S14
 import { AboutPage } from "./components/pages/AboutPage";
 
 export default function App(): React.ReactElement {
@@ -42,9 +43,10 @@ export default function App(): React.ReactElement {
       </a>
       <TopBar route={route} onMenuOpen={() => setNavOpen(true)} />
 
-      {route.name === "map" ? (
+      {/* CHANGED: S14 — atlas is full-width like the map (no sidebar) */}
+      {route.name === "map" || route.name === "atlas" ? (
         <main id="main" style={{ flex: 1 }}>
-          <ConceptMap />
+          {route.name === "map" ? <ConceptMap /> : <AtlasPage />}
         </main>
       ) : (
         <div className="layout">

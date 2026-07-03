@@ -52,7 +52,8 @@ const FIG_KEYS = keysOf(registrySrc, "FIGURES");
 
 const chapterIds = new Set(CHAPTERS.map((c) => c.id));
 const groupIds = new Set(GROUPS.map((g) => g.id));
-const KNOWN_ROUTES = new Set(["/map", "/interview", "/mental-models", "/flashcards", "/about"]);
+// CHANGED: S14 — /atlas
+const KNOWN_ROUTES = new Set(["/map", "/interview", "/mental-models", "/flashcards", "/atlas", "/about"]);
 
 /* track which registry keys actually get referenced (orphan detection) */
 const usedSims = new Set<string>();
@@ -163,6 +164,13 @@ const orphanSims = [...SIM_KEYS].filter((k) => !usedSims.has(k));
 const orphanFigs = [...FIG_KEYS].filter((k) => !usedFigs.has(k));
 if (orphanSims.length) console.log(`  warn  unused SIMS: ${orphanSims.join(", ")}`);
 if (orphanFigs.length) console.log(`  warn  unused FIGURES: ${orphanFigs.join(", ")}`);
+
+/* ---- 9. atlas coverage (S14) — every figure reachable, so /atlas is complete */
+// CHANGED: S14 — the atlas derives its entries from chapter bodies + model cards
+// (src/lib/atlas.ts). A figure referenced by neither would silently vanish from
+// the wall, so what was an orphan warning becomes a hard failure for FIGURES.
+section("Atlas coverage — every registered figure owned by a chapter body or model card");
+check(orphanFigs.length === 0, `figure(s) unreachable from the atlas: ${orphanFigs.join(", ")}`);
 
 /* ---- summary --------------------------------------------------------------*/
 console.log(`\n${failures === 0 ? "QA OK" : "QA FAILED"} — ${checks} checks, ${failures} failure(s).`);
