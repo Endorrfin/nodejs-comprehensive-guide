@@ -35,6 +35,7 @@ const routes = [
   "#/interview",
   "#/mental-models",
   "#/flashcards",
+  "#/atlas", // CHANGED: S14
   "#/about",
 ];
 
@@ -296,6 +297,23 @@ for (const must of ["Flashcards", "Active recall", "Show answer", "Got it", "All
   const has = fc.includes(must);
   ok &&= has;
   console.log(`${has ? "PASS" : "FAIL"} flashcards contains "${must}"`);
+}
+
+// CHANGED: S14 — atlas: the wall renders every figure card with title, chip and
+// PNG-export button. (Assertions avoid interpolated numbers — SSR inserts
+// comment markers around them — and apostrophes, which React escapes.)
+const at = render("#/atlas");
+for (const must of [
+  "Figure atlas",
+  "diagrams of the guide on one wall",
+  "⤓ PNG",
+  "The architecture layer cake", // card title from a mental-model card
+  "Timeout triad", // humanized title (figure without a model card)
+  "atlas-chip", // owning-chapter chip present
+]) {
+  const has = at.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} atlas contains "${must}"`);
 }
 
 const ab = render("#/about");

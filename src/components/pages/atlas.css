@@ -1,0 +1,121 @@
+/* CHANGED: S14 — the figure atlas (full-width wall of every diagram).
+   Reuses the global .filters/.fbtn chips and .sb-dot; only atlas-specific
+   classes live here. */
+.atlas-wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 30px 22px 64px;
+  width: 100%;
+}
+
+.atlas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.atlas-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+.atlas-card:hover {
+  border-color: var(--line2);
+}
+
+/* one anchor per card: chip + title + the live figure → owning chapter */
+.atlas-link {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 14px 10px;
+  color: inherit;
+  text-decoration: none;
+  flex: 1;
+}
+.atlas-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--r);
+}
+.atlas-link:hover .atlas-title {
+  color: var(--accent-bright);
+}
+
+.atlas-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tx3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px 2px 7px;
+}
+.atlas-chip .sb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.atlas-title {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 15.5px;
+  margin: 9px 0 10px;
+  transition: color 0.15s ease;
+}
+
+.atlas-fig {
+  display: block;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 10px 4px;
+  margin-top: auto;
+}
+.atlas-fig svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.atlas-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--line);
+}
+.atlas-caption {
+  color: var(--tx3);
+  font-size: 11.5px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.atlas-foot .btn {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.atlas-foot .btn.atlas-err {
+  border-color: var(--sem-error);
+  color: var(--sem-error);
+}
+
+@media (max-width: 560px) {
+  .atlas-grid {
+    grid-template-columns: 1fr;
+  }
+}

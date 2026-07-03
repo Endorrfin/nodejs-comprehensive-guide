@@ -49,15 +49,18 @@ sit alongside.
 7. **Flashcards.** A spaced-recall deck assembled from the mental models + interview questions —
    cards you mark *Again* come back later in the same round.
 
-8. **Global search.** Ranked results across chapters, Q&A and models, with keyboard navigation.
+8. **Figure atlas.** Every diagram of the guide on one wall (`#/atlas`) — filter by part, click
+   through to the owning chapter, or export any figure as a branded PNG poster, client-side.
 
-9. **Concept-map landing.** A clickable overview of all four parts and every chapter.
+9. **Global search.** Ranked results across chapters, Q&A and models, with keyboard navigation.
 
-10. **Accessible & responsive.** Keyboard navigation, focus rings, a skip link, `prefers-reduced-motion`
+10. **Concept-map landing.** A clickable overview of all four parts and every chapter.
+
+11. **Accessible & responsive.** Keyboard navigation, focus rings, a skip link, `prefers-reduced-motion`
     fallbacks on every animation, and phone/tablet breakpoints.
 
-11. **Shareable deep links, fully offline.** Hash routing (`#/chapter/event-loop`, `#/interview`,
-    `#/flashcards`, `#/about`); no backend and no runtime fetches.
+12. **Shareable deep links, fully offline.** Hash routing (`#/chapter/event-loop`, `#/interview`,
+    `#/flashcards`, `#/atlas`, `#/about`); no backend and no runtime fetches.
 
 ### Run locally
 
@@ -103,14 +106,14 @@ URL: `https://<user>.github.io/<repo>/`.
 ```
 src/
   data/        concepts.ts (chapters + sections) · interview.ts · mentalModels.ts · quizzes.ts · runtimes.ts  ← edit content here
-  lib/         hashRouter · registry (sim/figure keys) · *Engine.ts (deterministic engines) · search · flashcards
+  lib/         hashRouter · registry (sim/figure keys) · *Engine.ts (deterministic engines) · search · flashcards · atlas · exportPng
   components/
     layout/    TopBar (search) · Sidebar · Footer
     map/       ConceptMap (landing)
     chapter/   ChapterPage · Section renderers · Md
     sims/      EventLoopSim, GcSim, ThreadPoolSim, BackpressureSim, … (interactive widgets)
     figures/   EventLoopRing, GcHeap, ArchitectureStack, … (SVG diagrams)
-    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AboutPage
+    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AtlasPage · AboutPage
   theme/       tokens.css (brand) · global.css
 scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures) · qa-integrity.ts · smoke-entry.tsx (SSR smoke)
 ```
@@ -160,15 +163,18 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 7. **Флешкарти.** Колода з інтервальним повторенням, зібрана з ментальних моделей + питань інтерв'ю —
    картки, позначені *Again*, повертаються пізніше в межах того ж кола.
 
-8. **Глобальний пошук.** Ранжовані результати по розділах, Q&A та моделях, з навігацією з клавіатури.
+8. **Атлас фігур.** Усі діаграми гайду на одній стіні (`#/atlas`) — фільтр за частинами, клік
+   веде до розділу-власника, а будь-яку фігуру можна експортувати як брендований PNG-постер.
 
-9. **Стартова концепт-мапа.** Клікабельний огляд усіх чотирьох частин і кожного розділу.
+9. **Глобальний пошук.** Ранжовані результати по розділах, Q&A та моделях, з навігацією з клавіатури.
 
-10. **Доступність і адаптивність.** Навігація з клавіатури, focus-кільця, skip-лінк, фолбеки
+10. **Стартова концепт-мапа.** Клікабельний огляд усіх чотирьох частин і кожного розділу.
+
+11. **Доступність і адаптивність.** Навігація з клавіатури, focus-кільця, skip-лінк, фолбеки
     `prefers-reduced-motion` на кожній анімації та брейкпойнти для телефона/планшета.
 
-11. **Посилання, якими можна ділитися, повністю офлайн.** Маршрутизація на хешах
-    (`#/chapter/event-loop`, `#/interview`, `#/flashcards`, `#/about`); без бекенду й запитів під час роботи.
+12. **Посилання, якими можна ділитися, повністю офлайн.** Маршрутизація на хешах
+    (`#/chapter/event-loop`, `#/interview`, `#/flashcards`, `#/atlas`, `#/about`); без бекенду й запитів під час роботи.
 
 ### Запуск локально
 
@@ -215,14 +221,14 @@ URL: `https://<user>.github.io/<repo>/`.
 ```
 src/
   data/        concepts.ts (розділи + секції) · interview.ts · mentalModels.ts · quizzes.ts · runtimes.ts  ← контент тут
-  lib/         hashRouter · registry (ключі sim/figure) · *Engine.ts (детерміновані рушії) · search · flashcards
+  lib/         hashRouter · registry (ключі sim/figure) · *Engine.ts (детерміновані рушії) · search · flashcards · atlas · exportPng
   components/
     layout/    TopBar (пошук) · Sidebar · Footer
     map/       ConceptMap (стартова)
     chapter/   ChapterPage · рендерери секцій · Md
     sims/      EventLoopSim, GcSim, ThreadPoolSim, BackpressureSim, … (інтерактивні віджети)
     figures/   EventLoopRing, GcHeap, ArchitectureStack, … (SVG-діаграми)
-    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AboutPage
+    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AtlasPage · AboutPage
   theme/       tokens.css (бренд) · global.css
 scripts/       test-*.ts (набори тестів рушіїв) · node-truth-*.mjs (зняття з реального Node) · qa-integrity.ts · smoke-entry.tsx (SSR smoke)
 ```

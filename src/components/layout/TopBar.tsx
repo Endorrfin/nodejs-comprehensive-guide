@@ -151,6 +151,10 @@ export function TopBar({ route, onMenuOpen }: { route: Route; onMenuOpen?: () =>
           <a href="#/flashcards" className={cx(route.name === "flashcards" && "on")}>
             Flashcards
           </a>
+          {/* CHANGED: S14 */}
+          <a href="#/atlas" className={cx(route.name === "atlas" && "on")}>
+            Atlas
+          </a>
           <a href="#/about" className={cx(route.name === "about" && "on")}>
             About
           </a>
