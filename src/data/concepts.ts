@@ -352,6 +352,8 @@ http
         kind: "prose",
         md: "The damage isn't that the CPU task itself is slow — it's that it adds its **entire duration to every other request**. While the thread is busy in a 250 ms `JSON.parse` or a synchronous hash, the loop runs **no** I/O callbacks, fires **no** timers, and accepts **no** new connections. On a busy server that one call spikes **p99 latency across the board** — a handful of heavy requests degrade everyone. The metric that catches it is **event-loop lag** (see [Performance](#/chapter/performance)).",
       },
+      // CHANGED: S15 — the figure above, made draggable (reuses the Ch.14 lag engine)
+      { kind: "sim", sim: "block-the-loop" },
       {
         kind: "callout",
         tone: "warn",

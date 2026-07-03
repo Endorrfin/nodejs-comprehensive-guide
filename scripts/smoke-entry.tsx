@@ -299,6 +299,21 @@ for (const must of ["Flashcards", "Active recall", "Show answer", "Got it", "All
   console.log(`${has ? "PASS" : "FAIL"} flashcards contains "${must}"`);
 }
 
+// CHANGED: S15 — map: grid|graph toggle + theme switch render; weaknesses: the
+// block-the-loop sim is embedded (slider label + stat present in SSR markup)
+const mp = render("#/map");
+for (const must of ["Graph — how chapters connect", "themeseg", "System theme"]) {
+  const has = mp.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} map contains "${must}"`);
+}
+const wk = render("#/chapter/weaknesses");
+for (const must of ["Block-the-loop simulator", "the one synchronous call", "p99 of everyone else"]) {
+  const has = wk.includes(must);
+  ok &&= has;
+  console.log(`${has ? "PASS" : "FAIL"} weaknesses contains "${must}"`);
+}
+
 // CHANGED: S14 — atlas: the wall renders every figure card with title, chip and
 // PNG-export button. (Assertions avoid interpolated numbers — SSR inserts
 // comment markers around them — and apostrophes, which React escapes.)

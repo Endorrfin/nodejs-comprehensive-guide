@@ -286,10 +286,12 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   **"⤓ PNG" client-side export** (inline SVG → canvas → PNG, no deps) → branded poster/LinkedIn assets straight
   from the app. `public/og.png` regenerated via `scripts/ogtools` (chips 20/15 → **21/20**). Route wired into
   smoke + qa KNOWN_ROUTES (+ a new hard "atlas coverage" check).
-- **S15 · Visual pass III (optional).** Ch.3 `weaknesses` "block the loop" interactive **reusing the existing
-  `eventLoopLagEngine`** (slider: sync ms per request → p99 of everyone else); Overview "graph view" toggle
-  (SVG graph of `seeAlso` edges — data already validated by qa); cross-port from the database guide (their S22):
-  light/dark/system **theme toggle** + **print stylesheet**. Scope to appetite at session start.
+- **S15 · Visual pass III** — DONE (2026-07-03, see log; user picked ALL three items). Ch.3 `weaknesses`
+  **"block the loop"** interactive (new `simulateOneBlock` in `eventLoopLagEngine` — same FIFO recurrence,
+  one rogue sync task among innocent handlers; sim #21); Overview **graph view** toggle (ring of 21 chapters,
+  `seeAlso` chords, hover/focus highlight); cross-port from the database guide (their S22): light/dark/system
+  **theme toggle** (`[data-theme]` + pre-paint script; figures keep their dark poster canvas) + **print
+  stylesheet**. **The visual track (S12–S15) is complete.**
 
 ## 13. Status / progress log
 
@@ -818,4 +820,68 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   **Next session: S15 (optional, scope to appetite)** — §12: Ch.3 "block the loop" interactive (reuse
   `eventLoopLagEngine`) · Overview graph-view toggle · light/dark toggle + print stylesheet (database-guide
   cross-port).
+- **2026-07-03 · S15 Visual pass III — block-the-loop · graph view · theme + print** — DONE, all three items
+  (user's session-start pick). Closes the visual track (S12–S15).
+  • **Ch.3 "block the loop"** — `=== ADDED: S15 ===` block in `eventLoopLagEngine.ts`: `simulateOneBlock`
+    (same D/D/1 FIFO recurrence; the rogue block is just one more arrival with a big cpuMs at t=100 ms among
+    100 innocent 1 ms handlers/s; reports ONLY the innocents). `BlockTheLoopSim` (sim key `block-the-loop`,
+    **sims 20 → 21**) — slider 0–250 ms (echoes the figure's 250 ms), stats (stalled / worst added wait /
+    p99-of-everyone-else vs p50), per-request bars around the block, three verdict narratives; **reuses
+    eventLoopLagSim.css wholesale — zero new CSS**. Data: one `sim` section in `weaknesses` after the
+    p99 prose. Tests: +10 invariants in `scripts/test-performance.ts` (block 0 ⇒ nobody stalls & flat
+    latency; 250 ms ⇒ worst wait within one gap of the block, ≥ block/gap stalled, p99 ≫ p50 (233 vs 1 ms),
+    overloaded; p99+stalled monotonic in block length; sub-gap block ⇒ ≤1 stalled, healthy).
+    GOTCHA (fixed): a `// CHANGED: S15` comment INSIDE the registry SIMS object made qa's textual key-regex
+    count "CHANGED" as a sim — registry comments must stay colon-free.
+  • **Overview graph view** — `map/SeeAlsoGraph.tsx`: deterministic ring layout (21 chapters grouped by part
+    with gap slots, no layout lib → SSR-identical), every `seeAlso` pair drawn once as a centre-pulled
+    quadratic chord in the source group's accent; node radius grows with degree; hover/focus lights the
+    node's chords and dims the rest; every node is a real `<a href="#/chapter/…">`; legend + aria-label.
+    Grid|graph toggle in `ConceptMap` (reuses `.fbtn`); `.sg-*` styles in global.css (bigger labels ≤700px
+    where the viewBox scales down).
+  • **Theme toggle + print (database-guide S22 cross-port)** — `src/lib/theme.ts`: `useThemeMode` hook
+    (mode system|dark|light persisted as `nodeguide.theme`; effective theme → `<html data-theme>` + meta
+    theme-color; matchMedia listener while in system; storage/matchMedia guarded → SSR-safe). Pre-paint
+    resolver script + `color-scheme: dark light` in `index.html` (no flash). `tokens.css`: full light
+    palette (green-tinted near-whites; brand green + all `--sem-*`/`--code-*`/`--grp-*` darkened to ≥4.5:1)
+    — with one deliberate divergence from the database guide: **our 22 SVG figures are posters with
+    hardcoded light-on-dark hex**, so `.figure/.mm-fig/.atlas-fig` keep a dark canvas in light mode (and in
+    print). `ThemeSwitch` radiogroup (◐ ☾ ☼) in TopBar + `.themeseg` styles. `@media print` in global.css:
+    light-ink token remap, chrome hidden (topbar/sidebar/footer/drawer/toc), `.layout` unwrapped, sources
+    print their hrefs, `break-inside: avoid` on figure/callout/code/compare/table.
+  **Wired:** smoke += 6 assertions (map: toggle label + themeseg + "System theme"; weaknesses: sim aria-label,
+  slider label, "p99 of everyone else") — **25 routes / 185 PASS / 0 FAIL**. `og.png` re-rendered again:
+  chips now **"21 chapters / 21 simulators"** (S14's 21/20 was outdated the moment the new sim landed).
+  **Verified (sandbox):** `tsc` clean · eslint **0 errors** (4 known react-refresh warnings) · **18 suites
+  ALL PASS** · **QA 888/0** (21 chapters · **21 sims** · 22 figures · 46 IV Q · 19 models · 91 links) ·
+  build OK (JS ≈224.5 kB gz total incl. react-vendor; CSS 87.8 kB / 14.3 kB gz) · SSR smoke **SMOKE OK**.
+  (Scratch `scripts/_s15dist|_s15dist2|_ssr_s15` gitignored via `scripts/_*`; sandbox can't `unlink` — delete
+  locally. Note: a local `npm install`/`ci` on the Mac prunes the sandbox's no-save
+  `@rolldown/binding-linux-arm64-gnu` — expected; the sandbox reinstalls it per session, lockfile untouched.)
+  **Pending (user):** `npm run verify` on the Mac; browser pass — weaknesses slider, Overview graph toggle,
+  theme switch across a few chapters (+ one sim + one figure in light mode), `⌘P` print preview of a chapter;
+  then commit + push. After deploy: LinkedIn Post Inspector / X Card Validator for the 21/21 og.png.
+  **Next: the visual track is closed.** Remaining §12 candidates: none — future work is content-driven
+  (e.g. the deferred interview-prep PDF booklet, §8) or new chapters as Node evolves.
+- **2026-07-03 · S15 fix — header one-row tabs + light-mode topbar** — From the user's light-theme screenshots:
+  (1) `.topbar` background was **hardcoded** `rgba(10,12,10,.82)` — in light mode the text tokens flipped dark
+  onto a still-dark bar (unreadable). New `--topbar-bg` token (dark default, light `rgba(244,247,243,.88)`);
+  `.topbar` now consumes it. (2) "Mental models" tab wrapped to two lines: `.nav a { white-space: nowrap }` +
+  a `≤1240px` compaction (tab padding 13→9, search input 170→120, topbar gap 18→12) so the non-wrapping tabs
+  fit inside the `--maxw`-capped bar on mid widths. Verified: build OK (`var(--topbar-bg)` + nowrap in the
+  minified CSS) · QA 888/0 · SSR smoke SMOKE OK. Ships in the same s15 branch/commit.
+  **(3) Brand on one row** (user picked "wider header" over smaller-font / shorter-text options): the full
+  header content (~1220px) never fit the `--maxw` 1180px bar — that's why "Node.js Comprehensive Guide"
+  always wrapped. `.topbar-inner` now caps at **1360px** (content column stays 1180) + `.brand-title`
+  nowrap on desktop (>900px; phones keep stacking); compaction cascade: ≤1280 tighter tabs/search/gaps,
+  ≤1080 brand 12.5px + tightest tabs + search hidden (as on mobile). Verified: build OK (1360px in minified
+  CSS) · SSR smoke SMOKE OK.
+  **(4) `SupplyChainTrust` figure legibility** (user screenshot): both mono lines in the transitive-deps box
+  were wider than the box (subtitle ~250px in a 220px box; the bottom line even clipped at the 680px viewBox
+  edge), the "stolen CI token" chip overlapped the in-figure summary, and "typosquat name" sat on the
+  direct-deps border. Fix: subtitle → "you never read them", in-box bottom line → "Node runs them all — with
+  full trust" (the postinstall idea already lives on its warning chip), typosquat chip below the box (y162),
+  stolen-CI chip y192 + summary moved to y234 under a taller `viewBox` (236 → 246). **Visually verified in
+  the sandbox** by rendering the real component → SVG → resvg PNG (`scripts/_preview-supply-entry.tsx`,
+  gitignored) — no overflow/clipping/overlap. tsc + eslint + SSR smoke OK.
 - *(Update this log at the end of every session/block — per user request.)*

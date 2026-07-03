@@ -15,12 +15,14 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(10, 12, 10, 0.82);
+  background: var(--topbar-bg); /* CHANGED: S15 fix — was hardcoded dark, unreadable in light */
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
 .topbar-inner {
-  max-width: var(--maxw);
+  /* CHANGED: S15 fix — the header breathes wider than the 1180px content column,
+     so the full brand + non-wrapping tabs + search + theme switch fit on one row */
+  max-width: 1360px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -78,6 +80,7 @@
   padding: 7px 13px;
   border-radius: 999px;
   border: 1px solid transparent;
+  white-space: nowrap; /* CHANGED: S15 fix — "Mental models" was wrapping to two lines */
 }
 .nav a:hover {
   color: var(--tx);
@@ -1359,5 +1362,249 @@ figure[id^="fig-"] {
   }
   12% {
     filter: drop-shadow(0 0 0 rgba(74, 222, 128, 0));
+  }
+}
+
+/* === ADDED: S15 — Overview graph view (seeAlso chords) ==================== */
+.map-toggle {
+  justify-content: center;
+  margin-top: 18px;
+}
+.sg-wrap {
+  max-width: 980px;
+  margin: 6px auto 0;
+}
+.sg-edge {
+  stroke-width: 1.3;
+  opacity: 0.34;
+  transition:
+    opacity 0.15s ease,
+    stroke-width 0.15s ease;
+}
+.sg-edge.on {
+  opacity: 1;
+  stroke-width: 2.2;
+}
+.sg-edge.dim {
+  opacity: 0.07;
+}
+.sg-node {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.sg-node.dim {
+  opacity: 0.25;
+}
+.sg-node:focus-visible {
+  outline: none;
+}
+.sg-node:focus-visible circle {
+  stroke: var(--accent-bright);
+  stroke-width: 2.5;
+}
+.sg-label {
+  fill: var(--tx2);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+}
+.sg-node:hover .sg-label,
+.sg-node:focus-visible .sg-label {
+  fill: var(--tx);
+}
+.sg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  margin-top: 10px;
+  color: var(--tx3);
+  font-size: 11.5px;
+}
+.sg-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sg-leg .sb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.sg-leg-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+  .sg-label {
+    font-size: 14px; /* viewBox scales down hard on phones — keep labels legible */
+  }
+}
+
+/* === ADDED: S15 — theme segmented switch (TopBar) ========================= */
+.themeseg {
+  display: inline-flex;
+  flex-shrink: 0;
+  background: var(--s2);
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 2px;
+}
+.themeseg-btn {
+  background: none;
+  border: none;
+  color: var(--tx3);
+  font-size: 13px;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.themeseg-btn:hover {
+  color: var(--tx);
+}
+.themeseg-btn.on {
+  background: var(--s3);
+  color: var(--accent-bright);
+}
+@media (max-width: 560px) {
+  .themeseg-btn {
+    padding: 4px 6px;
+  }
+}
+
+/* === ADDED: S15 — print stylesheet (cross-ported from the database guide) ==
+   Chapters print as clean light-ink documents; the SVG figures keep their dark
+   poster canvas (their strokes/labels are hardcoded light hex — see tokens.css). */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    --bg: #fff;
+    --bg-grad: none;
+    --surface: #fff;
+    --s2: #f4f6f3;
+    --s3: #eaeee8;
+    --line: #cdd6c9;
+    --line2: #b3c1ac;
+    --tx: #000;
+    --tx2: #222;
+    --tx3: #444;
+    --accent: #1e5c22;
+    --accent-deep: #1e5c22;
+    --accent-bright: #14481c;
+    --accent-dim: #eef4ec;
+    --sem-runtime: #1e5c22;
+    --sem-pool: #8f4a00;
+    --sem-timer: #075985;
+    --sem-micro: #5a3fb0;
+    --sem-error: #b32626;
+    --sem-io: #7a5a00;
+    --code-type: #0b5e57;
+    --code-var: #0b5e57;
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  /* hide all chrome — the content is the document */
+  .topbar,
+  .sidebar,
+  .footer,
+  .skip-link,
+  .nav-toggle,
+  .drawer-backdrop,
+  .drawer-panel,
+  .search-results,
+  .toc {
+    display: none !important;
+  }
+  .layout {
+    display: block !important;
+  }
+  .main {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  * {
+    box-shadow: none !important;
+  }
+  a {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+
+  /* figures stay dark posters (hardcoded light-on-dark hex inside the SVGs) */
+  .figure,
+  .mm-fig,
+  .atlas-fig {
+    background: #0a0c0a !important;
+    border-color: #243024 !important;
+  }
+
+  /* print each source's destination after its title */
+  .sources a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.82em;
+    color: #333;
+    word-break: break-all;
+  }
+
+  /* keep related blocks from splitting across pages */
+  .figure,
+  .callout,
+  .code,
+  .compare,
+  table,
+  tr {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}
+
+/* === ADDED: S15 fix — one-row header at every desktop width =================
+   ≥1396px viewport: everything at full size inside the 1360px bar.
+   Below that a compaction cascade gives way instead of any label wrapping:
+   ≤1280 — tighter tabs + narrower search + smaller gaps;
+   ≤1080 — smaller brand title, tightest tabs, search hidden (as on mobile).
+   The brand title only refuses to wrap on desktop layouts (>900px) — phones
+   keep today's stacked behavior. */
+@media (min-width: 901px) {
+  .brand-title {
+    white-space: nowrap;
+  }
+}
+@media (max-width: 1280px) {
+  .nav a {
+    padding: 7px 9px;
+  }
+  .search input {
+    width: 120px;
+  }
+  .topbar-inner {
+    gap: 12px;
+  }
+}
+@media (max-width: 1080px) and (min-width: 901px) {
+  .brand-title {
+    font-size: 12.5px;
+  }
+  .brand-sub {
+    font-size: 10px;
+  }
+  .nav a {
+    padding: 7px 8px;
+  }
+  .search-wrap {
+    display: none;
   }
 }

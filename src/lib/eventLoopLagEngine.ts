@@ -148,3 +148,68 @@ export function simulateLoop(w: LagWorkload, cpuMs: number, windowMs: number = W
 /** Slider bounds for the on-loop CPU cost (ms). */
 export const CPU_MS_MIN = 0;
 export const CPU_MS_MAX = 200;
+
+/* === ADDED: S15 — "block the loop" (Ch.3 Weaknesses) ========================
+   One rogue synchronous task among innocent fast handlers — the figure's
+   250 ms story, made draggable. Same single-server FIFO recurrence as
+   simulateLoop; the block is just one more arrival with a big cpuMs. We report
+   ONLY the innocent requests: the lesson is what the block does to everyone
+   else's tail latency. Pure & deterministic. */
+
+export interface BlockResult {
+  /** The innocent requests (the rogue block itself is excluded). */
+  reqs: LagRequest[];
+  /** How many innocents queued behind the block (wait > 0). */
+  stalled: number;
+  worstWaitMs: number;
+  p50Ms: number;
+  p99Ms: number;
+  verdict: LagVerdict;
+}
+
+/** Innocent traffic: 100 fast handlers/s, 1 ms of loop time each. */
+export const BLOCK_ARRIVALS_PER_SEC = 100;
+export const BLOCK_FAST_CPU_MS = 1;
+/** The rogue synchronous call grabs the loop at t=100 ms. */
+export const BLOCK_AT_MS = 100;
+/** Slider bounds — 250 ms echoes the blocking-loop figure. */
+export const BLOCK_MS_MAX = 250;
+
+export function simulateOneBlock(blockMs: number, windowMs: number = WINDOW_MS): BlockResult {
+  const interval = 1000 / BLOCK_ARRIVALS_PER_SEC;
+  const n = Math.min(MAX_REQS, Math.floor(windowMs / interval));
+
+  type Arrival = { arrivalMs: number; cpuMs: number; block: boolean; i: number };
+  const arrivals: Arrival[] = [];
+  for (let i = 0; i < n; i++) arrivals.push({ arrivalMs: i * interval, cpuMs: BLOCK_FAST_CPU_MS, block: false, i });
+  if (blockMs > 0) arrivals.push({ arrivalMs: BLOCK_AT_MS, cpuMs: blockMs, block: true, i: -1 });
+  // deterministic FIFO order; an innocent arriving exactly at BLOCK_AT_MS runs first
+  arrivals.sort((a, b) => a.arrivalMs - b.arrivalMs || (a.block ? 1 : -1));
+
+  const reqs: LagRequest[] = [];
+  let prevFinish = 0;
+  for (const a of arrivals) {
+    const cpuStart = Math.max(a.arrivalMs, prevFinish);
+    const waitMs = cpuStart - a.arrivalMs;
+    prevFinish = cpuStart + a.cpuMs;
+    if (!a.block) {
+      reqs.push({ i: a.i, arrivalMs: a.arrivalMs, waitMs, cpuMs: a.cpuMs, ioMs: 0, latencyMs: waitMs + a.cpuMs });
+    }
+  }
+
+  const waits = reqs.map((r) => r.waitMs);
+  const latencies = reqs.map((r) => r.latencyMs).sort((a, b) => a - b);
+  const worstWaitMs = round(Math.max(...waits));
+  const stalled = waits.filter((w) => w > 0.5).length; // innocents alone never queue (1 ms ≪ 10 ms gap)
+  const verdict: LagVerdict = worstWaitMs <= 16 ? "healthy" : worstWaitMs <= 100 ? "strained" : "overloaded";
+
+  return {
+    reqs,
+    stalled,
+    worstWaitMs,
+    p50Ms: round(percentile(latencies, 50)),
+    p99Ms: round(percentile(latencies, 99)),
+    verdict,
+  };
+}
+/* === end ADDED: S15 ======================================================== */

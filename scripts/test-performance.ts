@@ -8,7 +8,14 @@
        histogram and a real synchronous block raises its max far above idle,
        while performance.eventLoopUtilization() climbs to ~1.0 when blocked.   */
 import { monitorEventLoopDelay, performance } from "node:perf_hooks";
-import { WORKLOADS, simulateLoop, type LagWorkload } from "../src/lib/eventLoopLagEngine.ts";
+import {
+  WORKLOADS,
+  simulateLoop,
+  simulateOneBlock, // CHANGED: S15
+  BLOCK_ARRIVALS_PER_SEC, // CHANGED: S15
+  BLOCK_FAST_CPU_MS, // CHANGED: S15
+  type LagWorkload,
+} from "../src/lib/eventLoopLagEngine.ts";
 
 let failed = 0;
 const check = (name: string, cond: boolean, extra = ""): void => {
@@ -42,6 +49,34 @@ check("lag is monotonic in on-loop CPU", monotonic, `[${ladder.join(", ")}]`);
 // CPU below the arrival gap ⇒ no queue, lag 0
 const belowGap = simulateLoop(asyncIo, 4); // interval = 1000/200 = 5ms; 4 < 5
 check("CPU below arrival gap ⇒ lag 0", belowGap.lagMaxMs === 0, `= ${belowGap.lagMaxMs}`);
+
+// === ADDED: S15 — simulateOneBlock (Ch.3 "block the loop") invariants ========
+const gap = 1000 / BLOCK_ARRIVALS_PER_SEC; // 10 ms between innocent arrivals
+
+const b0 = simulateOneBlock(0);
+check("block 0ms: nobody stalls", b0.stalled === 0 && b0.worstWaitMs === 0, `stalled=${b0.stalled}`);
+check("block 0ms: flat latency (p99 === p50 === fast cost)", b0.p99Ms === b0.p50Ms && b0.p50Ms === BLOCK_FAST_CPU_MS, `p50=${b0.p50Ms} p99=${b0.p99Ms}`);
+check("block 0ms: verdict healthy", b0.verdict === "healthy");
+
+const b250 = simulateOneBlock(250);
+check("block 250ms: only innocents reported (100/s window)", b250.reqs.length === BLOCK_ARRIVALS_PER_SEC, `n=${b250.reqs.length}`);
+check("block 250ms: worst wait ≈ the block (within one gap)", b250.worstWaitMs > 250 - gap && b250.worstWaitMs <= 250, `= ${b250.worstWaitMs}`);
+check("block 250ms: at least block/gap requests stall", b250.stalled >= Math.floor(250 / gap), `stalled=${b250.stalled}`);
+check("block 250ms: p99 inherits the stall while p50 stays fast", b250.p99Ms > 100 && b250.p50Ms <= 2 * BLOCK_FAST_CPU_MS, `p50=${b250.p50Ms} p99=${b250.p99Ms}`);
+check("block 250ms: verdict overloaded", b250.verdict === "overloaded");
+
+// monotonic: a longer block never lowers the tail or the stall count
+const bLadder = [0, 20, 60, 120, 250].map((b) => simulateOneBlock(b));
+let bMono = true;
+for (let i = 1; i < bLadder.length; i++) {
+  if (bLadder[i].p99Ms < bLadder[i - 1].p99Ms || bLadder[i].stalled < bLadder[i - 1].stalled) bMono = false;
+}
+check("one-block: p99 + stalled monotonic in block length", bMono, `p99=[${bLadder.map((r) => r.p99Ms).join(", ")}]`);
+
+// under one arrival gap the block hurts at most one request's frame budget
+const bTiny = simulateOneBlock(8); // 8 < 10ms gap
+check("block below one gap: at most 1 stalled, still healthy", bTiny.stalled <= 1 && bTiny.verdict === "healthy", `stalled=${bTiny.stalled} worst=${bTiny.worstWaitMs}`);
+// === end ADDED: S15 ==========================================================
 
 // ---- (2) LIVE anchor: monitorEventLoopDelay + eventLoopUtilization ----------
 const ms = (ns: number): number => +(ns / 1e6).toFixed(2);
