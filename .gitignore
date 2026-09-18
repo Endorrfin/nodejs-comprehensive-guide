@@ -17,6 +17,7 @@ Examples/
 #Temp
 _arhive/
 QA.txt
+_examples/
 
 # IDE
 .idea/
