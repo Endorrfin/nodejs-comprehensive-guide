@@ -80,8 +80,10 @@ export function FlashcardsPage(): React.ReactElement {
     <div className="page">
       <h1>Flashcards</h1>
       <p className="lead">
-        Active recall over the {filterDeck(null, "all").length} cards drawn from the mental models and the
-        interview bank. Reveal, then grade yourself — cards you mark <b>Again</b> come back later in the round.
+        {/* CHANGED: S17 */}
+        Active recall over the {filterDeck(null, "all").length} cards drawn from the mental models, the
+        interview bank and the seven principles — plus {filterDeck(null, "term").length} glossary cards
+        under their own filter. Reveal, then grade yourself — cards you mark <b>Again</b> come back later in the round.
       </p>
 
       <div className="fc-filters">
@@ -96,9 +98,10 @@ export function FlashcardsPage(): React.ReactElement {
           ))}
         </div>
         <div className="filters" role="group" aria-label="Filter by card type">
-          {(["all", "model", "interview"] as SourceFilter[]).map((s) => (
+          {/* CHANGED: S17 — + principle / glossary decks */}
+          {(["all", "model", "interview", "principle", "term"] as SourceFilter[]).map((s) => (
             <button key={s} className={cx("fbtn", source === s && "on")} onClick={() => setSource(s)}>
-              {s === "all" ? "All cards" : SOURCE_LABEL[s as "model" | "interview"]}
+              {s === "all" ? "All cards" : SOURCE_LABEL[s as Exclude<SourceFilter, "all">]}
             </button>
           ))}
         </div>

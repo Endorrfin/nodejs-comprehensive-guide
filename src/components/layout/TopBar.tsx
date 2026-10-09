@@ -4,6 +4,7 @@ import { go } from "../../lib/hashRouter";
 import { search, KIND_LABEL, type SearchHit } from "../../lib/search";
 import { useThemeMode, type ThemeMode } from "../../lib/theme"; // CHANGED: S15
 import { cx } from "../../lib/utils";
+import { goToAnchor } from "../../lib/pendingScroll"; // CHANGED: S17
 
 function Logo(): React.ReactElement {
   return (
@@ -19,6 +20,8 @@ const KIND_COLOR: Record<SearchHit["kind"], string> = {
   chapter: "var(--accent)",
   qa: "var(--sem-micro)",
   model: "var(--sem-timer)",
+  principle: "var(--accent-bright)", // CHANGED: S17
+  term: "var(--sem-io)", // CHANGED: S17
 };
 
 function SearchBox(): React.ReactElement {
@@ -32,7 +35,8 @@ function SearchBox(): React.ReactElement {
   const choose = (h: SearchHit): void => {
     setQ("");
     setOpen(false);
-    go(h.to);
+    if (h.anchor) goToAnchor(h.to, h.anchor); // CHANGED: S17
+    else go(h.to);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -59,7 +63,7 @@ function SearchBox(): React.ReactElement {
         </span>
         <input
           type="search"
-          placeholder="Search concepts, Q&A, models…"
+          placeholder="Search concepts, terms, Q&A…"
           aria-label="Search the guide"
           role="combobox"
           aria-expanded={open && results.length > 0}
@@ -171,6 +175,10 @@ export function TopBar({ route, onMenuOpen }: { route: Route; onMenuOpen?: () =>
           <a href="#/map" className={cx(route.name === "map" && "on")}>
             Overview
           </a>
+          {/* CHANGED: S17 */}
+          <a href="#/principles" className={cx(route.name === "principles" && "on")}>
+            Principles
+          </a>
           <a href="#/interview" className={cx(route.name === "interview" && "on")}>
             Interview
           </a>
@@ -183,6 +191,10 @@ export function TopBar({ route, onMenuOpen }: { route: Route; onMenuOpen?: () =>
           {/* CHANGED: S14 */}
           <a href="#/atlas" className={cx(route.name === "atlas" && "on")}>
             Atlas
+          </a>
+          {/* CHANGED: S17 */}
+          <a href="#/glossary" className={cx(route.name === "glossary" && "on")}>
+            Glossary
           </a>
           <a href="#/about" className={cx(route.name === "about" && "on")}>
             About

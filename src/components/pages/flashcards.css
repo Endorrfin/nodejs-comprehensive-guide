@@ -70,6 +70,7 @@
   color: var(--tx3);
 }
 .fc-back {
+  white-space: pre-line; /* CHANGED: S17 — principle cards list their "therefore" lines */
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px dashed var(--line2);

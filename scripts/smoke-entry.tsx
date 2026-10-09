@@ -36,6 +36,8 @@ const routes = [
   "#/mental-models",
   "#/flashcards",
   "#/atlas", // CHANGED: S14
+  "#/principles", // CHANGED: S17
+  "#/glossary", // CHANGED: S17
   "#/about",
 ];
 
@@ -357,6 +359,32 @@ for (const [route, musts] of [
   const absent = !html.includes("Real-life analogy");
   ok &&= absent;
   console.log(`${absent ? "PASS" : "FAIL"} #/chapter/summary (S16) has no analogy block`);
+}
+
+// CHANGED: S17 — principles page, glossary page, the derived "Built on principles"
+// line on content chapters (absent on link pages), nav tabs + flashcard decks.
+// (No apostrophes and no interpolated numbers — see the S9b/S14 notes above.)
+for (const [route, musts] of [
+  ["#/principles", ["Seven principles instead of a hundred facts", "How to use: reason from the principle out loud", "One thread runs your JavaScript.", "Therefore", "Derive these answers", 'id="principle-7"', "pr-chip"]],
+  ["#/glossary", ["Glossary", "Jump to letter", "Filter glossary terms", 'id="term-highwatermark"', 'id="term-process-nexttick"', 'id="letter-sym"', "◎ Analogy", "see also"]],
+  ["#/chapter/event-loop", ["Built on principles:", "Principle 4: Microtasks drain before the loop moves on."]],
+  ["#/chapter/summary", ["Built on principles:", "Principle 7: "]],
+  ["#/chapter/modern-node", ["Built on principles:"]],
+  ["#/map", ['href="#/principles"', 'href="#/glossary"']],
+  ["#/flashcards", ["seven principles", "glossary cards"]],
+] as const) {
+  const html = render(route);
+  for (const must of musts) {
+    const has = html.includes(must);
+    ok &&= has;
+    console.log(`${has ? "PASS" : "FAIL"} ${route} (S17) contains '${must}'`);
+  }
+}
+{
+  const html = render("#/interview");
+  const absent = !html.includes("Built on principles");
+  ok &&= absent;
+  console.log(`${absent ? "PASS" : "FAIL"} #/interview (S17) has no principles line`);
 }
 
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");

@@ -52,17 +52,25 @@ sit alongside.
 8. **Figure atlas.** Every diagram of the guide on one wall (`#/atlas`) — filter by part, click
    through to the owning chapter, or export any figure as a branded PNG poster, client-side.
 
-9. **Global search.** Ranked results across chapters, Q&A and models, with keyboard navigation.
+9. **Seven principles.** The layer the chapters are derived from (`#/principles`) — each principle
+   with its "therefore…" consequences, the interview questions it answers, and the chapters built on
+   it; every chapter shows a "Built on principles ① ③" line.
 
-10. **Concept-map landing.** A clickable overview of all four parts and every chapter — with a
+10. **Glossary.** 160+ terms in one or two sentences each (`#/glossary`) — A–Z rail, part filter and
+    search; every term links to its chapter, its real-life analogy and its principle. Principles and
+    terms are also flashcard decks.
+
+11. **Global search.** Ranked results across chapters, Q&A, models, principles and glossary terms, with keyboard navigation.
+
+12. **Concept-map landing.** A clickable overview of all four parts and every chapter — with a
     toggleable **graph view** showing how chapters cross-reference each other.
 
-11. **Accessible & responsive.** Keyboard navigation, focus rings, a skip link, `prefers-reduced-motion`
+13. **Accessible & responsive.** Keyboard navigation, focus rings, a skip link, `prefers-reduced-motion`
     fallbacks on every animation, phone/tablet breakpoints — plus a **light/dark/system theme**
     switch and a print stylesheet for clean paper/PDF chapters.
 
-12. **Shareable deep links, fully offline.** Hash routing (`#/chapter/event-loop`, `#/interview`,
-    `#/flashcards`, `#/atlas`, `#/about`); no backend and no runtime fetches.
+14. **Shareable deep links, fully offline.** Hash routing (`#/chapter/event-loop`, `#/interview`,
+    `#/flashcards`, `#/atlas`, `#/principles`, `#/glossary`, `#/about`); no backend and no runtime fetches.
 
 ### Run locally
 
@@ -107,15 +115,15 @@ URL: `https://<user>.github.io/<repo>/`.
 
 ```
 src/
-  data/        concepts.ts (chapters + sections) · interview.ts · mentalModels.ts · quizzes.ts · runtimes.ts  ← edit content here
-  lib/         hashRouter · registry (sim/figure keys) · *Engine.ts (deterministic engines) · search · flashcards · atlas · exportPng
+  data/        concepts.ts (chapters + sections) · interview.ts · mentalModels.ts · quizzes.ts · runtimes.ts · analogies.ts · principles.ts · glossary.ts  ← edit content here
+  lib/         hashRouter · registry (sim/figure keys) · *Engine.ts (deterministic engines) · search · flashcards · atlas · exportPng · pendingScroll
   components/
     layout/    TopBar (search) · Sidebar · Footer
     map/       ConceptMap (landing)
     chapter/   ChapterPage · Section renderers · Md
     sims/      EventLoopSim, GcSim, ThreadPoolSim, BackpressureSim, … (interactive widgets)
     figures/   EventLoopRing, GcHeap, ArchitectureStack, … (SVG diagrams)
-    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AtlasPage · AboutPage
+    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AtlasPage · PrinciplesPage · GlossaryPage · AboutPage
   theme/       tokens.css (brand) · global.css
 scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures) · qa-integrity.ts · smoke-entry.tsx (SSR smoke)
 ```
@@ -168,17 +176,25 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 8. **Атлас фігур.** Усі діаграми гайду на одній стіні (`#/atlas`) — фільтр за частинами, клік
    веде до розділу-власника, а будь-яку фігуру можна експортувати як брендований PNG-постер.
 
-9. **Глобальний пошук.** Ранжовані результати по розділах, Q&A та моделях, з навігацією з клавіатури.
+9. **Сім принципів.** Шар, з якого виводяться розділи (`#/principles`): кожен принцип із наслідками
+   «therefore…», питаннями інтерв'ю, на які він відповідає, і розділами, що на ньому побудовані;
+   на кожному розділі є рядок «Built on principles ① ③».
 
-10. **Стартова концепт-мапа.** Клікабельний огляд усіх чотирьох частин і кожного розділу — з
+10. **Словник термінів.** 160+ термінів по 1–2 речення (`#/glossary`): рейка A–Z, фільтр за частинами
+    й пошук; кожен термін веде до свого розділу, аналогії та принципу. Принципи й терміни також є
+    колодами флешкарт.
+
+11. **Глобальний пошук.** Ранжовані результати по розділах, Q&A, моделях, принципах і термінах словника, з навігацією з клавіатури.
+
+12. **Стартова концепт-мапа.** Клікабельний огляд усіх чотирьох частин і кожного розділу — з
     перемикачем **graph view**, що показує, як розділи посилаються один на одного.
 
-11. **Доступність і адаптивність.** Навігація з клавіатури, focus-кільця, skip-лінк, фолбеки
+13. **Доступність і адаптивність.** Навігація з клавіатури, focus-кільця, skip-лінк, фолбеки
     `prefers-reduced-motion` на кожній анімації, брейкпойнти для телефона/планшета — плюс перемикач
     теми **light/dark/system** і print-стилі для чистого друку/PDF розділів.
 
-12. **Посилання, якими можна ділитися, повністю офлайн.** Маршрутизація на хешах
-    (`#/chapter/event-loop`, `#/interview`, `#/flashcards`, `#/atlas`, `#/about`); без бекенду й запитів під час роботи.
+14. **Посилання, якими можна ділитися, повністю офлайн.** Маршрутизація на хешах
+    (`#/chapter/event-loop`, `#/interview`, `#/flashcards`, `#/atlas`, `#/principles`, `#/glossary`, `#/about`); без бекенду й запитів під час роботи.
 
 ### Запуск локально
 
@@ -224,15 +240,15 @@ URL: `https://<user>.github.io/<repo>/`.
 
 ```
 src/
-  data/        concepts.ts (розділи + секції) · interview.ts · mentalModels.ts · quizzes.ts · runtimes.ts  ← контент тут
-  lib/         hashRouter · registry (ключі sim/figure) · *Engine.ts (детерміновані рушії) · search · flashcards · atlas · exportPng
+  data/        concepts.ts (розділи + секції) · interview.ts · mentalModels.ts · quizzes.ts · runtimes.ts · analogies.ts · principles.ts · glossary.ts  ← контент тут
+  lib/         hashRouter · registry (ключі sim/figure) · *Engine.ts (детерміновані рушії) · search · flashcards · atlas · exportPng · pendingScroll
   components/
     layout/    TopBar (пошук) · Sidebar · Footer
     map/       ConceptMap (стартова)
     chapter/   ChapterPage · рендерери секцій · Md
     sims/      EventLoopSim, GcSim, ThreadPoolSim, BackpressureSim, … (інтерактивні віджети)
     figures/   EventLoopRing, GcHeap, ArchitectureStack, … (SVG-діаграми)
-    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AtlasPage · AboutPage
+    pages/     InterviewPage · MentalModelsPage · FlashcardsPage · AtlasPage · PrinciplesPage · GlossaryPage · AboutPage
   theme/       tokens.css (бренд) · global.css
 scripts/       test-*.ts (набори тестів рушіїв) · node-truth-*.mjs (зняття з реального Node) · qa-integrity.ts · smoke-entry.tsx (SSR smoke)
 ```

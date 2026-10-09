@@ -63,13 +63,16 @@ node-js_comprehensive-guide/            # = git repo root; deploy publishes dist
       interview.ts                      # the 40 senior/staff Q&A (tagged by chapter)
       mentalModels.ts                   # "draw from memory" gallery entries
       analogies.ts                      # real-life analogy per content chapter (S16)
+      principles.ts                     # the 7 principles + principlesForChapter() (S17)
+      glossary.ts                       # ~160 terms + termSlug/termLetter/sortKey (S17)
     components/
       layout/  TopBar  Sidebar  Toc  ProgressBar  Footer(brand)
       map/     ConceptMap  MapNode  Drawer         # landing overview (clickable → chapter)
       chapter/ ChapterPage  Section  Prose  Figure  CodeBlock  DataTable  Callout  Compare
       sims/    EventLoopSim  AsyncOrderSim  ThreadPoolSim  GcSim  BackpressureSim  ...
       study/   Flashcards  PredictOutputQuiz  InterviewBank
-    lib/     hashRouter.ts  search.ts  registry.ts(sim registry)  utils.ts
+      pages/   … AtlasPage  PrinciplesPage  GlossaryPage  AboutPage (S17: +principles.css, glossary.css)
+    lib/     hashRouter.ts  search.ts  registry.ts(sim registry)  utils.ts  pendingScroll.ts (S17: cross-page anchor jumps)
   scripts/   (PDF pipeline — added in the PDF sessions)
   CLAUDE.md  (this file)
 ```
@@ -110,6 +113,22 @@ so content stays declarative and widgets stay reusable.
 **mandatory**: an unchallenged analogy becomes a misconception. qa-integrity requires one for every
 chapter except link pages and `summary`. Rendered by `ChapterPage` right under the header (`#analogy`)
 and indexed by global search.
+
+**Principles (S17)** live in `src/data/principles.ts`: `{ id; n (1..7); title; line: md; therefore: md[];
+questions: md[]; chapters: id[] }`. `chapters` is the ONLY place the chapter↔principle link is stored — the
+"Built on principles ① ③" line under every chapter header is derived via `principlesForChapter(id)`. qa requires
+contiguous numbering, ≥2 therefore/questions, real non-link chapter refs, and that **every content chapter** (all
+except link pages) is built on ≥1 principle. Claims there restate verified chapter content — no new facts.
+
+**Glossary (S17)** lives in `src/data/glossary.ts`: `{ term; aka?: string[]; def: md (1–2 sentences); chapter;
+principle?: n; seeAlso?: term[] }`. Anchors are `id="term-<termSlug(term)>"`; qa enforces term+aka unique
+case-insensitively (one namespace), unique slugs, real chapter/principle/seeAlso refs, balanced backticks. Defs
+restate the owning chapter; version facts only where the guide already verified them.
+
+**Cross-page anchors (S17):** never `href="#id"` (fights the hash router). In-page → `jumpTo(id)`; cross-page →
+`setPendingScroll(id)` on the link click (or `goToAnchor(route, id)`), and the target page calls
+`consumePendingScroll` in a mount effect (ChapterPage, PrinciplesPage, GlossaryPage do). Search hits carry an
+optional `anchor`. **Md gotcha:** the inline md is non-nesting — never put `code` or **bold** inside *italics*.
 
 ## 5. Curriculum (maps `list of concepts.txt` → chapters)
 
@@ -299,6 +318,11 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   `seeAlso` chords, hover/focus highlight); cross-port from the database guide (their S22): light/dark/system
   **theme toggle** (`[data-theme]` + pre-paint script; figures keep their dark poster canvas) + **print
   stylesheet**. **The visual track (S12–S15) is complete.**
+- **S16 · Real-life analogies + Node 24** — DONE (2026-10-09, see log).
+- **S17 · Principles + Glossary** — DONE (2026-10-09, see log). `#/principles` (7 principles, derived
+  "Built on principles" line on every content chapter) + `#/glossary` (162 terms, A–Z rail, part filter, local
+  search, anchors) wired into global search (Principle/Term hits), flashcards (Principle deck in "All"; Glossary
+  deck behind its own filter), qa, smoke, About, README, og.png. Header re-tuned for 8 tabs.
 
 ## 13. Status / progress log
 
@@ -915,4 +939,41 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   **Content follow-ups (not done):** Ch.15 security text still says "`--allow-net` experimental / stable
   scope set = 6": verify against 24.x/25+/26 docs. Ch.18 Modern Node says "26 Current": becomes **26 Active
   LTS ~2026-10-28** (update data + `versionTimelineEngine` `NOW`).
+- **2026-10-09 · S17 Principles + Glossary** — DONE (branch `s17-principles-glossary`, not committed).
+  • **Principles** (`src/data/principles.ts`, `PrinciplesPage` + `principles.css`, nav tab). Drafted last session
+    (the S17 prompt arrived with the placeholder unfilled — recovered from that transcript). Fact-checked against
+    chapters/truth scripts; the user approved **5 corrections**: ② "a few KB" → "a callback and a socket — orders of
+    magnitude less than a ~1 MiB thread" (the guide itself is inconsistent: prose "a few KB" vs throughput sim /
+    mental model "~64 KiB/socket" — **follow-up, not fixed**); ④ + "(in CommonJS; an ESM top level flips the
+    order)"; ⑤ "`readFile` on 5 GB → OOM" was WRONG — verified on Node 24.21 a >2 GiB `readFile` throws
+    `ERR_FS_FILE_TOO_LARGE`, now "buffers the whole file (and refuses past 2 GiB)"; ⑦ OOM kill is SIGKILL directly,
+    not SIGTERM→SIGKILL; ① + "an invariant that spans an `await` can still race". User chose: **every** content
+    chapter gets the line → `modules` ①④, `security` ①⑦ (ReDoS; patch = rolling restart), `modern-node` ⑦,
+    `what-is-node` ①②③, `summary` all 7. ChapterPage renders "Built on principles: ①…" (links jump to the card).
+  • **Glossary** (`src/data/glossary.ts`, `GlossaryPage` + `glossary.css`, nav tab): **162 terms** across every
+    content chapter (the approved list was announced as "118" — a miscount of the same list; the terms are exactly
+    the approved ones). Each def restates its chapter (grepped per term; dropped 4 claims the chapters don't make).
+    A–Z rail (sticky, "#" bucket for `'drain'`/`--flags`/`0x`), part filter, local filter, see-also buttons
+    (reset filters, then jump), links to chapter / "◎ Analogy" / principle.
+  • **Integration:** `search.ts` kinds `principle`/`term` with `anchor` (TopBar → `goToAnchor`); flashcards
+    sources `principle` (7, in "All") + `term` (162, own filter only; `plain()` strips md; `.fc-back` pre-line);
+    About counters (+principles, +terms) and copy; README EN/UA features 9–10 (list now 14), routes, structure;
+    `og.png` chips → 21 chapters · 21 simulators · 7 principles · glossary · interview bank · flashcards (chip font
+    23→20 so 6 fit); ogtools needed `npm i --no-save @resvg/resvg-js-darwin-arm64` on the Mac (sandbox-installed).
+  • **Header (8 tabs):** measured in Chrome via same-origin iframes — the S15 cascade overflowed (~15px at full
+    width, up to ~150px at 1081–1240 / 901–1000; nothing wrapped, it h-scrolled). New "S17" block at the end of
+    global.css (all `min-width:901px`-bounded so phones keep the wrapping nav): >1360 tab gap 3 / pad 12 / search
+    150 · ≤1360 pad 9 / search 110 / gap 12 · ≤1240 search hidden · ≤1080 12.5px tabs, brand-sub hidden · ≤1000 pad 5.
+    Re-measured 1920…901: one row, no clipping, no page h-scroll (incl. a 10px scrollbar at 901).
+  • **Bug fixed:** Md is non-nesting — `code` inside *italics* rendered raw backticks (principles how-to callout).
+  • **Tests:** new `scripts/test-glossary.ts` (suite 19: slugs, A–Z bucketing, sort, part partition, principle
+    derivation); qa sections 11 (principles) + 12 (glossary), KNOWN_ROUTES += /principles /glossary →
+    **QA 2693/0** (was 996); smoke += 2 routes + S17 assertions → **27 routes, 223 PASS, SMOKE OK**.
+  **Verified on Node 24.21:** `npm run verify` exit 0 (tsc · eslint 0 errors / 4 known warnings · QA 2693/0 · all
+  suites PASS · build OK: JS ≈190 kB + 60 kB vendor gz, CSS 15.3 kB gz). Browser: header metrics + glossary DOM
+  (162 entries, rail, filter, see-also reset) checked; scroll/jump behaviour NOT verifiable (the Chrome tab stayed
+  `hidden`, so scroll + rAF never ran) → **user to eyeball**: chapter "①" → principle card, glossary "◎ Analogy" →
+  chapter #analogy, search Term/Principle hit → entry, A–Z rail, light theme, ≤560px.
+  **Follow-ups:** unify "a few KB" vs "~64 KiB per socket" across strengths/interview/analogy/throughput; S16's
+  Node 26 LTS (~28 Oct) + `--allow-*` content updates still open.
 - *(Update this log at the end of every session/block — per user request.)*

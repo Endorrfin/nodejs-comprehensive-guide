@@ -12,6 +12,8 @@ import { CHAPTERS, GROUPS } from "../src/data/concepts.ts";
 import { INTERVIEW } from "../src/data/interview.ts";
 import { MODELS } from "../src/data/mentalModels.ts";
 import { ANALOGIES } from "../src/data/analogies.ts"; // CHANGED: S16
+import { PRINCIPLES } from "../src/data/principles.ts"; // CHANGED: S17
+import { GLOSSARY, termSlug } from "../src/data/glossary.ts"; // CHANGED: S17
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz, expressQuiz } from "../src/data/quizzes.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -54,7 +56,8 @@ const FIG_KEYS = keysOf(registrySrc, "FIGURES");
 const chapterIds = new Set(CHAPTERS.map((c) => c.id));
 const groupIds = new Set(GROUPS.map((g) => g.id));
 // CHANGED: S14 — /atlas
-const KNOWN_ROUTES = new Set(["/map", "/interview", "/mental-models", "/flashcards", "/atlas", "/about"]);
+// CHANGED: S17 — /principles, /glossary
+const KNOWN_ROUTES = new Set(["/map", "/interview", "/mental-models", "/flashcards", "/atlas", "/principles", "/glossary", "/about"]);
 
 /* track which registry keys actually get referenced (orphan detection) */
 const usedSims = new Set<string>();
@@ -192,6 +195,57 @@ for (const c of CHAPTERS) {
   check(a.breaks.trim().length > 0, `analogy "${c.id}": missing "where it breaks"`);
 }
 
+/* ---- 11. principles (S17) ------------------------------------------------*/
+// Numbered 1..N contiguously, unique ids, every field filled, every chapter ref
+// real, each principle built on >=1 chapter, and EVERY content chapter carries
+// a "Built on principles" line (link pages excepted).
+section("Principles — numbering, refs resolve, every content chapter covered");
+const evenTicks = (md: string): boolean => (md.match(/`/g)?.length ?? 0) % 2 === 0;
+check(new Set(PRINCIPLES.map((p) => p.id)).size === PRINCIPLES.length, "duplicate principle id(s)");
+PRINCIPLES.forEach((p, i) => {
+  check(p.n === i + 1, `principle "${p.id}" numbered ${p.n}, expected ${i + 1}`);
+  check(!!p.title.trim() && !!p.line.trim(), `principle ${p.n}: empty title/line`);
+  check(p.therefore.length >= 2 && p.questions.length >= 2, `principle ${p.n}: needs >=2 therefore + >=2 questions`);
+  check(p.chapters.length >= 1, `principle ${p.n}: built on no chapter`);
+  check(new Set(p.chapters).size === p.chapters.length, `principle ${p.n}: duplicate chapter ref`);
+  for (const cid of p.chapters) {
+    check(chapterIds.has(cid), `principle ${p.n} → missing chapter "${cid}"`);
+    check(!CHAPTERS.find((c) => c.id === cid)?.link, `principle ${p.n} → "${cid}" is a link page`);
+  }
+  for (const md of [p.line, ...p.therefore, ...p.questions]) check(evenTicks(md), `principle ${p.n}: unbalanced backticks in "${md.slice(0, 40)}…"`);
+});
+for (const c of CHAPTERS) {
+  if (c.link) continue;
+  check(PRINCIPLES.some((p) => p.chapters.includes(c.id)), `chapter "${c.id}" is built on no principle`);
+}
+
+/* ---- 12. glossary (S17) ---------------------------------------------------*/
+// Terms + aka unique case-insensitively (one namespace), slugs unique (they are
+// anchors), chapter/principle/seeAlso refs resolve, defs non-empty + balanced md.
+section("Glossary — unique terms/aka/slugs, refs resolve");
+const termNames = new Set(GLOSSARY.map((t) => t.term));
+const seenNames = new Map<string, string>();
+const seenSlugs = new Set<string>();
+const principleNs = new Set(PRINCIPLES.map((p) => p.n));
+for (const t of GLOSSARY) {
+  for (const name of [t.term, ...(t.aka ?? [])]) {
+    const k = name.trim().toLowerCase();
+    check(!seenNames.has(k), `glossary: "${name}" (in "${t.term}") clashes with "${seenNames.get(k)}"`);
+    seenNames.set(k, t.term);
+  }
+  const slug = termSlug(t.term);
+  check(slug.length > 0 && !seenSlugs.has(slug), `glossary: empty or duplicate slug "${slug}" for "${t.term}"`);
+  seenSlugs.add(slug);
+  check(t.def.trim().length > 0 && evenTicks(t.def), `glossary "${t.term}": empty def or unbalanced backticks`);
+  check(chapterIds.has(t.chapter), `glossary "${t.term}" → missing chapter "${t.chapter}"`);
+  check(!CHAPTERS.find((c) => c.id === t.chapter)?.link, `glossary "${t.term}" → "${t.chapter}" is a link page`);
+  if (t.principle !== undefined) check(principleNs.has(t.principle), `glossary "${t.term}" → missing principle ${t.principle}`);
+  for (const s of t.seeAlso ?? []) {
+    check(termNames.has(s), `glossary "${t.term}" seeAlso → no term "${s}"`);
+    check(s !== t.term, `glossary "${t.term}" seeAlso points at itself`);
+  }
+}
+
 console.log(`\n${failures === 0 ? "QA OK" : "QA FAILED"} — ${checks} checks, ${failures} failure(s).`);
-console.log(`  chapters=${CHAPTERS.length} sims=${SIM_KEYS.size} figures=${FIG_KEYS.size} interview=${INTERVIEW.length} models=${MODELS.length} inProseLinks=${internalLinks.length}`);
+console.log(`  chapters=${CHAPTERS.length} sims=${SIM_KEYS.size} figures=${FIG_KEYS.size} interview=${INTERVIEW.length} models=${MODELS.length} principles=${PRINCIPLES.length} terms=${GLOSSARY.length} inProseLinks=${internalLinks.length}`);
 process.exit(failures === 0 ? 0 : 1);

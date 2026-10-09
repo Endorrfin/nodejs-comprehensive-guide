@@ -23,7 +23,7 @@ const fonts = [
 const C = { bg: "#0A0C0A", tx: "#F4F7F4", tx2: "#9CB3A0", dim: "#6B7B6E", green: "#6CC24A", bright: "#4ADE80", deep: "#3C873A" };
 
 const chip = (t) =>
-  `<div style="display:flex;align-items:center;border:1px solid ${C.deep};border-radius:999px;padding:9px 20px;margin-right:14px;font-size:23px;color:${C.bright};">${t}</div>`;
+  `<div style="display:flex;align-items:center;border:1px solid ${C.deep};border-radius:999px;padding:8px 17px;margin-right:12px;font-size:20px;color:${C.bright};">${t}</div>`;
 
 const markup = html(`
 <div style="display:flex;flex-direction:column;width:1200px;height:630px;background-color:${C.bg};background-image:radial-gradient(1000px 520px at 80% -18%, rgba(108,194,74,0.18), rgba(10,12,10,0) 62%);padding:60px 72px;font-family:Inter;">
@@ -45,7 +45,7 @@ const markup = html(`
     <div style="display:flex;font-family:SG;font-weight:700;font-size:86px;line-height:1.06;color:${C.green};">Comprehensive Guide</div>
     <div style="display:flex;font-size:30px;color:${C.tx2};margin-top:26px;max-width:1010px;line-height:1.4;">How the runtime really works — event loop, V8 & GC, async, streams, concurrency, HTTP internals — with live simulators.</div>
     <div style="display:flex;margin-top:32px;">
-      ${chip("21 chapters")}${chip("21 simulators")}${chip("interview bank")}${chip("flashcards")}
+      ${chip("21 chapters")}${chip("21 simulators")}${chip("7 principles")}${chip("glossary")}${chip("interview bank")}${chip("flashcards")}
     </div>
   </div>
 

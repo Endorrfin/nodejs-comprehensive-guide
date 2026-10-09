@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { CHAPTERS, CHAPTER_BY_ID, GROUPS, type Chapter } from "../../data/concepts";
 import { SectionView } from "./Section";
 import { Md } from "./Md";
 import { ANALOGIES } from "../../data/analogies"; // CHANGED: S16
 import { go } from "../../lib/hashRouter";
+import { principlesForChapter, CIRCLED } from "../../data/principles"; // CHANGED: S17
+import { consumePendingScroll, setPendingScroll } from "../../lib/pendingScroll"; // CHANGED: S17
+import "../pages/principles.css"; // CHANGED: S17 — .ch-principles line
 
 const ORDERED = [...CHAPTERS].sort((a, b) => a.order - b.order);
 
@@ -19,6 +22,8 @@ function jump(id: string): void {
 
 export function ChapterPage({ id }: { id: string }): React.ReactElement {
   const ch: Chapter | undefined = CHAPTER_BY_ID[id];
+  // CHANGED: S17 — honour a cross-page jump (e.g. glossary → "◎ Analogy")
+  useEffect(consumePendingScroll, [id]);
   if (!ch) {
     return (
       <div className="chapter">
@@ -44,6 +49,8 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
   const figNums = ch.sections.map((s) => (s.kind === "figure" ? ++figCount : 0));
   // CHANGED: S16 — real-life analogy (scene + 1:1 mapping + where it breaks)
   const analogy = ANALOGIES[ch.id];
+  // CHANGED: S17 — derived from principles.chapters, never stored on the chapter
+  const built = principlesForChapter(ch.id);
 
   return (
     <article className="chapter">
@@ -65,6 +72,24 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
             </>
           ) : null}
         </div>
+
+        {/* CHANGED: S17 */}
+        {built.length ? (
+          <div className="ch-principles">
+            <span>Built on principles:</span>
+            {built.map((p) => (
+              <a
+                key={p.n}
+                href="#/principles"
+                title={p.title}
+                aria-label={"Principle " + p.n + ": " + p.title}
+                onClick={() => setPendingScroll("principle-" + p.n)}
+              >
+                <span className="n">{CIRCLED[p.n]}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
 
         <div className="mental">
           <div className="lbl">Mental model</div>

@@ -9,6 +9,8 @@ import { InterviewPage } from "./components/pages/InterviewPage";
 import { MentalModelsPage } from "./components/pages/MentalModelsPage";
 import { FlashcardsPage } from "./components/pages/FlashcardsPage";
 import { AtlasPage } from "./components/pages/AtlasPage"; // CHANGED: S14
+import { PrinciplesPage } from "./components/pages/PrinciplesPage"; // CHANGED: S17
+import { GlossaryPage } from "./components/pages/GlossaryPage"; // CHANGED: S17
 import { AboutPage } from "./components/pages/AboutPage";
 
 export default function App(): React.ReactElement {
@@ -56,6 +58,8 @@ export default function App(): React.ReactElement {
             {route.name === "interview" ? <InterviewPage /> : null}
             {route.name === "mental-models" ? <MentalModelsPage /> : null}
             {route.name === "flashcards" ? <FlashcardsPage /> : null}
+            {route.name === "principles" ? <PrinciplesPage /> : null /* CHANGED: S17 */}
+            {route.name === "glossary" ? <GlossaryPage /> : null /* CHANGED: S17 */}
             {route.name === "about" ? <AboutPage /> : null}
           </main>
         </div>
