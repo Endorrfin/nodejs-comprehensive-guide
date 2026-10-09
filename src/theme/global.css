@@ -1654,3 +1654,60 @@ figure[id^="fig-"] {
     display: none;
   }
 }
+
+/* === ADDED: S17 — header with 8 tabs (+Principles, +Glossary) =================
+   Measured in Chrome: at S15 sizes the row needed ~1375px inside a 1360px bar.
+   Re-tuned cascade (desktop only, >900px — phones keep the wrapping nav):
+   >1360  tighter tab gaps + search 150px
+   ≤1360  tabs 9px padding, search 110px
+   ≤1240  search hidden (was ≤1080 in S15)
+   ≤1080  12.5px tabs, brand sub hidden
+   ≤1000  tightest tab padding */
+@media (min-width: 901px) {
+  .nav {
+    gap: 3px;
+  }
+  .nav a {
+    padding: 7px 12px;
+  }
+  .search input {
+    width: 150px;
+  }
+}
+@media (max-width: 1360px) and (min-width: 901px) {
+  .nav {
+    gap: 2px;
+  }
+  .nav a {
+    padding: 7px 9px;
+  }
+  .search input {
+    width: 110px;
+  }
+  .topbar-inner {
+    gap: 12px;
+  }
+}
+@media (max-width: 1240px) and (min-width: 901px) {
+  .search-wrap {
+    display: none;
+  }
+}
+@media (max-width: 1080px) and (min-width: 901px) {
+  .topbar-inner {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .nav a {
+    font-size: 12.5px;
+    padding: 6px 7px;
+  }
+  .brand-sub {
+    display: none;
+  }
+}
+@media (max-width: 1000px) and (min-width: 901px) {
+  .nav a {
+    padding: 6px 5px; /* 901px with a 10px scrollbar was 24px short */
+  }
+}

@@ -7,14 +7,18 @@ import { CHAPTERS, CHAPTER_BY_ID, type Section } from "../data/concepts";
 import { INTERVIEW } from "../data/interview";
 import { MODELS } from "../data/mentalModels";
 import { ANALOGIES } from "../data/analogies"; // CHANGED: S16
+import { PRINCIPLES } from "../data/principles"; // CHANGED: S17
+import { GLOSSARY, termSlug } from "../data/glossary"; // CHANGED: S17
 
-export type SearchKind = "chapter" | "qa" | "model";
+export type SearchKind = "chapter" | "qa" | "model" | "principle" | "term"; // CHANGED: S17
 
 export interface SearchHit {
   kind: SearchKind;
   title: string;
   sub: string;
   to: string; // route path, e.g. "/chapter/event-loop"
+  /** CHANGED: S17 — element id to land on after navigating (principle card / glossary term). */
+  anchor?: string;
   score: number;
 }
 
@@ -51,6 +55,7 @@ interface Entry {
   title: string;
   sub: string;
   to: string;
+  anchor?: string; // CHANGED: S17
   titleL: string;
   bodyL: string;
 }
@@ -80,6 +85,25 @@ const ENTRIES: Entry[] = [
     titleL: (m.title + " " + m.prompt).toLowerCase(),
     bodyL: m.answer.toLowerCase(),
   })),
+  // CHANGED: S17 — principles and glossary terms land on their card / entry
+  ...PRINCIPLES.map((p): Entry => ({
+    kind: "principle",
+    title: p.n + ". " + p.title,
+    sub: "Principle · " + p.line.replace(/[`*]/g, "").slice(0, 90),
+    to: "/principles",
+    anchor: "principle-" + p.n,
+    titleL: p.title.toLowerCase(),
+    bodyL: [p.line, ...p.therefore, ...p.questions].join(" ").toLowerCase(),
+  })),
+  ...GLOSSARY.map((t): Entry => ({
+    kind: "term",
+    title: t.term,
+    sub: "Glossary · " + (CHAPTER_BY_ID[t.chapter]?.title ?? t.chapter),
+    to: "/glossary",
+    anchor: "term-" + termSlug(t.term),
+    titleL: [t.term, ...(t.aka ?? [])].join(" ").toLowerCase(),
+    bodyL: t.def.toLowerCase(),
+  })),
 ];
 
 export function search(raw: string, limit = 8): SearchHit[] {
@@ -92,7 +116,7 @@ export function search(raw: string, limit = 8): SearchHit[] {
     if (e.bodyL.includes(t)) score += 1;
     // a small nudge so concept chapters surface above the many Q&A entries on ties
     if (score > 0 && e.kind === "chapter") score += 0.5;
-    if (score > 0) hits.push({ kind: e.kind, title: e.title, sub: e.sub, to: e.to, score });
+    if (score > 0) hits.push({ kind: e.kind, title: e.title, sub: e.sub, to: e.to, anchor: e.anchor, score });
   }
   hits.sort((a, b) => b.score - a.score || a.title.length - b.title.length);
   return hits.slice(0, limit);
@@ -102,4 +126,6 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   chapter: "Chapter",
   qa: "Q&A",
   model: "Model",
+  principle: "Principle", // CHANGED: S17
+  term: "Term", // CHANGED: S17
 };

@@ -1,0 +1,163 @@
+/* CHANGED: S17 — glossary page. Reuses .page/.lead/.filters/.fbtn/.prose/.sb-dot. */
+.gl-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gl-search {
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--tx);
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 13.5px;
+}
+.gl-search:focus {
+  border-color: var(--accent-deep);
+}
+
+/* A–Z rail: sticky under the topbar */
+.gl-rail {
+  position: sticky;
+  top: 64px; /* topbar is 59–65px tall; it sits above (z-index 40) */
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 16px 0 6px;
+  padding: 6px 4px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.gl-rail button,
+.gl-rail span {
+  min-width: 24px;
+  padding: 3px 4px;
+  text-align: center;
+  border-radius: 6px;
+}
+.gl-rail button {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+.gl-rail button:hover {
+  background: var(--accent-dim);
+}
+.gl-rail span {
+  color: var(--tx3);
+  opacity: 0.45;
+}
+
+.gl-letter {
+  scroll-margin-top: 112px;
+  margin-top: 18px;
+}
+.gl-letter h2 {
+  font-size: 18px;
+  color: var(--accent-bright);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+.gl-letter dl {
+  margin: 0;
+}
+.gl-entry {
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--line);
+  scroll-margin-top: 112px;
+}
+.gl-entry dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.gl-term {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 15.5px;
+  color: var(--tx);
+}
+.gl-aka {
+  font-size: 12px;
+  color: var(--tx3);
+  font-style: italic;
+}
+.gl-entry dd {
+  margin: 3px 0 0;
+}
+.gl-def p {
+  margin: 0;
+  font-size: 13.8px;
+}
+.gl-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+.gl-meta a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.gl-meta a:hover {
+  color: var(--accent-bright);
+}
+.gl-ch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gl-ch .sb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+.gl-see {
+  color: var(--tx3);
+}
+.gl-seebtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--tx2);
+  border-bottom: 1px dotted var(--line2);
+  cursor: pointer;
+}
+.gl-seebtn:hover {
+  color: var(--tx);
+}
+.gl-empty {
+  margin-top: 18px;
+}
+
+@media (max-width: 560px) {
+  .gl-rail {
+    top: 0;
+    position: static;
+  }
+  .gl-search {
+    max-width: none;
+  }
+}
+@media print {
+  .gl-controls,
+  .gl-rail {
+    display: none;
+  }
+  .gl-entry {
+    break-inside: avoid;
+  }
+}

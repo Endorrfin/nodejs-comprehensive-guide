@@ -7,6 +7,8 @@ export type Route =
   | { name: "mental-models" }
   | { name: "flashcards" }
   | { name: "atlas" } // CHANGED: S14
+  | { name: "principles" } // CHANGED: S17
+  | { name: "glossary" } // CHANGED: S17
   | { name: "about" };
 
 export function parseHash(raw: string): Route {
@@ -17,6 +19,8 @@ export function parseHash(raw: string): Route {
   if (seg === "mental-models") return { name: "mental-models" };
   if (seg === "flashcards") return { name: "flashcards" };
   if (seg === "atlas") return { name: "atlas" }; // CHANGED: S14
+  if (seg === "principles") return { name: "principles" }; // CHANGED: S17
+  if (seg === "glossary") return { name: "glossary" }; // CHANGED: S17
   if (seg === "about") return { name: "about" };
   return { name: "map" };
 }

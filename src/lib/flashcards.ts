@@ -6,8 +6,10 @@
 import { MODELS } from "../data/mentalModels";
 import { INTERVIEW } from "../data/interview";
 import { CHAPTER_BY_ID } from "../data/concepts";
+import { PRINCIPLES } from "../data/principles"; // CHANGED: S17
+import { GLOSSARY } from "../data/glossary"; // CHANGED: S17
 
-export type CardSource = "model" | "interview";
+export type CardSource = "model" | "interview" | "principle" | "term"; // CHANGED: S17
 
 export interface Flashcard {
   id: string;
@@ -20,6 +22,9 @@ export interface Flashcard {
 }
 
 const groupOf = (chapter: string): string => CHAPTER_BY_ID[chapter]?.group ?? "mastery";
+
+// CHANGED: S17 — cards render plain text; drop inline-md markers from data written as md
+const plain = (md: string): string => md.replace(/\*\*|`/g, "").replace(/(^|[^\w])\*([^*]+)\*/g, "$1$2");
 
 export const DECK: Flashcard[] = [
   ...MODELS.map((m) => ({
@@ -39,12 +44,33 @@ export const DECK: Flashcard[] = [
     source: "interview" as const,
     level: q.level,
   })),
+  // CHANGED: S17 — principles (state it, then derive the consequences) + glossary terms
+  ...PRINCIPLES.map((p) => ({
+    id: "p-" + p.id,
+    front: "Principle " + p.n + ": " + p.title + " — so what follows?",
+    back: plain(p.line) + "\n\nTherefore:\n" + p.therefore.map((t) => "• " + plain(t)).join("\n"),
+    chapter: p.chapters[0],
+    group: groupOf(p.chapters[0]),
+    source: "principle" as const,
+  })),
+  ...GLOSSARY.map((t) => ({
+    id: "t-" + t.term,
+    front: "Define: " + t.term + (t.aka?.length ? " (" + t.aka.join(", ") + ")" : ""),
+    back: plain(t.def),
+    chapter: t.chapter,
+    group: groupOf(t.chapter),
+    source: "term" as const,
+  })),
 ];
 
 export type SourceFilter = "all" | CardSource;
 
+// CHANGED: S17 — "all" = models + interview + principles; the ~160 glossary cards
+// would swamp a round, so they are only dealt under their own "term" filter.
 export function filterDeck(group: string | null, source: SourceFilter): Flashcard[] {
-  return DECK.filter((c) => (!group || c.group === group) && (source === "all" || c.source === source));
+  return DECK.filter(
+    (c) => (!group || c.group === group) && (source === "all" ? c.source !== "term" : c.source === source),
+  );
 }
 
 /** Fisher–Yates shuffle, returns a new array. */
@@ -60,4 +86,6 @@ export function shuffle<T>(arr: readonly T[]): T[] {
 export const SOURCE_LABEL: Record<CardSource, string> = {
   model: "Mental model",
   interview: "Interview Q",
+  principle: "Principle", // CHANGED: S17
+  term: "Glossary", // CHANGED: S17
 };

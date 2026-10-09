@@ -2,6 +2,8 @@ import React from "react";
 import { CHAPTERS, GROUPS } from "../../data/concepts";
 import { INTERVIEW } from "../../data/interview";
 import { MODELS } from "../../data/mentalModels";
+import { PRINCIPLES } from "../../data/principles"; // CHANGED: S17
+import { GLOSSARY } from "../../data/glossary"; // CHANGED: S17
 import { go } from "../../lib/hashRouter";
 
 const LINKEDIN = "https://www.linkedin.com/in/vasyl-krupka/";
@@ -29,6 +31,13 @@ export function AboutPage(): React.ReactElement {
         </div>
         <div className="map-stat">
           <b>{MODELS.length}</b>mental models
+        </div>
+        {/* CHANGED: S17 */}
+        <div className="map-stat">
+          <b>{PRINCIPLES.length}</b>principles
+        </div>
+        <div className="map-stat">
+          <b>{GLOSSARY.length}</b>glossary terms
         </div>
       </div>
 
@@ -59,7 +68,10 @@ export function AboutPage(): React.ReactElement {
         <p className="prose" style={{ marginTop: 12 }}>
           Plus interactive simulators (event loop, V8 &amp; GC, the thread pool, backpressure, the HTTP
           lifecycle, graceful shutdown and more), a predict-the-output quiz engine, a filterable
-          interview bank, a draw-from-memory mental-models gallery, and a spaced-recall flashcard deck.
+          interview bank, a draw-from-memory mental-models gallery, a spaced-recall flashcard deck,{" "}
+          {/* CHANGED: S17 */}
+          the <a href="#/principles">seven principles</a> the chapters are derived from, and a{" "}
+          <a href="#/glossary">glossary</a> of every term.
         </p>
       </section>
 
