@@ -86,7 +86,9 @@ npm run lint       # ESLint (flat config)
 npm run preview    # serve the production build
 npm test           # engine truth-tests + content/link integrity (no browser)
 npm run qa         # content/link integrity only
-npm run verify     # typecheck + lint + qa + tests + build (full local gate, mirrors CI)
+npm run verify     # typecheck + lint + qa + tests + build (full local gate)
+npm run e2e:install  # once: download Playwright's Chromium
+npm run e2e        # browser e2e (Playwright) against the built dist/ — run after build
 ```
 
 > It's a bundled app, so opening `dist/index.html` straight off disk won't work
@@ -131,7 +133,8 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 ### Conventions
 
 - TypeScript strict (`noUnusedLocals/Parameters`) + **ESLint** (flat config). `npm run verify`
-  (typecheck + lint + QA + engine tests + build) gates every deploy in CI.
+  (typecheck + lint + QA + engine tests + build) plus **Playwright e2e** (`npm run e2e`, Chromium)
+  gate every deploy in CI.
 - Content is edited **only** in `src/data/*`; never hand-edit rendered output.
 - Brand: black + Node green (`src/theme/tokens.css`); orange is a semantic "thread pool / CPU" accent only.
 
@@ -210,7 +213,9 @@ npm run lint       # ESLint (flat config)
 npm run preview    # віддати продакшн-білд
 npm test           # truth-тести рушіїв + перевірка цілісності контенту/лінків (без браузера)
 npm run qa         # лише перевірка цілісності контенту/лінків
-npm run verify     # typecheck + lint + qa + тести + build (повний локальний гейт, дзеркало CI)
+npm run verify     # typecheck + lint + qa + тести + build (повний локальний гейт)
+npm run e2e:install  # один раз: завантажити Chromium для Playwright
+npm run e2e        # браузерні e2e (Playwright) по зібраному dist/ — після build
 ```
 
 > Це зібраний застосунок, тож відкрити `dist/index.html` напряму з диска не вийде
@@ -256,7 +261,8 @@ scripts/       test-*.ts (набори тестів рушіїв) · node-truth-
 ### Конвенції
 
 - TypeScript strict (`noUnusedLocals/Parameters`) + **ESLint** (flat config). `npm run verify`
-  (typecheck + lint + QA + тести рушіїв + build) гейтить кожен деплой у CI.
+  (typecheck + lint + QA + тести рушіїв + build) плюс **Playwright e2e** (`npm run e2e`, Chromium)
+  гейтять кожен деплой у CI.
 - Контент редагується **лише** в `src/data/*`; ніколи не правиться згенерований вивід вручну.
 - Бренд: чорний + Node-зелений (`src/theme/tokens.css`); помаранчевий — лише семантичний акцент
   «thread pool / CPU».

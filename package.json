@@ -19,7 +19,9 @@
     "preview": "vite preview",
     "qa": "node --experimental-strip-types scripts/qa-integrity.ts",
     "test": "node --experimental-strip-types scripts/test-eventloop.ts && node --experimental-strip-types scripts/test-async.ts && node --experimental-strip-types scripts/test-gc.ts && node --experimental-strip-types scripts/test-concurrency.ts && node --experimental-strip-types scripts/test-streams.ts && node --experimental-strip-types scripts/test-modules.ts && node --experimental-strip-types scripts/test-architecture.ts && node --experimental-strip-types scripts/test-throughput.ts && node --experimental-strip-types scripts/test-errors.ts && node --experimental-strip-types scripts/test-http.ts && node --experimental-strip-types scripts/test-performance.ts && node --experimental-strip-types scripts/test-security.ts && node --experimental-strip-types scripts/test-production.ts && node --experimental-strip-types scripts/test-modern.ts && node --experimental-strip-types scripts/test-express.ts && node --experimental-strip-types scripts/test-highlight.ts && node --experimental-strip-types scripts/test-atlas.ts && node --experimental-strip-types scripts/test-glossary.ts && node --experimental-strip-types scripts/qa-integrity.ts",
-    "verify": "npm run typecheck && npm run lint && npm run qa && npm test && npm run build"
+    "verify": "npm run typecheck && npm run lint && npm run qa && npm test && npm run build",
+    "e2e": "tsc -p e2e && playwright test",
+    "e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.63.0",
     "@types/node": "^24.19.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

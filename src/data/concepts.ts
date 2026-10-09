@@ -242,7 +242,7 @@ http
       { kind: "figure", fig: "connection-scaling", caption: "The C10k contrast: thread-per-request needs one ~1 MiB thread per connection; the event loop watches every socket on one thread via the kernel, at a fraction of the memory." },
       {
         kind: "prose",
-        md: "This is the famous **C10k** insight. The old model gave every connection its **own thread or process** — but a thread costs roughly a megabyte of stack plus scheduler overhead, so you hit a wall in the low thousands. Node holds a connection as a **socket the kernel watches** plus a little JS state — a few kilobytes — so one box serves **tens of thousands** of concurrent, mostly-idle connections. A thread costs about **16×** a socket; drag the slider and watch the memory gap widen.",
+        md: "This is the famous **C10k** insight. The old model gave every connection its **own thread or process** — but a thread costs roughly a megabyte of stack plus scheduler overhead, so you hit a wall in the low thousands. Node holds a connection as a **socket the kernel watches** plus a little JS state — **a few KiB idle, ~20 KiB with a request in flight** — so one box serves **tens of thousands** of concurrent, mostly-idle connections. A thread costs about **50×** a busy connection; drag the slider and watch the memory gap widen.", // CHANGED: S18 (was a few kilobytes / 16×)
       },
       { kind: "sim", sim: "throughput" },
       {
@@ -310,7 +310,7 @@ http
       },
       {
         q: "How does a single thread serve thousands of connections?",
-        a: "Network sockets are non-blocking: libuv arms them with the OS event notifier and the kernel signals readiness; the one loop thread multiplexes them all, holding no thread per connection. Memory per connection is a few KB of socket + JS state, versus ~1 MB per thread in a thread-per-request model — so the same box scales from thousands to tens of thousands.",
+        a: "Network sockets are non-blocking: libuv arms them with the OS event notifier and the kernel signals readiness; the one loop thread multiplexes them all, holding no thread per connection. Memory per connection is a few KiB idle (~20 KiB with a request in flight), versus ~1 MiB per thread in a thread-per-request model — roughly 50× less — so the same box scales from thousands to tens of thousands.", // CHANGED: S18
         level: "staff",
       },
       {
@@ -2369,7 +2369,7 @@ setInterval(() => {
       },
       {
         kind: "prose",
-        md: "**Runtime least privilege: the Permission Model.** Since **Node 23.5 it is stable** — the flag is now `--permission` (formerly `--experimental-permission`). It denies by default and you grant explicitly: filesystem (`--allow-fs-read`, `--allow-fs-write`), child processes (`--allow-child-process`), worker threads (`--allow-worker`), native addons (`--allow-addons`) and WASI. Query it at runtime with `process.permission.has('fs.read')`. Two senior-level caveats: it is a **seat belt, not a sandbox** — the docs are explicit that it does **not** stop determined malicious code (which can bypass it); its job is to prevent *unintended* access and **shrink blast radius**. And **network permission (`--allow-net`) is still experimental**, so don't yet rely on it to block exfiltration.",
+        md: "**Runtime least privilege: the Permission Model.** The model has been **stable since Node 23.5 / 22.13**: the flag is `--permission` (formerly `--experimental-permission`). It denies by default and you grant explicitly. **Filesystem** (`--allow-fs-read`, `--allow-fs-write`) is the part the docs mark stable; **child processes, worker threads, native addons and WASI** (`--allow-child-process`, `--allow-worker`, `--allow-addons`, `--allow-wasi`) are gated by the stable model, but those flags still carry *Stability 1.1, active development*. Node 24 also gates the **inspector** (`--allow-inspector`, 24.12) and **OpenSSL STORE loaders** (`--allow-openssl-store`, 24.21), and adds **`--permission-audit`** (24.20): an audit-only mode that reports violations on `diagnostics_channel` instead of denying them. It is the safe way to roll the model out. Query grants at runtime with `process.permission.has('fs.read')`. Two senior-level caveats. First, it is a **seat belt, not a sandbox**: the docs are explicit that it does **not** stop determined malicious code (which can bypass it); its job is to prevent *unintended* access and **shrink blast radius**. Second, **on Node 24 the network is not gated at all**: with `--permission`, `fetch()` and `server.listen()` still work (verified on 24.21). Network permission arrives in **Node 25** (`--allow-net`, still experimental), where `--permission` denies sockets until you grant it. A 24 → 26 upgrade of a `--permission` service therefore needs `--allow-net`, or it loses its network.", // CHANGED: S18 — per-flag stability, 24.x additions, network NOT gated on 24
       },
       {
         kind: "code",
@@ -2385,16 +2385,21 @@ node --permission \\
       },
       {
         kind: "table",
-        caption: "The stable Permission Model scopes (verified against this Node's --allow-* flags). Network is intentionally absent.",
+        // CHANGED: S18 — re-verified vs the Node 24/25/26 CLI docs + `node --help` on 24.21 (was: "6 stable scopes, net experimental")
+        caption: "Permission Model flags on Node 24 LTS (verified against node --help on 24.21 and the CLI docs), plus what the 25/26 lines add. The model itself is stable since 23.5; the status column is each flag's own stability index.",
         head: ["Flag", "Grants", "Status"],
         rows: [
-          ["--allow-fs-read=<path>", "read the given files/dirs (or * for all)", "stable (Node ≥23.5)"],
-          ["--allow-fs-write=<path>", "write the given files/dirs", "stable"],
-          ["--allow-child-process", "spawn child processes", "stable"],
-          ["--allow-worker", "start worker_threads", "stable"],
-          ["--allow-addons", "load native (C++) addons", "stable"],
-          ["--allow-wasi", "use WASI", "stable"],
-          ["--allow-net", "outbound network to hosts/ports", "experimental — do not rely on it yet"],
+          ["--allow-fs-read=<path>", "read the given files/dirs (or * for all); the entrypoint is readable implicitly (24.2+)", "stable (23.5 / 22.13)"],
+          ["--allow-fs-write=<path>", "write the given files/dirs", "stable (23.5 / 22.13)"],
+          ["--allow-child-process", "spawn child processes (flags pass to child Node processes via NODE_OPTIONS, 24.4+)", "1.1 active development"],
+          ["--allow-worker", "start worker_threads", "1.1 active development"],
+          ["--allow-addons", "load native (C++) addons", "1.1 active development"],
+          ["--allow-wasi", "use WASI", "1.1 active development"],
+          ["--allow-inspector", "open the inspector (Node warns it can invalidate the model)", "24.12 · 1.0 early development"],
+          ["--allow-openssl-store", "OpenSSL STORE loaders (broad authority, not limited by the fs scopes)", "24.21 · 1.1 active development"],
+          ["--permission-audit", "audit-only mode: report violations, deny nothing", "24.20"],
+          ["--allow-net", "network: sockets, fetch, listen", "absent on 24: network is NOT gated. Added in 25.0 (1.1, experimental)"],
+          ["--allow-ffi", "node:ffi (builds with FFI support)", "26.1 · 1.1 active development"],
         ],
       },
       {
@@ -2420,13 +2425,13 @@ node --permission \\
       "Add a release-age cooldown (pnpm minimumReleaseAge ~1 day) — most malicious versions are caught within hours.",
       "Disable install scripts (npm ci --ignore-scripts): lifecycle scripts are the #1 worm execution vector.",
       "Provenance / Trusted Publishing proves ORIGIN, not intent — attested malware exists; layer other controls.",
-      "Permission Model is stable since Node 23.5 (--permission): a seat belt gating fs/child_process/worker/addons/wasi — net is still experimental.",
+      "Permission Model is stable since Node 23.5 (--permission): a seat belt gating fs/child_process/worker/addons/wasi/inspector. On Node 24 the network is NOT gated (--allow-net lands in 25); roll it out with --permission-audit first.", // CHANGED: S18
       "Patch fast: take Node security releases across all maintained lines; harden input, secrets, headers, TLS.",
     ],
     pitfalls: [
       {
         title: "Treating the permission model as a sandbox",
-        body: "The Node docs are explicit that --permission does not defend against malicious code, which can bypass it. It's a seat belt against unintended access and a blast-radius limiter — use it alongside supply-chain controls, not as a substitute for them.",
+        body: "The Node docs are explicit that --permission does not defend against malicious code, which can bypass it. It's a seat belt against unintended access and a blast-radius limiter — use it alongside supply-chain controls, not as a substitute for them. And on Node 24 it does not gate the network at all, so it cannot stop exfiltration over a socket (network permission arrives in Node 25).", // CHANGED: S18
       },
       {
         title: "npm install in CI instead of npm ci",
@@ -2453,7 +2458,7 @@ node --permission \\
       },
       {
         q: "What does the Node permission model protect against, and what doesn't it?",
-        a: "Stable since Node 23.5, --permission denies access by default and you grant scopes explicitly: --allow-fs-read/--allow-fs-write, --allow-child-process, --allow-worker, --allow-addons, --allow-wasi, checked at runtime via process.permission.has(). It protects against unintended access and limits blast radius — a compromised dependency can't touch resources you didn't grant. What it doesn't do is sandbox malicious code: the docs say so explicitly, malicious code can bypass it, and network permission is still experimental. It's a seat belt layered with supply-chain controls, not a security boundary on its own.",
+        a: "Stable since Node 23.5, --permission denies access by default and you grant scopes explicitly: --allow-fs-read/--allow-fs-write, --allow-child-process, --allow-worker, --allow-addons, --allow-wasi, checked at runtime via process.permission.has(). It protects against unintended access and limits blast radius — a compromised dependency can't touch resources you didn't grant. What it doesn't do is sandbox malicious code: the docs say so explicitly and malicious code can bypass it. On Node 24 it doesn't gate the network at all (--allow-net arrives in Node 25, still experimental). It's a seat belt layered with supply-chain controls, not a security boundary on its own.", // CHANGED: S18
         level: "staff",
       },
       {
@@ -2953,7 +2958,7 @@ npx tsc --noEmit`,
       "Target the Active LTS line for new production — June 2026 that's Node 24 (22 maintenance, 26 current, 18 & 20 EOL). Build on Active LTS; never ship on EOL.",
       "Node 24 runs .ts directly (type stripping, default on) — but it STRIPS types, it does NOT type-check; keep tsc --noEmit in CI, and note enums/decorators need --experimental-transform-types.",
       "require(esm) is unflagged since 22.12 — CommonJS can load an ES module synchronously; the CJS/ESM wall is much lower.",
-      "The Permission Model (--permission) is stable since 23.5 — a seat belt at the process boundary, NOT a sandbox (--allow-net still experimental).",
+      "The Permission Model (--permission) is stable since 23.5 — a seat belt at the process boundary, NOT a sandbox. Network is not gated on 24; --allow-net is new (experimental) in 25.", // CHANGED: S18
       "\"Stable\" is per-line: node:sqlite, fs.glob and node:quic/HTTP3 are still experimental — check the stability index before depending on them.",
       "The cadence changes Oct 2026 (Node 27): one major/year, calendar-year versions, every release LTS — the \"even = LTS\" heuristic stops being true.",
     ],
@@ -2997,7 +3002,7 @@ npx tsc --noEmit`,
       },
       {
         q: "Is the Permission Model a sandbox?",
-        a: "No. It's a coarse allow-list at the process boundary — --allow-fs-read, --allow-fs-write, --allow-child-process, --allow-worker — stable since 23.5. It's defense-in-depth that reduces blast radius, not isolation; --allow-net is still experimental, and it won't contain genuinely hostile code the way a container or VM does. Use it as one layer, not the only one.",
+        a: "No. It's a coarse allow-list at the process boundary — --allow-fs-read, --allow-fs-write, --allow-child-process, --allow-worker — stable since 23.5. It's defense-in-depth that reduces blast radius, not isolation; on Node 24 it doesn't gate the network at all (--allow-net is new in 25), and it won't contain genuinely hostile code the way a container or VM does. Use it as one layer, not the only one.", // CHANGED: S18
         level: "senior",
       },
       {

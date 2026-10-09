@@ -3,8 +3,9 @@
      (1) the set of --allow-* flags this runtime exposes (the STABLE scopes);
      (2) process.permission.has(scope) reflects exactly what was granted —
          granting fs.read does NOT grant fs.write, child or worker;
-     (3) network permission ('net') is NOT part of the stable scope set on the
-         LTS line (it is experimental) — documented, not asserted as present.
+     (3) network: on Node 24 --permission does NOT gate it at all (no
+         --allow-net; listen/fetch still work); from Node 25 it is denied
+         unless --allow-net (experimental) is passed.  CHANGED: S18
    Uses child processes so the parent stays unrestricted.
    Run: node scripts/node-truth-security.mjs                                    */
 import { execFileSync } from "node:child_process";
@@ -39,12 +40,25 @@ const netScope = run([
   "process.stdout.write(String(process.permission.has('net')))",
 ]);
 
+// (4) CHANGED: S18 — is the network actually gated? try to listen under --permission
+let listenUnderPermission;
+try {
+  listenUnderPermission = run([
+    "--permission",
+    "-e",
+    "require('net').createServer().listen(0,'127.0.0.1',function(){process.stdout.write('ok');this.close()})",
+  ]);
+} catch {
+  listenUnderPermission = "denied";
+}
+
 const truth = {
   node: process.version,
   openssl: process.versions.openssl,
   allowFlags: uniqFlags,
   hasNetFlag: uniqFlags.includes("--allow-net"),
   grantedOnlyFsRead: JSON.parse(probe),
-  netScopeHas: netScope, // 'false' on LTS — net perms are experimental / not granted
+  netScopeHas: netScope, // 'false' even on 24, where net is not enforced — has() alone proves nothing
+  listenUnderPermission, // CHANGED: S18 — 'ok' on 24 (network ungated), 'denied' on 25+
 };
 console.log(JSON.stringify(truth, null, 2));

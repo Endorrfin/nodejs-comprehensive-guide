@@ -18,7 +18,8 @@
    importantly that PROVENANCE proves origin, not intent, so it does NOT stop a
    maintainer who publishes attested malware. The permission-model half is
    anchored to a real Node in scripts/node-truth-security.mjs / test-security.ts
-   (the stable --allow-* scopes; granting fs.read grants only fs.read).
+   (the core --allow-* scopes; granting fs.read grants only fs.read; network
+   ungated before Node 25).
    =========================================================================== */
 
 export type Defense =
@@ -108,7 +109,7 @@ export const ATTACKS: Attack[] = [
     blurb: "A compromised package ships a postinstall script that steals tokens and republishes itself into packages you maintain.",
     stoppedBy: ["ignoreScripts", "cooldown"],
     containedBy: ["permission"],
-    note: "--ignore-scripts stops the payload from ever executing; the permission model denies it the fs/child_process/net access it needs to exfiltrate and spread.",
+    note: "--ignore-scripts stops the payload from ever executing; the permission model denies it the fs/child_process access it needs to spread (on Node 24 the network is NOT gated, so it can still phone home — --allow-net arrives in 25).",
   },
   {
     id: "provenance-evading",
@@ -161,10 +162,12 @@ export function score(active: ReadonlySet<Defense>): SupplyScore {
   return s;
 }
 
-/* ---- Permission model: the STABLE --allow-* scopes (verified on Node 22 LTS).
-   Network permission (--allow-net) is intentionally absent — it is still
-   experimental and is NOT part of this set. Asserted live in test-security.ts. */
-export const STABLE_ALLOW_FLAGS: string[] = [
+/* ---- Permission model: the CORE --allow-* scopes every supported line has.
+   CHANGED: S18 — renamed from STABLE_ALLOW_FLAGS: per the CLI docs only the
+   fs flags are Stability 2; child-process/worker/addons/wasi are 1.1. Newer
+   lines add more (24.12 --allow-inspector, 24.21 --allow-openssl-store,
+   25 --allow-net, 26.1 --allow-ffi). Asserted live in test-security.ts. */
+export const CORE_ALLOW_FLAGS: string[] = [
   "--allow-fs-read",
   "--allow-fs-write",
   "--allow-child-process",
@@ -172,4 +175,6 @@ export const STABLE_ALLOW_FLAGS: string[] = [
   "--allow-addons",
   "--allow-wasi",
 ];
-export const NET_PERMISSION_EXPERIMENTAL = true;
+/** CHANGED: S18 — first major where --permission gates the network (via
+    --allow-net, experimental). On 24 sockets/fetch work under --permission. */
+export const NET_PERMISSION_SINCE_MAJOR = 25;

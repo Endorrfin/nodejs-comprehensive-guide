@@ -9,15 +9,17 @@
        connections need N threads ≈ N MiB — and the scheduler thrashes long
        before you reach tens of thousands of them.
      • event-loop (Node) — ONE thread plus the OS notifier watch every socket.
-       A connection costs only a few KiB (socket buffers + a little JS state),
-       so the same N connections fit in a fraction of the memory on one thread.
+       A connection costs a few KiB idle and ~20 KiB with a request in flight
+       (socket + parser + req/res objects), so the same N connections fit in a
+       fraction of the memory on one thread.
 
-   IMPORTANT: the constants are deliberately ORDER-OF-MAGNITUDE, not measured
-   from a specific server — this is an illustrative model of the well-documented
-   C10k problem, not a benchmark. The structural facts it encodes — a thread
-   costs ~16× a socket, so thread-per-request memory balloons while the event
-   loop stays flat — are the real, citable lesson, asserted in
-   scripts/test-throughput.ts.
+   CHANGED: S18 — the loop constant is now MEASURED, not guessed (was 64 KiB):
+   scripts/node-truth-connmem.mjs on Node 24.21 → idle TCP socket ~3.6 KiB RSS,
+   HTTP keep-alive connection with a request in flight ~22 KiB RSS (~4.6 KiB
+   heap). The model rounds the BUSY case to ~20 KiB. It is still an
+   order-of-magnitude model of the C10k problem, not a benchmark: a thread
+   costs ~50× a busy connection, so thread-per-request memory balloons while
+   the event loop stays flat — asserted in scripts/test-throughput.ts.
    =========================================================================== */
 
 export type ModelId = "thread" | "loop";
@@ -47,9 +49,9 @@ export const MODELS: Record<ModelId, ModelMeta> = {
   loop: {
     id: "loop",
     label: "event loop (Node)",
-    sub: "one thread + the kernel watch every socket — ~64 KiB each",
+    sub: "one thread + the kernel watch every socket — ~20 KiB per busy connection", // CHANGED: S18 (was ~64 KiB)
     color: "#6CC24A",
-    perConnMiB: 64 / 1024, // ~64 KiB per socket
+    perConnMiB: 20 / 1024, // CHANGED: S18 — ~20 KiB per busy connection (measured ~22 KiB; idle ~3.6 KiB)
     threadsPerConn: 0, // they all share the single loop thread
   },
 };
@@ -80,7 +82,7 @@ export const fmtMem = (miB: number): string =>
 
 export const fmtN = (n: number): string => (n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : `${n}`);
 
-/** Memory blow-up factor (thread ÷ loop) at a given N — grows toward ~16×. */
+/** Memory blow-up factor (thread ÷ loop) at a given N — grows toward ~50× (1 MiB ÷ 20 KiB). CHANGED: S18 (was ~16×) */
 export function memRatio(n: number): number {
   return compute("thread", n).memMiB / compute("loop", n).memMiB;
 }

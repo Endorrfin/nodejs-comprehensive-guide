@@ -7,14 +7,17 @@
    (2) LIVE anchor — this Node exposes every core --allow-* scope in the
        engine's list (newer lines add more), --allow-net is absent before
        Node 25, and a
-       child granted only fs.read sees fs.read=true / fs.write/child/worker=false. */
+       child granted only fs.read sees fs.read=true / fs.write/child/worker=false;
+       CHANGED: S18 — and the network is NOT gated by --permission before Node 25
+       (a child can listen on a socket), but IS denied on 25+ without --allow-net. */
 import { execFileSync } from "node:child_process";
 import {
   ATTACKS,
   DEFENSES,
   evaluate,
   score,
-  STABLE_ALLOW_FLAGS,
+  CORE_ALLOW_FLAGS, // CHANGED: S18 — renamed (only the fs flags are Stability 2)
+  NET_PERMISSION_SINCE_MAJOR,
   type Defense,
 } from "../src/lib/supplyChainEngine.ts";
 
@@ -54,7 +57,7 @@ check("audit alone does NOT block a brand-new worm", status("postinstall-worm", 
 const node = process.execPath;
 const help = execFileSync(node, ["--help"], { encoding: "utf8" });
 const liveFlags = [...new Set([...help.matchAll(/--allow-[a-z-]+/g)].map((m) => m[0]))].sort();
-const expected = [...STABLE_ALLOW_FLAGS].sort();
+const expected = [...CORE_ALLOW_FLAGS].sort();
 // CHANGED: S16 — version-tolerant. CI moved 22 → 24 (engines ">=24") and newer
 // lines ADD scopes (24.x: --allow-inspector, --allow-openssl-store; 25+: --allow-net),
 // so assert the engine's core scopes are all present instead of exact equality,
@@ -80,6 +83,21 @@ const probe = JSON.parse(
     { encoding: "utf8" },
   ),
 ) as { r: boolean; w: boolean; c: boolean; k: boolean };
+// CHANGED: S18 — the chapter's headline caveat: on 24 --permission does NOT gate the network.
+const listenProbe = (() => {
+  try {
+    return execFileSync(
+      node,
+      ["--permission", "-e", "require('net').createServer().listen(0,'127.0.0.1',function(){process.stdout.write('ok');this.close()})"],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+  } catch {
+    return "denied";
+  }
+})();
+if (major < NET_PERMISSION_SINCE_MAJOR) check("live: --permission does NOT gate the network before Node 25 (listen works)", listenProbe === "ok", listenProbe);
+else check("live: --permission denies the network on 25+ (needs --allow-net)", listenProbe === "denied", listenProbe);
+
 check("live: granting fs.read grants ONLY fs.read", probe.r === true && probe.w === false && probe.c === false && probe.k === false, JSON.stringify(probe));
 
 console.log(failed === 0 ? "\nALL PASS" : `\n${failed} FAILED`);

@@ -917,7 +917,7 @@ export const GLOSSARY: Term[] = [
   },
   {
     term: "Permission Model",
-    def: "Runtime least privilege via `--permission` (stable since Node 23.5): denies fs, child processes, workers, addons and WASI unless granted by `--allow-*`. A seat belt, not a sandbox.",
+    def: "Runtime least privilege via `--permission` (stable since Node 23.5): denies fs, child processes, workers, addons, WASI and the inspector unless granted by `--allow-*`; on Node 24 the network is not gated (`--allow-net` arrives in 25). A seat belt, not a sandbox.", // CHANGED: S18
     chapter: "security",
     seeAlso: ["Supply-chain attack"],
   },

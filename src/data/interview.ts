@@ -207,7 +207,7 @@ export const INTERVIEW: BankItem[] = [
     topic: "Foundations",
     level: "staff",
     q: "If Node is single-threaded, how does it serve thousands of connections?",
-    a: "Network sockets are non-blocking: libuv arms them with the OS notifier (epoll/kqueue/IOCP) and the kernel signals readiness; one loop thread multiplexes them all, holding no thread per connection. Memory per connection is a few KB of socket state vs ~1 MB per thread in a thread-per-request model, so the same box scales to tens of thousands — the C10k win.",
+    a: "Network sockets are non-blocking: libuv arms them with the OS notifier (epoll/kqueue/IOCP) and the kernel signals readiness; one loop thread multiplexes them all, holding no thread per connection. Memory per connection is a few KiB idle (~20 KiB with a request in flight) vs ~1 MiB per thread in a thread-per-request model — roughly 50× less — so the same box scales to tens of thousands — the C10k win.", // CHANGED: S18
   },
   {
     id: "weak-block",
@@ -335,7 +335,7 @@ export const INTERVIEW: BankItem[] = [
     topic: "Security",
     level: "staff",
     q: "What does the Node permission model protect against — and what doesn't it?",
-    a: "Stable since Node 23.5, --permission denies access by default and grants scopes explicitly: --allow-fs-read/--allow-fs-write, --allow-child-process, --allow-worker, --allow-addons, --allow-wasi, checked via process.permission.has(). It prevents unintended access and limits the blast radius of a compromised dependency. It does NOT sandbox malicious code — the docs say so explicitly, malicious code can bypass it — and network permission (--allow-net) is still experimental. It's a seat belt to layer with supply-chain controls, not a security boundary by itself.",
+    a: "Stable since Node 23.5, --permission denies access by default and grants scopes explicitly: --allow-fs-read/--allow-fs-write, --allow-child-process, --allow-worker, --allow-addons, --allow-wasi, checked via process.permission.has(). It prevents unintended access and limits the blast radius of a compromised dependency. It does NOT sandbox malicious code — the docs say so explicitly, malicious code can bypass it — and on Node 24 it does not gate the network at all (--allow-net arrives in Node 25, still experimental). It's a seat belt to layer with supply-chain controls, not a security boundary by itself.", // CHANGED: S18
   },
   {
     id: "prod-graceful-shutdown",
