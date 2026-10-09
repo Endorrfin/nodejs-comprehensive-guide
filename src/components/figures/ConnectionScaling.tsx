@@ -8,7 +8,7 @@ export function ConnectionScaling(): React.ReactElement {
   const clients = [0, 1, 2, 3];
   const grid = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   return (
-    <svg viewBox="0 0 680 300" width="100%" role="img" aria-label="Holding 10,000 concurrent connections: thread-per-request needs 10,000 threads and about 10 GiB, while the event loop watches every socket on one thread via the OS kernel in about 0.65 GiB.">
+    <svg viewBox="0 0 680 300" width="100%" role="img" aria-label="Holding 10,000 concurrent connections: thread-per-request needs 10,000 threads and about 10 GiB, while the event loop watches every socket on one thread via the OS kernel in about 0.2 GiB.">
       <defs>
         <marker id="cs-o" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="#FF7A00" />
@@ -68,11 +68,12 @@ export function ConnectionScaling(): React.ReactElement {
 
       {/* memory bar (short) */}
       <rect x="372" y="170" width="34" height="70" rx="5" fill="rgba(0,0,0,0.3)" stroke="#33402f" strokeWidth="1" />
-      <rect x="374" y="226" width="30" height="12" rx="4" fill="rgba(108,194,74,0.55)" />
-      <text x="389" y="164" textAnchor="middle" fill="#6CC24A" fontFamily="'Space Grotesk',sans-serif" fontSize="12" fontWeight="700">≈0.65 GiB</text>
+      {/* CHANGED: S18 — 10k × ~20 KiB ≈ 0.2 GiB (was 0.65 GiB at 64 KiB/socket) */}
+      <rect x="374" y="232" width="30" height="6" rx="3" fill="rgba(108,194,74,0.55)" />
+      <text x="389" y="164" textAnchor="middle" fill="#6CC24A" fontFamily="'Space Grotesk',sans-serif" fontSize="12" fontWeight="700">≈0.2 GiB</text>
       <text x="389" y="254" textAnchor="middle" fill="#6B7B6E" fontFamily="'JetBrains Mono',monospace" fontSize="9">memory</text>
 
-      <text x="360" y="278" fill="#9CB3A0" fontFamily="'JetBrains Mono',monospace" fontSize="9.5">~64 KiB/socket vs ~1 MiB/thread — a thread costs ~16× a socket.</text>
+      <text x="360" y="278" fill="#9CB3A0" fontFamily="'JetBrains Mono',monospace" fontSize="9.5">~20 KiB/busy conn vs ~1 MiB/thread — a thread costs ~50×.</text>
     </svg>
   );
 }

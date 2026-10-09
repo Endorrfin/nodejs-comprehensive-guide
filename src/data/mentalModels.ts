@@ -37,7 +37,8 @@ export const MODELS: ModelCard[] = [
     figure: "connection-scaling",
     prompt: "10k mostly-idle connections: how does the event loop hold them where thread-per-request can't?",
     answer:
-      "Thread-per-request needs ~1 MiB of stack per connection → ~10 GiB + scheduler thrash at 10k. The event loop + OS notifier watch every socket on ONE thread at ~64 KiB each → a fraction of the memory. A thread costs ~16× a socket.",
+      // CHANGED: S18 — measured per-connection cost (was ~64 KiB / 16×)
+      "Thread-per-request needs ~1 MiB of stack per connection → ~10 GiB + scheduler thrash at 10k. The event loop + OS notifier watch every socket on ONE thread at a few KiB idle / ~20 KiB with a request in flight → a fraction of the memory. A thread costs ~50× a busy connection.",
   },
   {
     id: "blocking-loop",

@@ -73,7 +73,9 @@ node-js_comprehensive-guide/            # = git repo root; deploy publishes dist
       study/   Flashcards  PredictOutputQuiz  InterviewBank
       pages/   … AtlasPage  PrinciplesPage  GlossaryPage  AboutPage (S17: +principles.css, glossary.css)
     lib/     hashRouter.ts  search.ts  registry.ts(sim registry)  utils.ts  pendingScroll.ts (S17: cross-page anchor jumps)
-  scripts/   (PDF pipeline — added in the PDF sessions)
+  scripts/   engine truth-tests (test-*.ts) · node-truth-*.mjs captures (run by hand) · qa-integrity · smoke-entry · ogtools
+  e2e/       Playwright browser e2e (*.spec.ts + helpers.ts + own tsconfig.json) — S18
+  playwright.config.ts                  # Chromium only · webServer = vite preview of dist/ · reducedMotion
   CLAUDE.md  (this file)
 ```
 
@@ -225,7 +227,11 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
 
 - TypeScript **strict** + `noUnusedLocals/Parameters`; **ESLint flat config** (`eslint.config.js`),
   enforced as a CI gate (`npm run lint`) before every deploy. `npm run verify` runs typecheck + lint +
-  qa + engine tests + build locally.
+  qa + engine tests + build locally. **Browser e2e (S18):** `npm run e2e` (= `tsc -p e2e` + `playwright test`,
+  needs a fresh `npm run build`; `npm run e2e:install` once for Chromium) — NOT in `verify`, but a CI gate.
+  e2e rules: no sleeps — only web-first `expect`/`expect.poll`; anchor jumps use `expectLandedAt`
+  (in view AND top < 160px AND scrolled), because `toBeInViewport` alone passes for targets already
+  visible at scroll 0.
 - Content edited **only** in `src/data/*`; never hand-edit rendered output.
 - Numbers/labels via shared formatters; links/cross-refs by id.
 - **Accessibility:** keyboard nav, focus rings, ARIA on sims, `prefers-reduced-motion`
@@ -238,9 +244,11 @@ Footer: **"Vasyl Krupka · Senior Fullstack Engineer"** (poster series) + Ukrain
 
 ## 10. Deploy (GitHub Pages via Actions)
 
-- `.github/workflows/deploy.yml`: on push to `main` → `actions/checkout` → `setup-node@22`
-  → `npm ci` → `npm run build` → `upload-pages-artifact (dist)` → `deploy-pages`.
-  Pages **Source = GitHub Actions**.
+- `.github/workflows/deploy.yml`: on push to `main` → `actions/checkout@v4` → `actions/setup-node@v4`
+  (`node-version-file: .nvmrc` = 24, npm cache) → `npm ci` → typecheck → lint → qa → `npm test` → build →
+  **Playwright e2e gate** (browsers cached by Playwright version; `install --with-deps chromium` on a miss,
+  `install-deps` on a hit; HTML report uploaded as an artifact on failure) → `upload-pages-artifact (dist)` →
+  `deploy-pages`. Pages **Source = GitHub Actions**.
 - `vite base:'./'` + hash routing + `public/.nojekyll`. Confirm final **repo name** with user
   (URL `https://<user>.github.io/<repo>/`; base `'./'` keeps it sub-path-safe).
 
@@ -323,6 +331,10 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   "Built on principles" line on every content chapter) + `#/glossary` (162 terms, A–Z rail, part filter, local
   search, anchors) wired into global search (Principle/Term hits), flashcards (Principle deck in "All"; Glossary
   deck behind its own filter), qa, smoke, About, README, og.png. Header re-tuned for 8 tabs.
+- **S18 · Correctness + browser e2e** — DONE (2026-10-09, see log). Per-connection memory measured and unified
+  (~20 KiB busy / ~3.6 KiB idle vs ~1 MiB/thread ≈ 50×); Permission Model re-verified (network NOT gated on 24);
+  Playwright e2e (12 tests) as a CI gate. Node 26 Active-LTS content update waits until after ~28 Oct 2026.
+  User declined (for now): SRS progress, interview mode, 30-s answers, symptom-first pitfalls.
 
 ## 13. Status / progress log
 
@@ -976,4 +988,43 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   chapter #analogy, search Term/Principle hit → entry, A–Z rail, light theme, ≤560px.
   **Follow-ups:** unify "a few KB" vs "~64 KiB per socket" across strengths/interview/analogy/throughput; S16's
   Node 26 LTS (~28 Oct) + `--allow-*` content updates still open.
+- **2026-10-09 · S18 Correctness + browser e2e** — DONE (branch `s18-correctness-e2e`, not committed).
+  **A1 per-connection memory.** New `scripts/node-truth-connmem.mjs` (server in a forked `--expose-gc` child,
+  clients in the parent; GC'd `memoryUsage` delta ÷ N; NOT in `npm test` — fd ulimit). Node 24.21 darwin-arm64,
+  3 runs: **TCP idle 3.6 KiB RSS / 0.9 KiB heap (×5000)**, **HTTP in-flight 22.7 KiB RSS / 4.6 KiB heap (×3000)**.
+  Model: `throughputEngine` loop `perConnMiB` 64→**20 KiB** ("per busy connection") → thread ≈ **50×** (was 16×);
+  sim at 10k = 9.8 GiB vs 225 MiB (44.5×), 20k ≈ 48×. Updated: engine comments/sub, `ThroughputSim` note,
+  `ConnectionScaling` (caption, aria-label, 0.65→**0.2 GiB** label + shorter bar), mental model, strengths prose +
+  in-chapter IV, bank IV, strengths analogy; `test-throughput` (ratio 45–55, loop cost in measured 15–30 KiB band).
+  Left as is (still true): glossary Thread-per-request "~10 GiB at 10k", principle ② (no socket number), every
+  `highWaterMark` 64 KiB.
+  **A2 Permission Model** — re-verified vs the 24/25/26 `cli.html` + `permissions.html` and live probes on 24.21 and
+  25.7. Discrepancies fixed: (1) only `--allow-fs-read/-write` are Stability 2; child-process/worker/addons/wasi
+  flags are **1.1 active development** (the model as a whole is stable since 23.5/22.13) — the table said all 6
+  "stable"; (2) Node 24 adds `--allow-inspector` (24.12, 1.0), `--allow-openssl-store` (24.21), `--permission-audit`
+  (24.20) — absent from the guide; (3) **on Node 24 `--permission` does not gate the network at all** (verified:
+  `listen` + `fetch` work) — the guide implied net was gated-but-experimental; `--allow-net` lands in **25.0**
+  (1.1, ExperimentalWarning) and on 25.7 `listen` is denied without it → a 24→26 upgrade of a `--permission`
+  service needs `--allow-net`; (4) 26.1 adds `--allow-ffi`. Updated: security prose (rewritten), table (11 rows
+  with per-flag status/version), KP, pitfall body, in-chapter + bank IV, modern-node KP + IV, glossary
+  "Permission Model", `supplyChainEngine` (worm note no longer claims net is denied; `STABLE_ALLOW_FLAGS` →
+  **`CORE_ALLOW_FLAGS`**, `NET_PERMISSION_EXPERIMENTAL` → **`NET_PERMISSION_SINCE_MAJOR = 25`**),
+  `node-truth-security.mjs` (+ listen-under-`--permission` probe), `test-security` (+ live: net ungated <25,
+  denied ≥25 — passes on 24.21 AND 25.7).
+  **B Playwright e2e.** `@playwright/test` **1.63.0** exact (1.64.0 was 2 days old), Chromium only;
+  `playwright.config.ts` (vite preview of dist/ on 127.0.0.1:4173, `reducedMotion:'reduce'`, retries 1 / workers 2 /
+  forbidOnly / html report in CI, trace on-first-retry); `e2e/` with own tsconfig (`tsc -p e2e` inside `npm run e2e`),
+  linted by the root ESLint config. 12 tests in 5 specs: anchors (chapter ① → principle card; glossary ◎ Analogy →
+  #analogy), search (Term hit → glossary entry; Principle hit → card), glossary (filter → see-also resets + jumps;
+  A–Z rail → #letter-S), header (1920/1300/1100/950/901: 8 tabs one row, none wrap, not clipped, no page h-scroll;
+  400px drawer open + Esc), theme (Light persists across reload, sim Step works in light, Dark persists). Found:
+  `#analogy` is visible at scroll 0 → `toBeInViewport` alone is vacuous → `e2e/helpers.ts` `expectLandedAt`.
+  **Mutation-checked:** with `consumePendingScroll` disabled, all 4 jump tests fail. CI: e2e gate after Build
+  (browser cache keyed by PW version; report artifact on failure). `.gitignore` += test-results/,
+  playwright-report/, blob-report/. README EN/UA commands + conventions.
+  **Verified on Node 24.21:** `npm run verify` exit 0 (tsc · eslint 0 errors / 4 known warnings · QA 2697/0 ·
+  all suites ALL PASS · build OK) · SSR smoke **223 PASS / 0 FAIL — SMOKE OK** (`scripts/_ssr_s18`) · `npm run e2e`
+  12/12 ×3 in a row + `--repeat-each 10` (120/120) + `--repeat-each 5` after the helper (60/60).
+  **Follow-ups:** Node 26 Active LTS (~28 Oct) mini-session — also revisit the Permission text then (26 gates the
+  network by default under `--permission`); GitHub run of the new e2e step to be confirmed on first push.
 - *(Update this log at the end of every session/block — per user request.)*

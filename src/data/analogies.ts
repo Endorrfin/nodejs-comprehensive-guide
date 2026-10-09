@@ -41,7 +41,7 @@ export const ANALOGIES: Record<string, Analogy> = {
     map: [
       ["A butler per guest", "Thread-per-request (each thread reserves a stack, ~1 MiB)"],
       ["The butler idling in the corridor", "A blocked thread waiting on I/O"],
-      ["The concierge's ticket stack", "The event loop's queue of pending callbacks (~KBs per socket)"],
+      ["The concierge's ticket stack", "The event loop's queue of pending callbacks (a few KiB per idle socket, ~20 KiB while a request is in flight)"], // CHANGED: S18
       ["Thousands of guests on one salary", "The C10k win: concurrency without a thread per connection"],
     ],
     breaks:

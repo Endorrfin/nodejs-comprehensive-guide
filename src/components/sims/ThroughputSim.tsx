@@ -76,7 +76,8 @@ export function ThroughputSim(): React.ReactElement {
       </div>
 
       <div className="th-note">
-        Order-of-magnitude model of the C10k problem (~1 MiB per thread vs ~64 KiB per socket) — a thread costs roughly <b>16×</b> a socket, which is the ceiling this ratio approaches. Real numbers vary; the shape does not.
+        {/* CHANGED: S18 — measured per-connection cost (was ~64 KiB / 16×) */}
+        Order-of-magnitude model of the C10k problem (~1 MiB per thread vs ~20 KiB per busy connection — measured on Node 24: ~3.6 KiB idle, ~22 KiB with a request in flight) — a thread costs roughly <b>50×</b> a busy connection, which is the ceiling this ratio approaches. Real numbers vary; the shape does not.
       </div>
     </div>
   );

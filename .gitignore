@@ -19,6 +19,11 @@ _arhive/
 QA.txt
 _examples/
 
+# Playwright e2e output (S18)
+test-results/
+playwright-report/
+blob-report/
+
 # IDE
 .idea/
 .vscode/
