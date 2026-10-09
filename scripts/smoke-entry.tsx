@@ -339,5 +339,25 @@ for (const must of ["About this guide", "What it is", "Truth-first", "Vasyl Krup
   console.log(`${has ? "PASS" : "FAIL"} about contains "${must}"`);
 }
 
+// CHANGED: S16 — real-life analogy block on content chapters (scene, mapping, breaks)
+for (const [route, musts] of [
+  ["#/chapter/event-loop", ["Real-life analogy", "night guard", "In real life", "Where the analogy breaks", "Analogy"]],
+  ["#/chapter/streams", ["Real-life analogy", "dishwasher", "highWaterMark"]],
+  ["#/chapter/express", ["Airport security lanes", "arity"]],
+] as const) {
+  const html = render(route);
+  for (const must of musts) {
+    const has = html.includes(must);
+    ok &&= has;
+    console.log(`${has ? "PASS" : "FAIL"} ${route} (S16) contains '${must}'`);
+  }
+}
+{
+  const html = render("#/chapter/summary");
+  const absent = !html.includes("Real-life analogy");
+  ok &&= absent;
+  console.log(`${absent ? "PASS" : "FAIL"} #/chapter/summary (S16) has no analogy block`);
+}
+
 console.log(ok ? "\nSMOKE OK" : "\nSMOKE FAILED");
 process.exit(ok ? 0 : 1);

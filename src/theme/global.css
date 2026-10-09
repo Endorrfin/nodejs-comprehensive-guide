@@ -715,6 +715,51 @@ figure[id^="fig-"] {
   font-size: 13px;
   color: var(--tx2);
 }
+/* CHANGED: S16 — real-life analogy block (scene + mapping table + where it breaks) */
+.analogy {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r);
+  background: var(--surface);
+  padding: 4px 18px 16px;
+}
+.analogy h2 {
+  margin-top: 14px;
+}
+.an-scene p {
+  margin: 8px 0;
+}
+.an-map td p {
+  margin: 0;
+}
+.an-map td:first-child {
+  color: var(--tx2);
+  width: 42%;
+}
+.an-breaks {
+  margin-top: 14px;
+  border-left: 3px solid var(--sem-io);
+  padding: 8px 12px;
+  background: var(--s2);
+  border-radius: 0 10px 10px 0;
+}
+.an-breaks .lbl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--sem-io);
+  font-weight: 700;
+}
+.an-breaks p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  color: var(--tx);
+}
+@media (max-width: 560px) {
+  .analogy {
+    padding: 2px 12px 12px;
+  }
+}
 .qa {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -1560,6 +1605,7 @@ figure[id^="fig-"] {
   .callout,
   .code,
   .compare,
+  .an-breaks,
   table,
   tr {
     break-inside: avoid;

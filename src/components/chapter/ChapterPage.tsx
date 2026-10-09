@@ -1,6 +1,8 @@
 import React from "react";
 import { CHAPTERS, CHAPTER_BY_ID, GROUPS, type Chapter } from "../../data/concepts";
 import { SectionView } from "./Section";
+import { Md } from "./Md";
+import { ANALOGIES } from "../../data/analogies"; // CHANGED: S16
 import { go } from "../../lib/hashRouter";
 
 const ORDERED = [...CHAPTERS].sort((a, b) => a.order - b.order);
@@ -40,6 +42,8 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
   // (0 = not a figure), drives the "Fig. N" captions + #fig-N anchors.
   let figCount = 0;
   const figNums = ch.sections.map((s) => (s.kind === "figure" ? ++figCount : 0));
+  // CHANGED: S16 — real-life analogy (scene + 1:1 mapping + where it breaks)
+  const analogy = ANALOGIES[ch.id];
 
   return (
     <article className="chapter">
@@ -68,6 +72,12 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
         </div>
 
         <div className="seealso" style={{ marginTop: 14 }}>
+          {/* CHANGED: S16 */}
+          {analogy ? (
+            <a href="#analogy" onClick={(e) => { e.preventDefault(); jump("analogy"); }}>
+              ◎ Analogy
+            </a>
+          ) : null}
           {hasSim ? (
             <a href="#simulator" onClick={(e) => { e.preventDefault(); jump("simulator"); }}>
               ▶ Simulator
@@ -85,6 +95,42 @@ export function ChapterPage({ id }: { id: string }): React.ReactElement {
           ) : null}
         </div>
       </header>
+
+      {/* CHANGED: S16 — real-life analogy, right before the deep dive */}
+      {analogy ? (
+        <section className="block analogy" id="analogy" aria-labelledby="analogy-h">
+          <h2 id="analogy-h">◎ Real-life analogy — {analogy.title}</h2>
+          <div className="an-scene prose">
+            <Md md={analogy.scene} />
+          </div>
+          <div className="tbl-wrap">
+            <table className="data an-map">
+              <thead>
+                <tr>
+                  <th>In real life</th>
+                  <th>In Node</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analogy.map.map(([real, node], i) => (
+                  <tr key={i}>
+                    <td>
+                      <Md md={real} />
+                    </td>
+                    <td>
+                      <Md md={node} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="an-breaks">
+            <div className="lbl">Where the analogy breaks</div>
+            <Md md={analogy.breaks} />
+          </div>
+        </section>
+      ) : null}
 
       {/* sections */}
       <div className="ch-sections">
