@@ -66,7 +66,7 @@ sit alongside.
 
 ### Run locally
 
-Requires Node 22+.
+Requires Node 24+ (LTS).
 
 ```bash
 git clone https://github.com/Endorrfin/nodejs-comprehensive-guide
@@ -182,7 +182,7 @@ scripts/       test-*.ts (engine suites) · node-truth-*.mjs (real-Node captures
 
 ### Запуск локально
 
-Потрібен Node 22+.
+Потрібен Node 24+ (LTS).
 
 ```bash
 git clone https://github.com/Endorrfin/nodejs-comprehensive-guide

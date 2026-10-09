@@ -4,8 +4,9 @@
    (1) engine invariants — no single defense covers every attack class; only
        layering leaves nothing exposed; and provenance does NOT stop attested
        malware (origin ≠ intent);
-   (2) LIVE anchor — this Node's STABLE --allow-* scopes match the engine's
-       list, --allow-net is absent (network perms are experimental), and a
+   (2) LIVE anchor — this Node exposes every core --allow-* scope in the
+       engine's list (newer lines add more), --allow-net is absent before
+       Node 25, and a
        child granted only fs.read sees fs.read=true / fs.write/child/worker=false. */
 import { execFileSync } from "node:child_process";
 import {
@@ -54,8 +55,16 @@ const node = process.execPath;
 const help = execFileSync(node, ["--help"], { encoding: "utf8" });
 const liveFlags = [...new Set([...help.matchAll(/--allow-[a-z-]+/g)].map((m) => m[0]))].sort();
 const expected = [...STABLE_ALLOW_FLAGS].sort();
-check("live: stable --allow-* set matches engine", JSON.stringify(liveFlags) === JSON.stringify(expected), `live=${liveFlags.join(",")}`);
-check("live: --allow-net absent (network perms experimental)", !liveFlags.includes("--allow-net"));
+// CHANGED: S16 — version-tolerant. CI moved 22 → 24 (engines ">=24") and newer
+// lines ADD scopes (24.x: --allow-inspector, --allow-openssl-store; 25+: --allow-net),
+// so assert the engine's core scopes are all present instead of exact equality,
+// and only demand --allow-net's absence on the lines the chapter describes (< 25).
+const major = Number(process.versions.node.split(".")[0]);
+const missing = expected.filter((f) => !liveFlags.includes(f));
+const extra = liveFlags.filter((f) => !expected.includes(f));
+check("live: engine's core --allow-* scopes all exist", missing.length === 0, `missing=${missing.join(",") || "none"} · extra on ${process.version}=${extra.join(",") || "none"}`);
+if (major < 25) check("live: --allow-net absent before Node 25 (network perms)", !liveFlags.includes("--allow-net"));
+else console.log(`INFO  --allow-net ${liveFlags.includes("--allow-net") ? "present" : "absent"} on ${process.version} (added in the 25 line)`);
 
 const probe = JSON.parse(
   execFileSync(

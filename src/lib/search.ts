@@ -6,6 +6,7 @@
 import { CHAPTERS, CHAPTER_BY_ID, type Section } from "../data/concepts";
 import { INTERVIEW } from "../data/interview";
 import { MODELS } from "../data/mentalModels";
+import { ANALOGIES } from "../data/analogies"; // CHANGED: S16
 
 export type SearchKind = "chapter" | "qa" | "model";
 
@@ -15,6 +16,12 @@ export interface SearchHit {
   sub: string;
   to: string; // route path, e.g. "/chapter/event-loop"
   score: number;
+}
+
+// CHANGED: S16 — analogies are searchable too ("waiter", "taxi", "dishwasher" → chapter)
+function analogyText(id: string): string {
+  const a = ANALOGIES[id];
+  return a ? [a.title, a.scene, ...a.map.flat(), a.breaks].join(" ") : "";
 }
 
 const chapterLink = (id: string): string => CHAPTER_BY_ID[id]?.link ?? "/chapter/" + id;
@@ -55,7 +62,7 @@ const ENTRIES: Entry[] = [
     sub: c.tagline,
     to: chapterLink(c.id),
     titleL: (c.title + " " + c.tagline).toLowerCase(),
-    bodyL: (c.mentalModel + " " + c.keyPoints.join(" ") + " " + c.sections.map(sectionText).join(" ")).toLowerCase(),
+    bodyL: (c.mentalModel + " " + c.keyPoints.join(" ") + " " + c.sections.map(sectionText).join(" ") + " " + analogyText(c.id)).toLowerCase(),
   })),
   ...INTERVIEW.map((q): Entry => ({
     kind: "qa",

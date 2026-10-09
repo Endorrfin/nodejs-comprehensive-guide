@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 import { CHAPTERS, GROUPS } from "../src/data/concepts.ts";
 import { INTERVIEW } from "../src/data/interview.ts";
 import { MODELS } from "../src/data/mentalModels.ts";
+import { ANALOGIES } from "../src/data/analogies.ts"; // CHANGED: S16
 import { asyncOrderingQuiz, concurrencyQuiz, modulesQuiz, expressQuiz } from "../src/data/quizzes.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -173,6 +174,24 @@ section("Atlas coverage — every registered figure owned by a chapter body or m
 check(orphanFigs.length === 0, `figure(s) unreachable from the atlas: ${orphanFigs.join(", ")}`);
 
 /* ---- summary --------------------------------------------------------------*/
+/* ---- 10. analogies (S16) — every content chapter has one, well-formed ------*/
+// Content chapters = everything except link pages (interview, mental-models) and
+// the capstone summary. Each analogy needs a scene, >=3 mapping rows of exactly
+// two non-empty cells, and a non-empty "where it breaks" line.
+section("Analogies — coverage of content chapters + well-formed");
+const ANALOGY_EXEMPT = new Set(["summary"]);
+for (const id of Object.keys(ANALOGIES)) check(chapterIds.has(id), `analogy keyed "${id}" → no such chapter`);
+for (const c of CHAPTERS) {
+  if (c.link || ANALOGY_EXEMPT.has(c.id)) continue;
+  const a = ANALOGIES[c.id];
+  check(!!a, `chapter "${c.id}" has no real-life analogy`);
+  if (!a) continue;
+  check(a.title.trim().length > 0 && a.scene.trim().length > 0, `analogy "${c.id}": empty title/scene`);
+  check(a.map.length >= 3, `analogy "${c.id}": fewer than 3 mapping rows`);
+  check(a.map.every((r) => r.length === 2 && r[0].trim() !== "" && r[1].trim() !== ""), `analogy "${c.id}": malformed mapping row`);
+  check(a.breaks.trim().length > 0, `analogy "${c.id}": missing "where it breaks"`);
+}
+
 console.log(`\n${failures === 0 ? "QA OK" : "QA FAILED"} — ${checks} checks, ${failures} failure(s).`);
 console.log(`  chapters=${CHAPTERS.length} sims=${SIM_KEYS.size} figures=${FIG_KEYS.size} interview=${INTERVIEW.length} models=${MODELS.length} inProseLinks=${internalLinks.length}`);
 process.exit(failures === 0 ? 0 : 1);

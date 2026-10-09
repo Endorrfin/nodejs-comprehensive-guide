@@ -7,6 +7,10 @@
   "homepage": "https://endorrfin.github.io/nodejs-comprehensive-guide/",
   "author": "Vasyl Krupka",
   "license": "MIT",
+  "engines": {
+    "node": ">=24",
+    "npm": ">=11"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -23,7 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^22.19.21",
+    "@types/node": "^24.19.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.0",

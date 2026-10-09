@@ -42,7 +42,7 @@ remember* Node internals (deep-dive mode), and to prep senior/staff interviews.
 - **Single source of truth for content:** `src/data/concepts.ts` (+ `interview.ts`,
   `mentalModels.ts`). Chapters/pages are *rendered from data*; we don't hand-write page HTML.
   (Same philosophy as DPmap's `dpmap_data.js`.)
-- **Tooling/CI Node:** Node 22 LTS. **Pin & re-verify latest stable** versions at scaffold
+- **Tooling/CI Node:** Node **24 LTS** (`engines: node >=24, npm >=11`; `.nvmrc` = 24, CI reads it — S16; was 22). **Pin & re-verify latest stable** versions at scaffold
   time; for the *Modern Node (2026)* chapter, **web-search current LTS/release lines**
   (knowledge cutoff is older than the live site date).
 
@@ -52,7 +52,7 @@ remember* Node internals (deep-dive mode), and to prep senior/staff interviews.
 node-js_comprehensive-guide/            # = git repo root; deploy publishes dist/ only
   index.html                            # app shell (title, favicon, theme-color)
   package.json  vite.config.ts  tsconfig.json  eslint.config.js
-  .github/workflows/deploy.yml          # Actions → Pages (Node 22, npm ci, build, upload dist)
+  .github/workflows/deploy.yml          # Actions → Pages (Node from .nvmrc = 24, npm ci, gates, build, upload dist)
   .gitignore                            # node_modules, dist, AND Examples/ (see gotchas)
   public/  favicon.svg  .nojekyll
   src/
@@ -62,6 +62,7 @@ node-js_comprehensive-guide/            # = git repo root; deploy publishes dist
       concepts.ts                       # SINGLE SOURCE OF TRUTH (groups + chapters + sections)
       interview.ts                      # the 40 senior/staff Q&A (tagged by chapter)
       mentalModels.ts                   # "draw from memory" gallery entries
+      analogies.ts                      # real-life analogy per content chapter (S16)
     components/
       layout/  TopBar  Sidebar  Toc  ProgressBar  Footer(brand)
       map/     ConceptMap  MapNode  Drawer         # landing overview (clickable → chapter)
@@ -103,6 +104,12 @@ type Section =
 
 Figures and sims are referenced by **key** and resolved via a registry (`lib/registry.ts`),
 so content stays declarative and widgets stay reusable.
+
+**Analogies (S16)** live beside the chapters in `src/data/analogies.ts`, keyed by chapter id:
+`{ title; scene: md; map: [realLife, node][]; breaks: md }`. `breaks` ("where the analogy breaks") is
+**mandatory**: an unchallenged analogy becomes a misconception. qa-integrity requires one for every
+chapter except link pages and `summary`. Rendered by `ChapterPage` right under the header (`#analogy`)
+and indexed by global search.
 
 ## 5. Curriculum (maps `list of concepts.txt` → chapters)
 
@@ -884,4 +891,28 @@ static figure; `modules` has none in-body; code blocks render as plain text; onl
   stolen-CI chip y192 + summary moved to y234 under a taller `viewBox` (236 → 246). **Visually verified in
   the sandbox** by rendering the real component → SVG → resvg PNG (`scripts/_preview-supply-entry.tsx`,
   gitignored) — no overflow/clipping/overlap. tsc + eslint + SSR smoke OK.
+- **2026-10-09 · S16 Real-life analogies + Node 24** — Investigation of `Examples/analogy` (Postgres / D3 /
+  Docker "на пальцях" guides, EPAM trainer, interview playbook): their per-topic layout is definition →
+  usage → **metaphor** → lab example → "say it in 30 s" → trap → sim → self-check. Our guide had **zero**
+  analogies, so that was the gap borrowed. User decisions: **add analogies; the 30-second / say-it-aloud idea
+  is NOT implemented now** (parked, along with principles page / glossary / priority markers / interview
+  timer). Built:
+  • `src/data/analogies.ts`: **18 analogies** (every content chapter except `summary`), each a concrete scene
+    + 1:1 mapping table + mandatory "where it breaks" (waiter · concierge vs butler · coin-jar checkout ·
+    vehicles · engine≠car · night-guard patrol · coffee pager · kitchen dishes/GC · post-office clerks vs
+    couriers · dishwasher "stop!" · recipe vs mise en place · flat tyre vs faulty brakes · taxi rank ·
+    doctor's pulse/scan · restaurant supply chain · supermarket closing · airport security lanes · car model
+    years/warranty). • `ChapterPage`: `#analogy` block under the header + "◎ Analogy" jump link; `.analogy`
+    / `.an-*` CSS (+ print break-inside). • search indexes analogy text. • qa section 10 (coverage +
+    well-formed) → **QA 996/0**. • smoke +11 S16 assertions (incl. summary has none).
+  **Node version:** user pinned **24+** (rejected `~25.7.0`: Node 25 EOL since 2026-06-01). `engines`
+  `node >=24, npm >=11`; `.nvmrc` = 24; deploy.yml `node-version-file: .nvmrc`; `@types/node` ^24.19.1;
+  README "Requires Node 24+". **Found + fixed:** `test-security` asserted the EXACT `--allow-*` set and
+  would have **failed CI on Node 24** (24.21 adds `--allow-inspector`, `--allow-openssl-store`; 25 adds
+  `--allow-net`). Now version-tolerant: core scopes ⊆ live, `--allow-net` absent only asserted for <25;
+  passes on 22.22 / 24.21 / 25.7. **Verified on Node 24.21:** `npm run verify` exit 0 (tsc · eslint 0 errors
+  (4 known warnings) · QA 996/0 · 16 suites ALL PASS + atlas OK · build OK) · SSR smoke **SMOKE OK**.
+  **Content follow-ups (not done):** Ch.15 security text still says "`--allow-net` experimental / stable
+  scope set = 6": verify against 24.x/25+/26 docs. Ch.18 Modern Node says "26 Current": becomes **26 Active
+  LTS ~2026-10-28** (update data + `versionTimelineEngine` `NOW`).
 - *(Update this log at the end of every session/block — per user request.)*
